@@ -62,3 +62,43 @@ create index if not exists idx_readings_sensor_ts on readings (sensor_id, timest
 create index if not exists idx_readings_location_ts on readings (location_id, timestamp desc);
 create index if not exists idx_readings_metric_ts on readings (metric, timestamp desc);
 create index if not exists idx_readings_type_ts on readings (type, timestamp desc);
+
+-- User profiles (linked to Supabase auth.users)
+create table if not exists profiles (
+  id uuid primary key references auth.users (id) on delete cascade,
+  name text,
+  email text,
+  role text default 'user', -- 'user' | 'admin'
+  city text,
+  created_at timestamptz not null default now()
+);
+
+-- Compact, denormalized environmental snapshots (publicly readable by default)
+create table if not exists environment_readings (
+  id uuid primary key default gen_random_uuid(),
+  location text,
+  latitude double precision,
+  longitude double precision,
+  aqi integer,
+  temperature double precision,
+  humidity double precision,
+  noise_level double precision,
+  source text,
+  recorded_at timestamptz not null default now(),
+  created_at timestamptz not null default now()
+);
+
+-- Per-user alert preferences
+create table if not exists user_alert_preferences (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  aqi_threshold integer,
+  noise_threshold double precision,
+  temp_threshold double precision,
+  email_alerts boolean not null default true,
+  created_at timestamptz not null default now()
+);
+
+-- Helpful indexes for environment_readings
+create index if not exists idx_env_readings_recorded_at on environment_readings (recorded_at desc);
+create index if not exists idx_env_readings_location_ts on environment_readings (location, recorded_at desc);
