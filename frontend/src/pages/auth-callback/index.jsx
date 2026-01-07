@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../utils/supabaseClient';
+import { getProfile } from '../../utils/profiles';
 
 const AuthCallback = () => {
   const navigate = useNavigate();
@@ -11,7 +12,18 @@ const AuthCallback = () => {
       // We just try to load session and redirect.
       const { data } = await supabase.auth.getSession();
       if (data?.session) {
-        navigate('/environmental-dashboard', { replace: true });
+        try {
+          const existing = await getProfile(data.session.user.id);
+          if (existing) {
+            navigate('/environmental-dashboard', { replace: true });
+          } else {
+            // If a role was preselected on login, pass it via state
+            const intendedRole = localStorage.getItem('ecowatch.intendedRole') || null;
+            navigate('/profile-setup', { replace: true, state: { intendedRole } });
+          }
+        } catch {
+          navigate('/profile-setup', { replace: true });
+        }
       } else {
         navigate('/login', { replace: true });
       }

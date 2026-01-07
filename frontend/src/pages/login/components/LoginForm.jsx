@@ -3,10 +3,12 @@ import { useAuth } from '../../../auth/AuthProvider';
 import Input from '../../../components/ui/Input';
 import Button from '../../../components/ui/Button';
 import Icon from '../../../components/AppIcon';
+import Select from '../../../components/ui/Select';
 
 const LoginForm = () => {
   const { signInWithEmailLink } = useAuth();
   const [email, setEmail] = useState('');
+  const [role, setRole] = useState('viewer');
   const [error, setError] = useState('');
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -24,6 +26,8 @@ const LoginForm = () => {
     if (authError) {
       setError(authError.message);
     } else {
+      // Persist intended role to use in profile setup after auth
+      try { localStorage.setItem('ecowatch.intendedRole', role); } catch {}
       setSent(true);
     }
   };
@@ -42,6 +46,21 @@ const LoginForm = () => {
           disabled={loading || sent}
         />
       </div>
+
+      <Select
+        label="Sign in as"
+        options={[
+          { value: 'admin', label: 'Administrator' },
+          { value: 'official', label: 'Government Official' },
+          { value: 'researcher', label: 'Researcher' },
+          { value: 'analyst', label: 'Data Analyst' },
+          { value: 'leader', label: 'Community Leader' },
+          { value: 'viewer', label: 'Viewer' },
+        ]}
+        value={role}
+        onChange={setRole}
+        disabled={loading || sent}
+      />
 
       {sent ? (
         <div className="p-4 bg-success/10 border border-success/20 rounded-lg flex items-start gap-3">

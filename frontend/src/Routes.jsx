@@ -16,6 +16,7 @@ import UserProfile from './pages/user-profile';
 import ComparativeAnalysis from './pages/comparative-analysis';
 import { useAuth } from './auth/AuthProvider';
 import AuthCallback from './pages/auth-callback';
+import ProfileSetup from './pages/profile-setup';
 
 const RequireAuth = ({ children }) => {
   const { user, loading } = useAuth();
@@ -45,6 +46,7 @@ const Routes = () => {
 
         <Route path="/login" element={<RedirectIfAuthed><Login /></RedirectIfAuthed>} />
         <Route path="/auth/callback" element={<AuthCallback />} />
+        <Route path="/profile-setup" element={<RequireAuth><ProfileSetup /></RequireAuth>} />
 
         {/* Authenticated app shell (static sidebar) */}
         <Route element={<RequireAuth><MainLayout /></RequireAuth>}>

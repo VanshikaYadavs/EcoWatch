@@ -4,11 +4,15 @@ import Sidebar from '../components/navigation/Sidebar';
 import AlertBanner from '../components/navigation/AlertBanner';
 import DataRefreshIndicator from '../components/navigation/DataRefreshIndicator';
 import UserRoleBadge from '../components/navigation/UserRoleBadge';
+import { useAuth } from '../auth/AuthProvider';
+import { useMyProfile } from '../utils/profileHooks';
 
 const MainLayout = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [alerts, setAlerts] = useState([]);
   const [lastUpdate, setLastUpdate] = useState(new Date()?.toISOString());
+  const { user } = useAuth();
+  const { profile } = useMyProfile(user);
 
   const handleToggleSidebar = () => {
     setIsSidebarCollapsed(!isSidebarCollapsed);
@@ -61,8 +65,8 @@ const MainLayout = () => {
                 onRefresh={handleRefreshData}
               />
               <UserRoleBadge
-                role="official"
-                userName="John Smith"
+                role={profile?.role || 'viewer'}
+                userName={profile?.full_name || user?.email || 'User'}
                 showName={true}
               />
             </div>

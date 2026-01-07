@@ -12,6 +12,11 @@ const UserRoleBadge = ({
       icon: 'Shield',
       description: 'Full system access'
     },
+    researcher: {
+      label: 'Researcher',
+      icon: 'FlaskConical',
+      description: 'Research data access'
+    },
     official: {
       label: 'Government Official',
       icon: 'Building',
