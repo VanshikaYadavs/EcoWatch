@@ -37,6 +37,7 @@ npm run dev
 - `GET /api/readings/latest?location_id=...&type=air&limit=50` — latest readings
 - `POST /api/readings` — insert a reading (server trusted)
  - `GET /api/ingest/now?name=Jaipur&lat=26.9124&lon=75.7873` — fetch AQI + weather and store one snapshot
+  - On insert, the backend evaluates user thresholds and writes triggered items to `alert_events`.
 
 Body example:
 ```json
@@ -77,3 +78,9 @@ npm run ingest
 ```
 
 Schedule this with Windows Task Scheduler or a hosted cron (e.g., GitHub Actions, Render cron) every 10–15 minutes.
+
+## Alert Engine
+
+- Preferences are defined per user in `user_alert_preferences`.
+- When a new `environment_readings` row is written by ingestion, the backend checks thresholds for AQI, noise, and temperature.
+- Triggered items are recorded in `alert_events` (users can read their own via Supabase with RLS).

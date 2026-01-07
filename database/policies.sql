@@ -7,6 +7,7 @@ alter table alerts enable row level security;
 alter table profiles enable row level security;
 alter table environment_readings enable row level security;
 alter table user_alert_preferences enable row level security;
+alter table alert_events enable row level security;
 
 -- Basic policies
 -- Organizations: read-only to authenticated users; writes by service role only
@@ -71,3 +72,9 @@ create policy if not exists prefs_update_own on user_alert_preferences for updat
   with check (user_id = auth.uid() or auth.role() = 'service_role');
 create policy if not exists prefs_delete_own on user_alert_preferences for delete
   to authenticated using (user_id = auth.uid() or auth.role() = 'service_role');
+
+-- Alert events: users can read their own; service role can write
+create policy if not exists alerts_events_read_own on alert_events for select
+  to authenticated using (user_id = auth.uid() or auth.role() = 'service_role');
+create policy if not exists alerts_events_insert_service_role on alert_events for insert
+  to authenticated with check (auth.role() = 'service_role');

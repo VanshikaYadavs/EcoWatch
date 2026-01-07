@@ -102,3 +102,17 @@ create table if not exists user_alert_preferences (
 -- Helpful indexes for environment_readings
 create index if not exists idx_env_readings_recorded_at on environment_readings (recorded_at desc);
 create index if not exists idx_env_readings_location_ts on environment_readings (location, recorded_at desc);
+
+-- Alert events (triggered alerts log)
+create table if not exists alert_events (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  type text not null,              -- 'AQI' | 'NOISE' | 'HEAT'
+  value double precision,
+  message text,
+  location text,
+  recorded_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_alert_events_user_ts on alert_events (user_id, created_at desc);

@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import { supabaseAdmin } from './index.mjs';
+import { evaluateAndRecordAlerts } from './alerts.mjs';
 
 const WAQI_TOKEN = process.env.WAQI_TOKEN;
 const OPENWEATHER_API_KEY = process.env.OPENWEATHER_API_KEY;
@@ -63,6 +64,12 @@ export async function ingestOne({ name, lat, lon, simulateNoise = true }) {
 
   const { data, error } = await supabaseAdmin.from('environment_readings').insert([payload]).select('*').single();
   if (error) throw new Error(error.message);
+  try {
+    await evaluateAndRecordAlerts(payload);
+  } catch (e) {
+    // Log but don't fail the ingestion on alert errors
+    console.warn('Alert evaluation error:', e?.message || e);
+  }
   return data;
 }
 
