@@ -14,19 +14,20 @@ import AirQualityMonitor from './pages/air-quality-monitor';
 import NotificationSettings from './pages/notification-setting';
 import UserProfile from './pages/user-profile';
 import ComparativeAnalysis from './pages/comparative-analysis';
-
-const AUTH_KEY = 'ecowatch.auth';
-
-const isAuthenticated = () =>
-  localStorage.getItem(AUTH_KEY) === '1' || sessionStorage.getItem(AUTH_KEY) === '1';
+import { useAuth } from './auth/AuthProvider';
+import AuthCallback from './pages/auth-callback';
 
 const RequireAuth = ({ children }) => {
-  if (!isAuthenticated()) return <Navigate to="/login" replace />;
+  const { user, loading } = useAuth();
+  if (loading) return null;
+  if (!user) return <Navigate to="/login" replace />;
   return children;
 };
 
 const RedirectIfAuthed = ({ children }) => {
-  if (isAuthenticated()) return <Navigate to="/environmental-dashboard" replace />;
+  const { user, loading } = useAuth();
+  if (loading) return null;
+  if (user) return <Navigate to="/environmental-dashboard" replace />;
   return children;
 };
 
@@ -43,6 +44,7 @@ const Routes = () => {
         <Route path="/comparative-analysis" element={<ComparativeAnalysis />} />
 
         <Route path="/login" element={<RedirectIfAuthed><Login /></RedirectIfAuthed>} />
+        <Route path="/auth/callback" element={<AuthCallback />} />
 
         {/* Authenticated app shell (static sidebar) */}
         <Route element={<RequireAuth><MainLayout /></RequireAuth>}>
