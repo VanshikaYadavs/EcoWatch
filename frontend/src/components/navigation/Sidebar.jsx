@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import Icon from '../AppIcon';
+import { useAuth } from '../../auth/AuthProvider';
+import { useMyProfile } from '../../utils/profileHooks';
 
 const Sidebar = ({ isCollapsed = false, onToggleCollapse }) => {
   const location = useLocation();
@@ -35,13 +37,15 @@ const Sidebar = ({ isCollapsed = false, onToggleCollapse }) => {
       label: 'Reports',
       path: '/historical-reports',
       icon: 'FileText',
-      description: 'Historical analysis and compliance'
+      description: 'Historical analysis and compliance',
+      roles: ['admin', 'official', 'analyst', 'researcher']
     },
     {
       label: 'Notifications',
       path: '/notification-settings',
       icon: 'Bell',
-      description: 'Alert preferences and settings'
+      description: 'Alert preferences and settings',
+      roles: ['admin', 'official']
     },
     {
       label: 'Profile',
@@ -52,6 +56,14 @@ const Sidebar = ({ isCollapsed = false, onToggleCollapse }) => {
   ];
 
   const isActive = (path) => location?.pathname === path;
+
+  const { user } = useAuth();
+  const { profile } = useMyProfile(user);
+  const role = profile?.role || 'viewer';
+
+  const visibleNav = useMemo(() => {
+    return navigationItems.filter(item => !item.roles || item.roles.includes(role));
+  }, [role]);
 
   const handleMobileToggle = () => {
     setIsMobileOpen(!isMobileOpen);
@@ -86,7 +98,7 @@ const Sidebar = ({ isCollapsed = false, onToggleCollapse }) => {
         </div>
 
         <nav className="flex flex-col gap-2 p-4 mt-4" role="navigation" aria-label="Main navigation">
-          {navigationItems?.map((item) => (
+          {visibleNav?.map((item) => (
             <Link
               key={item?.path}
               to={item?.path}
@@ -144,7 +156,7 @@ const Sidebar = ({ isCollapsed = false, onToggleCollapse }) => {
       )}
       <nav className="fixed bottom-0 left-0 right-0 z-[100] lg:hidden bg-card border-t border-border">
         <div className="flex justify-around items-center h-16 px-2">
-          {navigationItems?.slice(0, 5)?.map((item) => (
+          {visibleNav?.slice(0, 5)?.map((item) => (
             <Link
               key={item?.path}
               to={item?.path}
