@@ -1,13 +1,17 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
 import ThresholdConfiguration from './components/ThresholdConfiguration';
 import ChannelConfiguration from './components/ChannelConfiguration';
 import FrequencyConfiguration from './components/FrequencyConfiguration';
 import NotificationHistory from './components/NotificationHistory';
+import { useAuth } from '../../auth/AuthProvider';
+import { loadUserPreferences, saveUserPreferences } from '../../utils/preferences';
 
 const NotificationSettings = () => {
   const [activeTab, setActiveTab] = useState('thresholds');
+  const { user } = useAuth();
+  const [loadingPrefs, setLoadingPrefs] = useState(false);
   const [settings, setSettings] = useState({
     // Air Quality Thresholds
     airQuality: {
@@ -62,6 +66,48 @@ const NotificationSettings = () => {
     userRole: 'official'
   });
 
+  // Load user preferences from Supabase
+  useEffect(() => {
+    let mounted = true;
+    const run = async () => {
+      if (!user?.id) return;
+      setLoadingPrefs(true);
+      try {
+        const prefs = await loadUserPreferences(user.id);
+        if (!mounted || !prefs) {
+          setLoadingPrefs(false);
+          return;
+        }
+        // Merge minimal prefs into the full local settings shape
+        setSettings((prev) => ({
+          ...prev,
+          airQuality: {
+            ...prev.airQuality,
+            aqiThreshold: prefs?.aqi_threshold ?? prev.airQuality.aqiThreshold,
+          },
+          noise: {
+            ...prev.noise,
+            thresholdExceeded: prefs?.noise_threshold ?? prev.noise.thresholdExceeded,
+          },
+          temperature: {
+            ...prev.temperature,
+            heatWarning: prefs?.temp_threshold ?? prev.temperature.heatWarning,
+          },
+          channels: {
+            ...prev.channels,
+            email: prefs?.email_alerts ?? prev.channels.email,
+          },
+        }));
+      } catch (e) {
+        console.error('Failed to load preferences:', e?.message || e);
+      } finally {
+        setLoadingPrefs(false);
+      }
+    };
+    run();
+    return () => { mounted = false; };
+  }, [user?.id]);
+
   const tabs = [
     { id: 'thresholds', label: 'Alert Thresholds', icon: 'Gauge' },
     { id: 'channels', label: 'Notification Channels', icon: 'Send' },
@@ -69,9 +115,16 @@ const NotificationSettings = () => {
     { id: 'history', label: 'Notification History', icon: 'History' }
   ];
 
-  const handleSaveSettings = () => {
-    console.log('Saving settings:', settings);
-    // In real implementation, this would save to backend/localStorage
+  const canSave = useMemo(() => !!user?.id && !loadingPrefs, [user?.id, loadingPrefs]);
+
+  const handleSaveSettings = async () => {
+    if (!user?.id) return;
+    try {
+      const saved = await saveUserPreferences(user.id, settings);
+      console.log('Preferences saved:', saved);
+    } catch (e) {
+      console.error('Failed to save preferences:', e?.message || e);
+    }
   };
 
   const handleTestNotification = () => {
@@ -123,6 +176,7 @@ const NotificationSettings = () => {
             iconName="Save"
             iconPosition="left"
             onClick={handleSaveSettings}
+            disabled={!canSave}
           >
             Save Settings
           </Button>

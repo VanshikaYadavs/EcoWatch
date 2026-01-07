@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import TemperatureChart from './components/TemperatureChart';
 import TemperatureStatCard from './components/TemperatureStatCard';
@@ -11,12 +11,14 @@ import ComparativeAnalysis from './components/ComparativeAnalysis';
 import Select from '../../components/ui/Select';
 import Button from '../../components/ui/Button';
 import Icon from '../../components/AppIcon';
+import { useEnvironmentReadings } from '../../utils/dataHooks';
 
 const TemperatureAnalytics = () => {
-  const [selectedLocation, setSelectedLocation] = useState('jaipur');
+  const [selectedLocation, setSelectedLocation] = useState('all');
   const [chartType, setChartType] = useState('line');
   const [showHeatIndex, setShowHeatIndex] = useState(true);
   const [timePeriod, setTimePeriod] = useState('24h');
+  const { data: readings, loading } = useEnvironmentReadings({ location: selectedLocation, limit: 100 });
   
 
   const locations = [
@@ -30,15 +32,21 @@ const TemperatureAnalytics = () => {
     }
   ];
 
-  const temperatureData = [
-    { time: '00:00', current: 22, high: 24, low: 20, heatIndex: 23 },
-    { time: '04:00', current: 20, high: 22, low: 18, heatIndex: 21 },
-    { time: '08:00', current: 24, high: 26, low: 22, heatIndex: 25 },
-    { time: '12:00', current: 28, high: 30, low: 26, heatIndex: 30 },
-    { time: '16:00', current: 32, high: 34, low: 30, heatIndex: 35 },
-    { time: '20:00', current: 26, high: 28, low: 24, heatIndex: 27 },
-    { time: '23:59', current: 23, high: 25, low: 21, heatIndex: 24 }
-  ];
+  const temperatureData = useMemo(() => {
+    const seq = (readings || []).slice().reverse();
+    const calcHeatIndex = (t, rh) => {
+      if (typeof t !== 'number' || typeof rh !== 'number') return null;
+      // Simple feels-like approximation
+      return Math.round(t + Math.max(0, (rh - 50) * 0.1));
+    };
+    return seq.map(r => ({
+      time: new Date(r.recorded_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      current: r?.temperature ?? null,
+      high: r?.temperature ?? null,
+      low: r?.temperature ?? null,
+      heatIndex: calcHeatIndex(r?.temperature ?? null, r?.humidity ?? null),
+    }));
+  }, [readings]);
 
   const heatMapZones = [
     { id: 1, name: 'MI Road, Jaipur', temperature: 34, lat: 40.7128, lng: -74.0060 },
@@ -144,47 +152,23 @@ const TemperatureAnalytics = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-              <TemperatureStatCard
-                title="Current Temperature"
-                value={32}
-                unit="°C"
-                trend="up"
-                trendValue="+2.5°C"
-                icon="Thermometer"
-                color="var(--color-error)"
-                description="Above normal for this time"
-              />
-              <TemperatureStatCard
-                title="Daily High"
-                value={34}
-                unit="°C"
-                trend="up"
-                trendValue="+1.8°C"
-                icon="TrendingUp"
-                color="var(--color-warning)"
-                description="Recorded at 3:45 PM"
-              />
-              <TemperatureStatCard
-                title="Daily Low"
-                value={22}
-                unit="°C"
-                trend="down"
-                trendValue="-0.5°C"
-                icon="TrendingDown"
-                color="var(--color-accent)"
-                description="Recorded at 5:30 AM"
-              />
-              <TemperatureStatCard
-                title="Heat Index"
-                value={36}
-                unit="°C"
-                trend="up"
-                trendValue="+3.2°C"
-                icon="Flame"
-                color="var(--color-error)"
-                description="Feels like temperature"
-              />
-          </div>
+          {(() => {
+            const temps = (readings || []).map(r => r?.temperature).filter(v => typeof v === 'number');
+            const hums = (readings || []).map(r => r?.humidity).filter(v => typeof v === 'number');
+            const current = temps?.[0] ?? null;
+            const high = temps.length ? Math.max(...temps) : null;
+            const low = temps.length ? Math.min(...temps) : null;
+            const heatIndex = current != null && hums?.[0] != null ? Math.round(current + Math.max(0, (hums[0] - 50) * 0.1)) : null;
+            return (
+              <>
+                <TemperatureStatCard title="Current Temperature" value={current ?? '--'} unit="°C" trend={null} trendValue={null} icon="Thermometer" color="var(--color-error)" description="Latest reading" />
+                <TemperatureStatCard title="Daily High" value={high ?? '--'} unit="°C" trend={null} trendValue={null} icon="TrendingUp" color="var(--color-warning)" description="Max recent value" />
+                <TemperatureStatCard title="Daily Low" value={low ?? '--'} unit="°C" trend={null} trendValue={null} icon="TrendingDown" color="var(--color-accent)" description="Min recent value" />
+                <TemperatureStatCard title="Heat Index" value={heatIndex ?? '--'} unit="°C" trend={null} trendValue={null} icon="Flame" color="var(--color-error)" description="Feels like temperature" />
+              </>
+            );
+          })()}
+        </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
               <div className="lg:col-span-2">
@@ -242,6 +226,7 @@ const TemperatureAnalytics = () => {
                   selectedLocation={selectedLocation}
                   onLocationChange={setSelectedLocation}
                   showElevation={true}
+                  loading={loading}
                 />
               </div>
             </div>

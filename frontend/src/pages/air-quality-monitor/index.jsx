@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
 import AQIChart from './components/AQIChart';
 import SensorDataTable from './components/SensorDataTable';
 import FilterControls from './components/FilterControls';
 import AlertConfiguration from './components/AlertConfiguration';
 import LocationComparison from './components/LocationComparison';
+import { useEnvironmentReadings } from '../../utils/dataHooks';
 
 const AirQualityMonitor = () => {
   const [filters, setFilters] = useState({
@@ -17,126 +18,30 @@ const AirQualityMonitor = () => {
   const [chartData, setChartData] = useState([]);
   const [sensorData, setSensorData] = useState([]);
   const [comparisonData, setComparisonData] = useState([]);
+  const { data: readings, loading } = useEnvironmentReadings({ location: filters.location === 'all' ? null : filters.location, limit: 100 });
 
   useEffect(() => {
-    const mockChartData = [
-      { time: '00:00', aqi: 45, pm25: 12, pm10: 25, ozone: 35, no2: 15 },
-      { time: '02:00', aqi: 52, pm25: 15, pm10: 28, ozone: 38, no2: 18 },
-      { time: '04:00', aqi: 48, pm25: 13, pm10: 26, ozone: 36, no2: 16 },
-      { time: '06:00', aqi: 65, pm25: 22, pm10: 35, ozone: 45, no2: 25 },
-      { time: '08:00', aqi: 85, pm25: 32, pm10: 48, ozone: 55, no2: 35 },
-      { time: '10:00', aqi: 95, pm25: 38, pm10: 55, ozone: 62, no2: 42 },
-      { time: '12:00', aqi: 102, pm25: 42, pm10: 62, ozone: 68, no2: 48 },
-      { time: '14:00', aqi: 98, pm25: 40, pm10: 58, ozone: 65, no2: 45 },
-      { time: '16:00', aqi: 88, pm25: 35, pm10: 52, ozone: 58, no2: 38 },
-      { time: '18:00', aqi: 92, pm25: 37, pm10: 54, ozone: 60, no2: 40 },
-      { time: '20:00', aqi: 78, pm25: 28, pm10: 42, ozone: 50, no2: 32 },
-      { time: '22:00', aqi: 62, pm25: 20, pm10: 32, ozone: 42, no2: 22 }
-    ];
-
-    const mockSensorData = [
-      {
-        id: 1,
-        location: 'MI Road, Jaipur',
-        zone: 'Jaipur',
-        aqi: 102,
-        pm25: 42,
-        pm10: 62,
-        ozone: 68,
-        no2: 48,
-        lastUpdate: '2 min ago'
-      },
-      {
-        id: 2,
-        location: 'Industrial Area, Tonk',
-        zone: 'Tonk',
-        aqi: 145,
-        pm25: 65,
-        pm10: 95,
-        ozone: 82,
-        no2: 72,
-        lastUpdate: '1 min ago'
-      },
-      {
-        id: 3,
-        location: 'Lake Pichola, Udaipur',
-        zone: 'Udaipur',
-        aqi: 48,
-        pm25: 13,
-        pm10: 26,
-        ozone: 36,
-        no2: 16,
-        lastUpdate: '3 min ago'
-      },
-      {
-        id: 4,
-        location: 'Clock Tower, Jodhpur',
-        zone: 'Jodhpur',
-        aqi: 118,
-        pm25: 52,
-        pm10: 75,
-        ozone: 72,
-        no2: 58,
-        lastUpdate: '1 min ago'
-      },
-      {
-        id: 5,
-        location: 'Pushkar Road, Ajmer',
-        zone: 'Ajmer',
-        aqi: 68,
-        pm25: 24,
-        pm10: 38,
-        ozone: 48,
-        no2: 28,
-        lastUpdate: '2 min ago'
-      },
-      {
-        id: 6,
-        location: 'Jaipur City',
-        zone: 'Jaipur',
-        aqi: 55,
-        pm25: 18,
-        pm10: 30,
-        ozone: 40,
-        no2: 20,
-        lastUpdate: '4 min ago'
-      },
-      {
-        id: 7,
-        location: 'Industrial Area, Bikaner',
-        zone: 'Bikaner',
-        aqi: 92,
-        pm25: 37,
-        pm10: 54,
-        ozone: 60,
-        no2: 40,
-        lastUpdate: '1 min ago'
-      },
-      {
-        id: 8,
-        location: 'Tonk District',
-        zone: 'Tonk',
-        aqi: 108,
-        pm25: 45,
-        pm10: 68,
-        ozone: 70,
-        no2: 52,
-        lastUpdate: '2 min ago'
-      }
-    ];
-
-    const mockComparisonData = [
-      { location: 'MI Road, Jaipur', pm25: 42, pm10: 62, ozone: 68, no2: 48 },
-      { location: 'Industrial Area, Tonk', pm25: 65, pm10: 95, ozone: 82, no2: 72 },
-      { location: 'Lake Pichola, Udaipur', pm25: 13, pm10: 26, ozone: 36, no2: 16 },
-      { location: 'Clock Tower, Jodhpur', pm25: 52, pm10: 75, ozone: 72, no2: 58 },
-      { location: 'Pushkar Road, Ajmer', pm25: 24, pm10: 38, ozone: 48, no2: 28 }
-    ];
-
-    setChartData(mockChartData);
-    setSensorData(mockSensorData);
-    setComparisonData(mockComparisonData);
-  }, []);
+    if (!readings?.length) return;
+    const series = readings
+      .slice()
+      .reverse()
+      .map(r => ({ time: new Date(r.recorded_at).toLocaleTimeString(), aqi: r.aqi ?? 0 }));
+    setChartData(series);
+    const sensors = readings.slice(0, 50).map((r, i) => ({
+      id: i + 1,
+      location: r.location,
+      zone: r.location,
+      aqi: r.aqi ?? 0,
+      pm25: null,
+      pm10: null,
+      ozone: null,
+      no2: null,
+      lastUpdate: new Date(r.recorded_at).toLocaleTimeString(),
+    }));
+    setSensorData(sensors);
+    const comp = readings.slice(0, 10).map(r => ({ location: r.location, pm25: 0, pm10: 0, ozone: 0, no2: 0 }));
+    setComparisonData(comp);
+  }, [readings]);
 
   const locationOptions = [
     { value: 'all', label: 'All Locations' },

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MetricCard from './components/MetricCard';
 import SensorMap from './components/SensorMap';
@@ -7,6 +7,7 @@ import HotspotAlert from './components/HotspotAlert';
 import QuickStats from './components/QuickStats';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
+import { useEnvironmentReadings, useAlertEvents } from '../../utils/dataHooks';
 
 const EnvironmentalDashboard = () => {
   const navigate = useNavigate();
@@ -14,69 +15,91 @@ const EnvironmentalDashboard = () => {
   const [location, setLocation] = useState('all');
   const [parameter, setParameter] = useState('all');
 
+  const { data: readings } = useEnvironmentReadings({ location: location === 'all' ? null : location, limit: 100 });
+  const { data: alerts } = useAlertEvents({ limit: 20 });
+
+  const latest = useMemo(() => readings?.[0] || {}, [readings]);
+  const avg = useMemo(() => {
+    if (!readings?.length) return {};
+    const sum = readings.reduce((acc, r) => ({
+      aqi: acc.aqi + (Number(r.aqi) || 0),
+      noise: acc.noise + (Number(r.noise_level) || 0),
+      temp: acc.temp + (Number(r.temperature) || 0),
+      humidity: acc.humidity + (Number(r.humidity) || 0),
+    }), { aqi: 0, noise: 0, temp: 0, humidity: 0 });
+    const n = readings.length;
+    return {
+      aqi: Math.round(sum.aqi / n),
+      noise: Math.round(sum.noise / n),
+      temp: Math.round(sum.temp / n),
+      humidity: Math.round(sum.humidity / n),
+      sensors: n,
+    };
+  }, [readings]);
+
   const metrics = [
     {
       title: 'Air Quality Index',
-      value: '156',
+      value: String(latest?.aqi ?? avg.aqi ?? '—'),
       unit: 'AQI',
-      status: 'poor',
+      status: (latest?.aqi ?? avg.aqi) >= 150 ? 'poor' : 'good',
       trend: 'up',
-      trendValue: '+12%',
+      trendValue: '',
       icon: 'Wind',
       threshold: '150',
       onClick: () => navigate('/air-quality-monitor')
     },
     {
       title: 'Noise Level',
-      value: '78',
+      value: String(latest?.noise_level ?? avg.noise ?? '—'),
       unit: 'dB',
-      status: 'moderate',
+      status: (latest?.noise_level ?? avg.noise) >= 85 ? 'critical' : 'moderate',
       trend: 'down',
-      trendValue: '-5%',
+      trendValue: '',
       icon: 'Volume2',
       threshold: '85',
       onClick: () => navigate('/noise-level-tracking')
     },
     {
       title: 'Temperature',
-      value: '28',
+      value: String(latest?.temperature ?? avg.temp ?? '—'),
       unit: '°C',
-      status: 'good',
+      status: (latest?.temperature ?? avg.temp) >= 35 ? 'poor' : 'good',
       trend: 'up',
-      trendValue: '+2°C',
+      trendValue: '',
       icon: 'Thermometer',
       threshold: '35',
       onClick: () => navigate('/temperature-analytics')
     },
     {
       title: 'Humidity',
-      value: '65',
+      value: String(latest?.humidity ?? avg.humidity ?? '—'),
       unit: '%',
       status: 'good',
       trend: 'down',
-      trendValue: '-3%',
+      trendValue: '',
       icon: 'Droplets',
       threshold: '80',
       onClick: () => {}
     },
     {
       title: 'Active Hotspots',
-      value: '3',
-      unit: 'zones',
-      status: 'critical',
+      value: String(alerts?.length ?? 0),
+      unit: 'events',
+      status: alerts?.length ? 'critical' : 'good',
       trend: 'up',
-      trendValue: '+2',
+      trendValue: '',
       icon: 'MapPin',
       threshold: '5',
       onClick: () => {}
     },
     {
       title: 'Active Sensors',
-      value: '47',
+      value: String(avg?.sensors ?? readings?.length ?? 0),
       unit: 'online',
       status: 'good',
       trend: 'up',
-      trendValue: '+1',
+      trendValue: '',
       icon: 'Radio',
       threshold: '50',
       onClick: () => {}
@@ -114,74 +137,28 @@ const EnvironmentalDashboard = () => {
     }
   ];
 
-  const sensors = [
-    {
-      id: 1,
-      location: 'MI Road, Jaipur',
-      address: 'MI Road, Jaipur, Rajasthan',
-      aqi: 156,
-      noise: 78,
-      status: 'poor',
-      lat: 40.7128,
-      lng: -74.0060
-    },
-    {
-      id: 2,
-      location: 'Industrial Area, Tonk',
-      address: 'Industrial Area, Tonk, Rajasthan',
-      aqi: 189,
-      noise: 92,
-      status: 'critical',
-      lat: 40.7200,
-      lng: -74.0100
-    },
-    {
-      id: 3,
-      location: 'Lake Pichola, Udaipur',
-      address: 'Lake Pichola, Udaipur, Rajasthan',
-      aqi: 45,
-      noise: 52,
-      status: 'good',
-      lat: 40.7050,
-      lng: -74.0020
-    }
-  ];
+  const sensors = (readings || []).slice(0, 20).map((r, i) => ({
+    id: i + 1,
+    location: r.location || 'Unknown',
+    address: r.location,
+    aqi: r.aqi ?? 0,
+    noise: r.noise_level ?? 0,
+    status: (r.aqi ?? 0) >= 150 ? 'poor' : 'good',
+    lat: r.latitude ?? 0,
+    lng: r.longitude ?? 0,
+  }));
 
-  const hotspots = [
-    {
-      id: 1,
-      severity: 'critical',
-      title: 'Severe Air Pollution Detected',
-      location: 'MI Road, Jaipur - Sensor #12',
-      description: 'AQI levels have exceeded critical threshold. Immediate action recommended for sensitive groups.',
-      aqi: 312,
-      noise: 85,
-      temperature: 32,
-      time: '2 mins ago'
-    },
-    {
-      id: 2,
-      severity: 'high',
-      title: 'Elevated Noise Levels',
-      location: 'Clock Tower, Jodhpur - Sensor #08',
-      description: 'Continuous noise exposure above 90dB detected. Construction activity ongoing.',
-      aqi: 145,
-      noise: 94,
-      temperature: 29,
-      time: '15 mins ago'
-    },
-    {
-      id: 3,
-      severity: 'medium',
-      title: 'Temperature Spike Alert',
-      location: 'Pushkar Road, Ajmer - Sensor #23',
-      description: 'Unusual temperature increase detected. Heat island effect monitoring active.',
-      aqi: 78,
-      noise: 68,
-      temperature: 35,
-      time: '1 hour ago'
-    }
-  ];
+  const hotspots = (alerts || []).map((a, idx) => ({
+    id: idx + 1,
+    severity: a.type === 'AQI' ? 'critical' : a.type === 'NOISE' ? 'high' : 'medium',
+    title: a.message || `${a.type} alert` ,
+    location: `${a.location || 'Unknown'}`,
+    description: a.message || '',
+    aqi: a.type === 'AQI' ? a.value : null,
+    noise: a.type === 'NOISE' ? a.value : null,
+    temperature: a.type === 'HEAT' ? a.value : null,
+    time: new Date(a.created_at).toLocaleString(),
+  }));
 
   const handleRefreshData = async () => {
     return new Promise((resolve) => {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 import RealtimeNoiseMeter from './components/RealtimeNoiseMeter';
 import NoiseTimelineChart from './components/NoiseTimelineChart';
 import LocationFilter from './components/LocationFilter';
@@ -7,41 +7,42 @@ import AlertConfiguration from './components/AlertConfiguration';
 import ComparativeAnalysis from './components/ComparativeAnalysis';
 import ExportReports from './components/ExportReports';
 import { RAJASTHAN_PLACES } from '../../utils/rajasthanLocations';
+import { useEnvironmentReadings } from '../../utils/dataHooks';
 
 const NoiseLevelTracking = () => {
   
 
-  const [currentNoiseData, setCurrentNoiseData] = useState({
-    currentLevel: 68,
-    peakLevel: 82,
-    averageLevel: 61,
-    status: 'concerning'
-  });
+  const [selectedLocation, setSelectedLocation] = useState('all');
+  const { data: readings, loading } = useEnvironmentReadings({ location: selectedLocation, limit: 100 });
 
-  const [timelineData, setTimelineData] = useState([
-    { time: '00:00', level: 45 },
-    { time: '02:00', level: 42 },
-    { time: '04:00', level: 48 },
-    { time: '06:00', level: 58 },
-    { time: '08:00', level: 72 },
-    { time: '10:00', level: 68 },
-    { time: '12:00', level: 75 },
-    { time: '14:00', level: 71 },
-    { time: '16:00', level: 78 },
-    { time: '18:00', level: 82 },
-    { time: '20:00', level: 65 },
-    { time: '22:00', level: 52 }
-  ]);
+  const currentNoiseData = useMemo(() => {
+    const levels = (readings || []).map(r => r?.noise_level).filter(v => typeof v === 'number');
+    const current = levels?.[0] ?? 0;
+    const peak = levels.length ? Math.max(...levels) : 0;
+    const avg = levels.length ? Math.round(levels.reduce((a, b) => a + b, 0) / levels.length) : 0;
+    const status = current >= 85 ? 'harmful' : current >= 70 ? 'concerning' : 'acceptable';
+    return { currentLevel: current, peakLevel: peak, averageLevel: avg, status };
+  }, [readings]);
 
-  const [locations, setLocations] = useState([
-    { id: 'loc1', name: RAJASTHAN_PLACES?.[0]?.label || 'MI Road, Jaipur', type: 'Commercial', sensors: 12, density: 'High' },
-    { id: 'loc2', name: RAJASTHAN_PLACES?.[1]?.label || 'Clock Tower, Jodhpur', type: 'Educational', sensors: 8, density: 'Medium' },
-    { id: 'loc3', name: RAJASTHAN_PLACES?.[2]?.label || 'Lake Pichola, Udaipur', type: 'Healthcare', sensors: 15, density: 'High' },
-    { id: 'loc4', name: RAJASTHAN_PLACES?.[3]?.label || 'Pushkar Road, Ajmer', type: 'Residential', sensors: 10, density: 'Medium' },
-    { id: 'loc5', name: RAJASTHAN_PLACES?.[4]?.label || 'Industrial Area, Tonk', type: 'Industrial', sensors: 6, density: 'Low' }
-  ]);
+  const timelineData = useMemo(() => {
+    return (readings || [])
+      .slice()
+      .reverse()
+      .map(r => ({ time: new Date(r.recorded_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), level: r?.noise_level ?? 0 }));
+  }, [readings]);
 
-  const [selectedLocation, setSelectedLocation] = useState('loc1');
+  const locations = useMemo(() => {
+    const unique = new Set((readings || []).map(r => r.location).filter(Boolean));
+    const base = [...unique].map(loc => ({ id: loc, name: loc, type: 'Unknown', sensors: 0, density: 'Unknown' }));
+    if (base.length) return base;
+    // Fallback demo locations
+    return [
+      { id: RAJASTHAN_PLACES?.[0]?.value || 'Jaipur', name: RAJASTHAN_PLACES?.[0]?.label || 'MI Road, Jaipur', type: 'Commercial', sensors: 12, density: 'High' },
+      { id: RAJASTHAN_PLACES?.[1]?.value || 'Jodhpur', name: RAJASTHAN_PLACES?.[1]?.label || 'Clock Tower, Jodhpur', type: 'Educational', sensors: 8, density: 'Medium' },
+    ];
+  }, [readings]);
+
+  
   const [customThresholds, setCustomThresholds] = useState({
     acceptable: 55,
     concerning: 70,
@@ -89,19 +90,7 @@ const NoiseLevelTracking = () => {
 
   const [timeRange, setTimeRange] = useState('Last 24 Hours');
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const newLevel = Math.floor(Math.random() * 30) + 50;
-      setCurrentNoiseData(prev => ({
-        ...prev,
-        currentLevel: newLevel,
-        peakLevel: Math.max(prev?.peakLevel, newLevel),
-        averageLevel: Math.floor((prev?.averageLevel + newLevel) / 2)
-      }));
-    }, 15000);
-
-    return () => clearInterval(interval);
-  }, []);
+  // live data via Supabase, so no random simulation needed
 
   const handleLocationChange = (locationId) => {
     setSelectedLocation(locationId);
@@ -173,6 +162,7 @@ const NoiseLevelTracking = () => {
             locations={locations}
             customThresholds={customThresholds}
             onThresholdChange={handleThresholdChange}
+            loading={loading}
           />
 
           <AlertConfiguration
