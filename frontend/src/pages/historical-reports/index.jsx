@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import ReportBuilder from './components/ReportBuilder';
 import TrendChart from './components/TrendChart';
 import StatisticsPanel from './components/StatisticsPanel';
@@ -7,56 +7,87 @@ import ReportHistory from './components/ReportHistory';
 import ComparisonTool from './components/ComparisonTool';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
+import Select from '../../components/ui/Select';
+import { useEnvironmentReadings } from '../../utils/dataHooks';
 
 const HistoricalReports = () => {
   const [activeTab, setActiveTab] = useState('builder');
+  const [selectedLocation, setSelectedLocation] = useState('all');
+  const [timeRange, setTimeRange] = useState('30d');
 
-  const aqiTrendData = [
-    { date: '12/01', value: 85 },
-    { date: '12/08', value: 92 },
-    { date: '12/15', value: 78 },
-    { date: '12/22', value: 105 },
-    { date: '12/29', value: 88 },
-    { date: '01/05', value: 95 }
+  const now = useMemo(() => new Date(), []);
+  const { start, end } = useMemo(() => {
+    const end = now.toISOString();
+    const d = new Date(now);
+    if (timeRange === '7d') d.setDate(d.getDate() - 7);
+    else if (timeRange === '30d') d.setDate(d.getDate() - 30);
+    else if (timeRange === '90d') d.setDate(d.getDate() - 90);
+    else if (timeRange === '1y') d.setFullYear(d.getFullYear() - 1);
+    else d.setDate(d.getDate() - 1);
+    const start = d.toISOString();
+    return { start, end };
+  }, [now, timeRange]);
+
+  const { data: readings, loading } = useEnvironmentReadings({ location: selectedLocation, limit: 2000, start, end });
+
+  const byDay = useMemo(() => {
+    const bucket = {};
+    (readings || []).forEach(r => {
+      const dt = new Date(r.recorded_at);
+      const key = `${dt.getMonth()+1}/${dt.getDate()}`; // MM/DD
+      bucket[key] = bucket[key] || { aqi: [], noise: [], temp: [], humidity: [] };
+      if (typeof r.aqi === 'number') bucket[key].aqi.push(r.aqi);
+      if (typeof r.noise_level === 'number') bucket[key].noise.push(r.noise_level);
+      if (typeof r.temperature === 'number') bucket[key].temp.push(r.temperature);
+      if (typeof r.humidity === 'number') bucket[key].humidity.push(r.humidity);
+    });
+    const avg = (arr) => arr.length ? Math.round(arr.reduce((a,b)=>a+b,0)/arr.length) : null;
+    const dates = Object.keys(bucket);
+    dates.sort((a,b) => {
+      const [am,ad] = a.split('/').map(Number);
+      const [bm,bd] = b.split('/').map(Number);
+      return am === bm ? ad - bd : am - bm;
+    });
+    return {
+      aqi: dates.map(k => ({ date: k, value: avg(bucket[k].aqi) })).filter(p => p.value != null),
+      noise: dates.map(k => ({ date: k, value: avg(bucket[k].noise) })).filter(p => p.value != null),
+      temp: dates.map(k => ({ date: k, value: avg(bucket[k].temp) })).filter(p => p.value != null),
+      humidity: dates.map(k => ({ date: k, value: avg(bucket[k].humidity) })).filter(p => p.value != null),
+    };
+  }, [readings]);
+
+  const statistics = useMemo(() => {
+    const vals = {
+      aqi: (readings || []).map(r => r.aqi).filter(v => typeof v === 'number'),
+      noise: (readings || []).map(r => r.noise_level).filter(v => typeof v === 'number'),
+      temp: (readings || []).map(r => r.temperature).filter(v => typeof v === 'number'),
+      humidity: (readings || []).map(r => r.humidity).filter(v => typeof v === 'number'),
+    };
+    const avg = (arr) => arr.length ? Math.round((arr.reduce((a,b)=>a+b,0)/arr.length) * 10)/10 : null;
+    const trend = (arr) => (arr.length > 1 ? Math.round((arr[arr.length-1] - arr[0]) * 10)/10 : 0);
+    return {
+      avgAqi: avg(vals.aqi) ?? '--',
+      aqiTrend: trend(vals.aqi) ?? 0,
+      peakNoise: (vals.noise.length ? Math.max(...vals.noise) : '--'),
+      noiseTrend: trend(vals.noise) ?? 0,
+      avgTemp: avg(vals.temp) ?? '--',
+      tempTrend: trend(vals.temp) ?? 0,
+      avgHumidity: avg(vals.humidity) ?? '--',
+      humidityTrend: trend(vals.humidity) ?? 0,
+    };
+  }, [readings]);
+
+  const locationOptions = [
+    { value: 'all', label: 'All Locations' },
+    { value: 'Jaipur', label: 'Jaipur' },
+    { value: 'Tonk', label: 'Tonk' },
   ];
-
-  const noiseTrendData = [
-    { date: '12/01', value: 68 },
-    { date: '12/08', value: 72 },
-    { date: '12/15', value: 65 },
-    { date: '12/22', value: 75 },
-    { date: '12/29', value: 70 },
-    { date: '01/05', value: 73 }
+  const timeOptions = [
+    { value: '7d', label: 'Last 7 Days' },
+    { value: '30d', label: 'Last 30 Days' },
+    { value: '90d', label: 'Last 90 Days' },
+    { value: '1y', label: 'Last Year' },
   ];
-
-  const temperatureTrendData = [
-    { date: '12/01', value: 62 },
-    { date: '12/08', value: 58 },
-    { date: '12/15', value: 55 },
-    { date: '12/22', value: 52 },
-    { date: '12/29', value: 48 },
-    { date: '01/05', value: 50 }
-  ];
-
-  const humidityTrendData = [
-    { date: '12/01', value: 65 },
-    { date: '12/08', value: 68 },
-    { date: '12/15', value: 72 },
-    { date: '12/22', value: 70 },
-    { date: '12/29', value: 75 },
-    { date: '01/05', value: 73 }
-  ];
-
-  const statistics = {
-    avgAqi: 89,
-    aqiTrend: 5.2,
-    peakNoise: 88,
-    noiseTrend: -2.1,
-    avgTemp: 55,
-    tempTrend: -8.5,
-    avgHumidity: 70,
-    humidityTrend: 3.8
-  };
 
   const tabs = [
     { id: 'builder', label: 'Report Builder', icon: 'FileText' },
@@ -138,12 +169,18 @@ const HistoricalReports = () => {
         )}
 
         {activeTab === 'trends' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-            <TrendChart title="Air Quality Trends" data={aqiTrendData} parameter="aqi" chartType="area" />
-            <TrendChart title="Noise Level Trends" data={noiseTrendData} parameter="noise" chartType="line" />
-            <TrendChart title="Temperature Trends" data={temperatureTrendData} parameter="temperature" chartType="area" />
-            <TrendChart title="Humidity Trends" data={humidityTrendData} parameter="humidity" chartType="line" />
-          </div>
+          <>
+            <div className="flex flex-col sm:flex-row gap-3 mb-4">
+              <Select options={locationOptions} value={selectedLocation} onChange={setSelectedLocation} placeholder="Location" />
+              <Select options={timeOptions} value={timeRange} onChange={setTimeRange} placeholder="Time Range" />
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+              <TrendChart title="Air Quality Trends" data={byDay.aqi} parameter="aqi" chartType="area" />
+              <TrendChart title="Noise Level Trends" data={byDay.noise} parameter="noise" chartType="line" />
+              <TrendChart title="Temperature Trends" data={byDay.temp} parameter="temperature" chartType="area" />
+              <TrendChart title="Humidity Trends" data={byDay.humidity} parameter="humidity" chartType="line" />
+            </div>
+          </>
         )}
 
         {activeTab === 'statistics' && (

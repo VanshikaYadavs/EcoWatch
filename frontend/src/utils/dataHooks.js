@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from './supabaseClient';
 
-export function useEnvironmentReadings({ location = null, limit = 50 } = {}) {
+export function useEnvironmentReadings({ location = null, limit = 50, start = null, end = null } = {}) {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -17,6 +17,8 @@ export function useEnvironmentReadings({ location = null, limit = 50 } = {}) {
         .order('recorded_at', { ascending: false })
         .limit(limit);
       if (location && location !== 'all') q = q.eq('location', location);
+      if (start) q = q.gte('recorded_at', start);
+      if (end) q = q.lte('recorded_at', end);
       const { data: rows, error: err } = await q;
       if (cancelled) return;
       if (err) setError(err.message);
@@ -24,7 +26,7 @@ export function useEnvironmentReadings({ location = null, limit = 50 } = {}) {
       setLoading(false);
     })();
     return () => { cancelled = true; };
-  }, [location, limit]);
+  }, [location, limit, start, end]);
 
   return { data, loading, error };
 }
