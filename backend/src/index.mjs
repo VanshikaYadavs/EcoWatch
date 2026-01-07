@@ -2,6 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import morgan from 'morgan';
 import { createClient } from '@supabase/supabase-js';
+import { ingestOne } from './ingest.mjs';
 
 const app = express();
 app.use(express.json());
@@ -70,6 +71,19 @@ app.post('/api/readings', async (req, res) => {
     if (error) return res.status(400).json({ error: error.message });
 
     res.status(201).json({ data });
+  } catch (err) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// Trigger ingestion for a single location
+// GET /api/ingest/now?name=Jaipur&lat=26.91&lon=75.78
+app.get('/api/ingest/now', async (req, res) => {
+  try {
+    const { name, lat, lon } = req.query;
+    if (!name || !lat || !lon) return res.status(400).json({ error: 'name, lat, lon are required' });
+    const data = await ingestOne({ name, lat: Number(lat), lon: Number(lon) });
+    res.json({ data });
   } catch (err) {
     res.status(500).json({ error: String(err) });
   }

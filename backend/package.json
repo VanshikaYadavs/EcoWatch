@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "node --watch src/index.mjs",
-    "start": "node src/index.mjs"
+    "start": "node src/index.mjs",
+    "ingest": "node src/ingest.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",

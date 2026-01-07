@@ -15,6 +15,9 @@ cp .env.example .env
 - `SUPABASE_SERVICE_ROLE_KEY` (server only)
 - `SUPABASE_ANON_KEY` (optional)
 - `PORT` (optional, default 8080)
+ - `WAQI_TOKEN` (optional for AQI)
+ - `OPENWEATHER_API_KEY` (optional for weather)
+ - `DEFAULT_LOCATIONS` JSON array (name, lat, lon) for CLI ingest
 
 3) Install dependencies
 
@@ -33,6 +36,7 @@ npm run dev
 - `GET /health` — service status
 - `GET /api/readings/latest?location_id=...&type=air&limit=50` — latest readings
 - `POST /api/readings` — insert a reading (server trusted)
+ - `GET /api/ingest/now?name=Jaipur&lat=26.9124&lon=75.7873` — fetch AQI + weather and store one snapshot
 
 Body example:
 ```json
@@ -54,3 +58,22 @@ Apply schema and policies in Supabase SQL editor:
 - `database/policies.sql`
 
 Consider adding scheduled jobs (Edge Functions or external cron) to ingest public APIs and evaluate alerts.
+
+## Ingestion (CLI)
+
+Run ingestion for default locations from `.env`:
+
+```bash
+npm run ingest
+```
+
+`DEFAULT_LOCATIONS` example:
+
+```json
+[
+  { "name": "Jaipur", "lat": 26.9124, "lon": 75.7873 },
+  { "name": "Udaipur", "lat": 24.5854, "lon": 73.7125 }
+]
+```
+
+Schedule this with Windows Task Scheduler or a hosted cron (e.g., GitHub Actions, Render cron) every 10–15 minutes.
