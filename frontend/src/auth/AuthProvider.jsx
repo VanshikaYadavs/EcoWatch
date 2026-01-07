@@ -17,16 +17,52 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     let mounted = true;
     (async () => {
+      // Load session from storage first
       const { data } = await supabase.auth.getSession();
+      let sess = data?.session ?? null;
+      let usr = sess?.user ?? null;
+
+      // Validate session against Supabase API (handles deleted/expired users)
+      if (sess) {
+        try {
+          const { data: userData, error } = await supabase.auth.getUser();
+          if (error || !userData?.user) {
+            await supabase.auth.signOut();
+            sess = null;
+            usr = null;
+          } else {
+            usr = userData.user;
+          }
+        } catch {
+          // On unexpected error, fail closed (treat as signed out)
+          await supabase.auth.signOut();
+          sess = null;
+          usr = null;
+        }
+      }
+
       if (!mounted) return;
-      setSession(data?.session ?? null);
-      setUser(data?.session?.user ?? null);
+      setSession(sess);
+      setUser(usr);
       setLoading(false);
     })();
 
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, sess) => {
-      setSession(sess ?? null);
-      setUser(sess?.user ?? null);
+    const { data: sub } = supabase.auth.onAuthStateChange(async (_event, sess) => {
+      // On any auth change, validate the user from server
+      if (sess) {
+        const { data: userData, error } = await supabase.auth.getUser();
+        if (error || !userData?.user) {
+          await supabase.auth.signOut();
+          setSession(null);
+          setUser(null);
+        } else {
+          setSession(sess);
+          setUser(userData.user);
+        }
+      } else {
+        setSession(null);
+        setUser(null);
+      }
     });
 
     return () => {

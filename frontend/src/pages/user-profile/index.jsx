@@ -8,9 +8,11 @@ import AccountSecurity from './components/AccountSecurity';
 import NotificationPreferences from './components/NotificationPreferences';
 import ActivityHistory from './components/ActivityHistory';
 import AccountStatistics from './components/AccountStatistics';
+import { useAuth } from '../../auth/AuthProvider';
 
 const UserProfile = () => {
   const navigate = useNavigate();
+  const { signOut } = useAuth();
 
   const [activeTab, setActiveTab] = useState('details');
   const [profileData, setProfileData] = useState({
@@ -62,13 +64,13 @@ const UserProfile = () => {
     link?.click();
   };
 
-  const handleLogout = () => {
-    const AUTH_KEY = 'ecowatch.auth';
-    const USER_KEY = 'ecowatch.user';
-    localStorage.removeItem(AUTH_KEY);
-    localStorage.removeItem(USER_KEY);
-    sessionStorage.removeItem(AUTH_KEY);
-    sessionStorage.removeItem(USER_KEY);
+  const handleLogout = async () => {
+    try {
+      await signOut();
+    } catch (e) {
+      // best-effort fallback: proceed to login regardless
+    }
+    try { localStorage.removeItem('ecowatch.intendedRole'); } catch {}
     navigate('/login', { replace: true });
   };
 
