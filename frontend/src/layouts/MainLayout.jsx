@@ -1,17 +1,19 @@
 import React, { useState } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useNavigate } from 'react-router-dom';
 import Sidebar from '../components/navigation/Sidebar';
 import AlertBanner from '../components/navigation/AlertBanner';
 import DataRefreshIndicator from '../components/navigation/DataRefreshIndicator';
 import UserRoleBadge from '../components/navigation/UserRoleBadge';
 import { useAuth } from '../auth/AuthProvider';
 import { useMyProfile } from '../utils/profileHooks';
+import Button from '../components/ui/Button';
 
 const MainLayout = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [alerts, setAlerts] = useState([]);
   const [lastUpdate, setLastUpdate] = useState(new Date()?.toISOString());
-  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { user, signOut } = useAuth();
   const { profile } = useMyProfile(user);
 
   const handleToggleSidebar = () => {
@@ -29,6 +31,11 @@ const MainLayout = () => {
         resolve();
       }, 1000);
     });
+  };
+
+  const handleLogout = async () => {
+    try { await signOut(); } catch {}
+    navigate('/login', { replace: true });
   };
 
   return (
@@ -69,6 +76,14 @@ const MainLayout = () => {
                 userName={profile?.full_name || user?.email || 'User'}
                 showName={true}
               />
+              <Button
+                variant="outline"
+                iconName="LogOut"
+                iconPosition="left"
+                onClick={handleLogout}
+              >
+                Logout
+              </Button>
             </div>
           </div>
         </header>
