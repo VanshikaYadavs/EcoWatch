@@ -18,7 +18,7 @@ const AirQualityMonitor = () => {
   const [chartData, setChartData] = useState([]);
   const [sensorData, setSensorData] = useState([]);
   const [comparisonData, setComparisonData] = useState([]);
-  const { data: readings, loading } = useEnvironmentReadings({ location: filters.location === 'all' ? null : filters.location, limit: 100 });
+  const { data: readings, loading } = useEnvironmentReadings({ location: filters.location === 'all' ? null : filters.location, limit: 100, realtime: true });
 
   useEffect(() => {
     if (!readings?.length) return;

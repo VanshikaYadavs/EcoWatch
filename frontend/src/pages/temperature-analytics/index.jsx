@@ -18,7 +18,7 @@ const TemperatureAnalytics = () => {
   const [chartType, setChartType] = useState('line');
   const [showHeatIndex, setShowHeatIndex] = useState(true);
   const [timePeriod, setTimePeriod] = useState('24h');
-  const { data: readings, loading } = useEnvironmentReadings({ location: selectedLocation, limit: 100 });
+  const { data: readings, loading } = useEnvironmentReadings({ location: selectedLocation, limit: 100, realtime: true });
   
 
   const locations = [

@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react';
 import { supabase } from './supabaseClient';
 
-export function useEnvironmentReadings({ location = null, limit = 50, start = null, end = null } = {}) {
+export function useEnvironmentReadings({ location = null, limit = 50, start = null, end = null, realtime = false } = {}) {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
-    (async () => {
+    const fetchData = async () => {
       setLoading(true);
       setError(null);
       let q = supabase
@@ -24,9 +24,27 @@ export function useEnvironmentReadings({ location = null, limit = 50, start = nu
       if (err) setError(err.message);
       else setData(rows || []);
       setLoading(false);
-    })();
+    };
+
+    fetchData();
+
+    // Optional realtime subscription
+    let channel;
+    if (realtime) {
+      try {
+        channel = supabase.channel(`env_readings_${location || 'all'}`)
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'environment_readings' }, (_payload) => {
+            // On any change, refresh with current filters
+            fetchData();
+          })
+          .subscribe();
+      } catch (e) {
+        // Non-fatal: just log and continue without realtime
+        console.warn('Realtime subscription error:', e?.message || e);
+      }
+    }
     return () => { cancelled = true; };
-  }, [location, limit, start, end]);
+  }, [location, limit, start, end, realtime]);
 
   return { data, loading, error };
 }

@@ -13,7 +13,7 @@ const NoiseLevelTracking = () => {
   
 
   const [selectedLocation, setSelectedLocation] = useState('all');
-  const { data: readings, loading } = useEnvironmentReadings({ location: selectedLocation, limit: 100 });
+  const { data: readings, loading } = useEnvironmentReadings({ location: selectedLocation, limit: 100, realtime: true });
 
   const currentNoiseData = useMemo(() => {
     const levels = (readings || []).map(r => r?.noise_level).filter(v => typeof v === 'number');

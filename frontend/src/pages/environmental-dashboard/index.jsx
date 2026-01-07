@@ -15,7 +15,7 @@ const EnvironmentalDashboard = () => {
   const [location, setLocation] = useState('all');
   const [parameter, setParameter] = useState('all');
 
-  const { data: readings } = useEnvironmentReadings({ location: location === 'all' ? null : location, limit: 100 });
+  const { data: readings } = useEnvironmentReadings({ location: location === 'all' ? null : location, limit: 100, realtime: true });
   const { data: alerts } = useAlertEvents({ limit: 20 });
 
   const latest = useMemo(() => readings?.[0] || {}, [readings]);
