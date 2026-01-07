@@ -1,0 +1,15 @@
+# Root ignores
+node_modules/
+.DS_Store
+*.log
+
+# Backend
+backend/.env
+backend/node_modules/
+
+# Frontend build artifacts (also handled in frontend/.gitignore)
+dist/
+build/
+
+# VS Code
+.vscode/

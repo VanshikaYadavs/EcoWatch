@@ -11,8 +11,8 @@ This repository currently contains the **frontend** (Vite + React + Tailwind). T
 ```text
 EcoWatch/
   frontend/                # React + Vite client
-  backend/                 # (planned) API / services
-  database/                # (planned) migrations / schema docs
+  backend/                 # Node + Express API (Supabase server client)
+  database/                # Supabase schema + RLS policies
 ```
 
 > Note: `backend/` and `database/` are not in the repo yet. You can add them later without changing the frontend setup.
@@ -37,10 +37,8 @@ EcoWatch/
 - Tailwind CSS
 - Client-side routing
 
-### Backend (planned)
-You can choose one of these patterns:
-- **Supabase-first (recommended for MVP):** use Supabase Auth + Postgres + Row Level Security (RLS), and optionally Edge Functions for server logic.
-- **Custom API:** Node.js (Express/NestJS) or Python (FastAPI) as a separate `backend/` service.
+### Backend
+This repo includes a minimal Node + Express service in `backend/` using a server-side Supabase client (service role) for secure operations. You can also complement with Supabase Edge Functions later if needed.
 
 ### Database (planned)
 - **Supabase Postgres** (managed Postgres + Auth + Storage)
@@ -141,22 +139,55 @@ Indexes to consider:
 - `readings (sensor_id, timestamp desc)`
 - `readings (metric, timestamp desc)`
 
-### 4) Realtime (optional)
+### 4) Apply schema + policies
+In Supabase SQL editor, run the contents of:
+- `database/schema.sql`
+- `database/policies.sql`
+
+This creates the core tables and enables safe defaults (RLS). Client read access is allowed for most reference data; inserts/updates require the service role or ownership where applicable (see policies).
+
+### 5) Realtime (optional)
 If you want “live” dashboards, Supabase Realtime can stream inserts/updates from tables (often `readings`).
 
 ---
 
-## Backend (When You Add It)
+## Backend
 
-If you decide to add a backend service in `backend/`, it usually handles:
+The `backend/` service typically handles:
 - Writing sensor readings (so clients can’t spoof data)
 - Aggregations (hourly/daily rollups)
 - Alerts evaluation + notifications
 - Secrets (e.g., Supabase service key, third-party APIs)
 
 Common approaches:
+- The included **Node/Express** server (with Supabase server client)
 - **Supabase Edge Functions** for lightweight server logic
-- **Node/Express or FastAPI** when you need a fuller service
+
+---
+
+## Backend Quickstart
+
+1) Configure environment
+
+Create `backend/.env` from the example and fill values:
+
+```bash
+cp backend/.env.example backend/.env
+```
+
+Required keys:
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY` (server only)
+
+2) Install deps and run
+
+```bash
+cd backend
+npm install
+npm run dev
+```
+
+The service listens on `http://localhost:8080` by default and exposes `/health`, `/api/readings/latest`, and `/api/readings` (trusted insert path).
 
 ---
 
