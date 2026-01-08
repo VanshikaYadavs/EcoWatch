@@ -45,14 +45,12 @@ create policy if not exists alerts_own_update on alerts for update
 create policy if not exists alerts_own_delete on alerts for delete
   to authenticated using (user_id = auth.uid() or auth.role() = 'service_role');
 
--- Profiles: users can read/update their own; service role can do all
+-- Profiles: users can read/update their own; inserts handled by trigger
 create policy if not exists profiles_read_own on profiles for select
   to authenticated using (id = auth.uid() or auth.role() = 'service_role');
 create policy if not exists profiles_update_own on profiles for update
   to authenticated using (id = auth.uid() or auth.role() = 'service_role')
   with check (id = auth.uid() or auth.role() = 'service_role');
-create policy if not exists profiles_insert_service_role on profiles for insert
-  to authenticated with check (auth.role() = 'service_role');
 
 -- Environment readings: public/anonymized reads; service role writes
 create policy if not exists env_readings_read_anon on environment_readings for select

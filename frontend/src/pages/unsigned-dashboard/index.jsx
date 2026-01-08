@@ -316,7 +316,7 @@ const EnvironmentalDashboard = () => {
                   variant="outline"
                   iconName="BarChart3"
                   iconPosition="left"
-                  onClick={() => navigate('/login')}>
+                  onClick={() => navigate('/comparative-analysis')}>
 
                   Compare Cities
                 </Button>
@@ -461,7 +461,7 @@ const EnvironmentalDashboard = () => {
                 size="sm"
                 iconName="Bell"
                 iconPosition="left"
-                onClick={() => navigate('/user-authentication')}>
+                onClick={() => navigate('/login')}>
 
                 Sign In to Manage Alerts
               </Button>
@@ -493,7 +493,7 @@ const EnvironmentalDashboard = () => {
                 size="lg"
                 iconName="LogIn"
                 iconPosition="left"
-                onClick={() => navigate('/user-authentication')}>
+                onClick={() => navigate('/login')}>
 
                 Create Free Account
               </Button>

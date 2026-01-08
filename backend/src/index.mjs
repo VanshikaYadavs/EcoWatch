@@ -26,6 +26,25 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok', service: 'ecowatch-backend' });
 });
 
+// Root route – helpful message for developers
+app.get('/', (_req, res) => {
+  res.status(200).send(`
+    <html>
+      <head><title>EcoWatch Backend</title></head>
+      <body style="font-family: system-ui; padding: 24px;">
+        <h2>EcoWatch Backend is running ✅</h2>
+        <p>Available endpoints:</p>
+        <ul>
+          <li><a href="/health">/health</a> – service status</li>
+          <li><a href="/api/readings/latest">/api/readings/latest</a> – query latest readings</li>
+          <li><a href="/api/ingest/now?name=Jaipur&lat=26.91&lon=75.78">/api/ingest/now</a> – trigger one-off ingest</li>
+        </ul>
+        <p>If you expected the frontend UI, run it separately at <code>npm start</code> in the <strong>frontend</strong> folder.</p>
+      </body>
+    </html>
+  `);
+});
+
 // Example: fetch latest readings for a location or sensor type
 app.get('/api/readings/latest', async (req, res) => {
   try {
@@ -92,3 +111,5 @@ app.get('/api/ingest/now', async (req, res) => {
 app.listen(PORT, () => {
   console.log(`EcoWatch backend listening on http://localhost:${PORT}`);
 });
+
+

@@ -7,28 +7,44 @@ const AuthCallback = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    let timer = setTimeout(async () => {
-      // Supabase will process the hash in URL and set session automatically.
-      // We just try to load session and redirect.
-      const { data } = await supabase.auth.getSession();
-      if (data?.session) {
-        try {
-          const existing = await getProfile(data.session.user.id);
-          if (existing) {
-            navigate('/environmental-dashboard', { replace: true });
-          } else {
-            // If a role was preselected on login, pass it via state
-            const intendedRole = localStorage.getItem('ecowatch.intendedRole') || null;
-            navigate('/profile-setup', { replace: true, state: { intendedRole } });
+    const finishAuth = async () => {
+      try {
+        // Try exchanging auth code/hash into session (handles magic-link/PKCE flows)
+        if (typeof supabase.auth.exchangeCodeForSession === 'function') {
+          try {
+            await supabase.auth.exchangeCodeForSession(window.location.href);
+          } catch {
+            // Ignore if not applicable; we'll still attempt getSession next
           }
-        } catch {
-          navigate('/profile-setup', { replace: true });
         }
-      } else {
+
+        const { data, error } = await supabase.auth.getSession();
+        if (error) {
+          navigate('/login', { replace: true });
+          return;
+        }
+
+        if (data?.session) {
+          try {
+            const existing = await getProfile(data.session.user.id);
+            if (existing) {
+              navigate('/environmental-dashboard', { replace: true });
+            } else {
+              const intendedRole = localStorage.getItem('ecowatch.intendedRole') || null;
+              navigate('/profile-setup', { replace: true, state: { intendedRole } });
+            }
+          } catch {
+            navigate('/profile-setup', { replace: true });
+          }
+        } else {
+          navigate('/login', { replace: true });
+        }
+      } catch {
         navigate('/login', { replace: true });
       }
-    }, 600);
-    return () => clearTimeout(timer);
+    };
+
+    finishAuth();
   }, [navigate]);
 
   return (

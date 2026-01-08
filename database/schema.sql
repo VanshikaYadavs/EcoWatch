@@ -66,11 +66,10 @@ create index if not exists idx_readings_type_ts on readings (type, timestamp des
 -- User profiles (linked to Supabase auth.users)
 create table if not exists profiles (
   id uuid primary key references auth.users (id) on delete cascade,
-  name text,
-  email text,
-  role text default 'user', -- 'user' | 'admin'
-  city text,
-  created_at timestamptz not null default now()
+  full_name text,
+  role text check (role in ('admin','official','researcher','analyst','leader','viewer')) default 'viewer',
+  organization text,
+  updated_at timestamptz not null default now()
 );
 
 -- Compact, denormalized environmental snapshots (publicly readable by default)

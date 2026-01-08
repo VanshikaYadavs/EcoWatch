@@ -7,6 +7,7 @@ import MainLayout from "./layouts/MainLayout";
 import UnsignedDashboard from "./pages/unsigned-dashboard";
 import NoiseLevelTracking from './pages/noise-level-tracking';
 import Login from './pages/login';
+import Signup from './pages/signup';
 import TemperatureAnalytics from './pages/temperature-analytics';
 import HistoricalReports from './pages/historical-reports';
 import EnvironmentalDashboard from './pages/environmental-dashboard';
@@ -18,16 +19,25 @@ import { useAuth } from './auth/AuthProvider';
 import AuthCallback from './pages/auth-callback';
 import ProfileSetup from './pages/profile-setup';
 
+const LoadingScreen = () => (
+  <div className="min-h-screen flex items-center justify-center bg-background text-foreground">
+    <div className="flex items-center gap-2 text-sm">
+      <span className="w-3 h-3 rounded-full bg-primary animate-pulse" />
+      <span>Loading…</span>
+    </div>
+  </div>
+);
+
 const RequireAuth = ({ children }) => {
   const { user, loading } = useAuth();
-  if (loading) return null;
+  if (loading) return <LoadingScreen />;
   if (!user) return <Navigate to="/login" replace />;
   return children;
 };
 
 const RedirectIfAuthed = ({ children }) => {
   const { user, loading } = useAuth();
-  if (loading) return null;
+  if (loading) return <LoadingScreen />;
   if (user) return <Navigate to="/environmental-dashboard" replace />;
   return children;
 };
@@ -45,6 +55,7 @@ const Routes = () => {
         <Route path="/comparative-analysis" element={<ComparativeAnalysis />} />
 
         <Route path="/login" element={<RedirectIfAuthed><Login /></RedirectIfAuthed>} />
+        <Route path="/signup" element={<RedirectIfAuthed><Signup /></RedirectIfAuthed>} />
         <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/profile-setup" element={<RequireAuth><ProfileSetup /></RequireAuth>} />
 
