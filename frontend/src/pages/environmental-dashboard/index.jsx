@@ -42,16 +42,28 @@ const EnvironmentalDashboard = () => {
   useEffect(() => {
     let mounted = true;
     (async () => {
+      // First: try to get geolocation
       try {
         const { lat, lon } = await getCurrentLocation();
-        await axios.get(`http://localhost:8080/api/ingest/now?lat=${lat}&lon=${lon}`);
-      } catch (err) {
-        // Permission denied or geolocation unsupported – fallback to Jaipur
+        // Then: request backend ingest for this location
         try {
-          const jaipur = { lat: 26.9124, lon: 75.7873 };
-          await axios.get(`http://localhost:8080/api/ingest/now?lat=${jaipur.lat}&lon=${jaipur.lon}&name=Jaipur`);
-        } catch (e) {
-          console.warn('Fallback ingest failed:', e?.message || e);
+          await axios.get(`http://localhost:8080/api/ingest/now?lat=${lat}&lon=${lon}`);
+        } catch (reqErr) {
+          console.warn('Location-based ingest failed:', reqErr?.message || reqErr);
+          // Do not fallback to Jaipur if the user granted permission; keep existing data
+        }
+      } catch (geoErr) {
+        // Only fallback when permission is denied or geolocation is unavailable
+        const denied = geoErr?.code === 1 || /denied/i.test(String(geoErr?.message || ''));
+        if (denied) {
+          try {
+            const jaipur = { lat: 26.9124, lon: 75.7873 };
+            await axios.get(`http://localhost:8080/api/ingest/now?lat=${jaipur.lat}&lon=${jaipur.lon}&name=Jaipur`);
+          } catch (e) {
+            console.warn('Fallback ingest failed:', e?.message || e);
+          }
+        } else {
+          console.warn('Geolocation unavailable:', geoErr?.message || geoErr);
         }
       }
     })();

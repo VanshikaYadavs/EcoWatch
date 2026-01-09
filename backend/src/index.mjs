@@ -2,12 +2,15 @@ import 'dotenv/config';
 import express from 'express';
 import morgan from 'morgan';
 import axios from 'axios';
+import cors from 'cors';
 import { createClient } from '@supabase/supabase-js';
 import { ingestOne } from './ingest.mjs';
 
 const app = express();
 app.use(express.json());
 app.use(morgan('dev'));
+// Allow frontend dev origin for cross-origin requests
+app.use(cors({ origin: process.env.FRONTEND_ORIGIN || 'http://localhost:5173' }));
 
 const PORT = process.env.PORT || 8080;
 const SUPABASE_URL = process.env.SUPABASE_URL;
