@@ -9,6 +9,8 @@ import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
 import { useEnvironmentReadings, useAlertEvents } from '../../utils/dataHooks';
 import { getLatestReading } from '../../services/environment.service';
+import { getCurrentLocation } from '../../utils/location';
+import axios from 'axios';
 
 const EnvironmentalDashboard = () => {
   const navigate = useNavigate();
@@ -34,6 +36,26 @@ const EnvironmentalDashboard = () => {
       }
     })();
     return () => { cancelled = true; };
+  }, []);
+
+  // On first load, try to ingest based on user's location
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const { lat, lon } = await getCurrentLocation();
+        await axios.get(`http://localhost:8080/api/ingest/now?lat=${lat}&lon=${lon}`);
+      } catch (err) {
+        // Permission denied or geolocation unsupported – fallback to Jaipur
+        try {
+          const jaipur = { lat: 26.9124, lon: 75.7873 };
+          await axios.get(`http://localhost:8080/api/ingest/now?lat=${jaipur.lat}&lon=${jaipur.lon}&name=Jaipur`);
+        } catch (e) {
+          console.warn('Fallback ingest failed:', e?.message || e);
+        }
+      }
+    })();
+    return () => { mounted = false; };
   }, []);
   const avg = useMemo(() => {
     if (!readings?.length) return {};

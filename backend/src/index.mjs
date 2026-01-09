@@ -112,9 +112,28 @@ app.post('/api/readings', async (req, res) => {
 // GET /api/ingest/now?name=Jaipur&lat=26.91&lon=75.78
 app.get('/api/ingest/now', async (req, res) => {
   try {
-    const { name, lat, lon } = req.query;
-    if (!name || !lat || !lon) return res.status(400).json({ error: 'name, lat, lon are required' });
-    const data = await ingestOne({ name, lat: Number(lat), lon: Number(lon) });
+    let { name, lat, lon } = req.query;
+    if (!lat || !lon) return res.status(400).json({ error: 'lat and lon are required' });
+    lat = Number(lat);
+    lon = Number(lon);
+
+    // Optional reverse geocoding to get city name when not provided
+    if (!name) {
+      try {
+        const key = process.env.OPENWEATHER_API_KEY;
+        if (key) {
+          const geoUrl = `http://api.openweathermap.org/geo/1.0/reverse?lat=${lat}&lon=${lon}&limit=1&appid=${key}`;
+          const resp = await axios.get(geoUrl);
+          name = resp?.data?.[0]?.name || 'User Location';
+        } else {
+          name = 'User Location';
+        }
+      } catch {
+        name = 'User Location';
+      }
+    }
+
+    const data = await ingestOne({ name, lat, lon });
     res.json({ data });
   } catch (err) {
     res.status(500).json({ error: String(err) });
