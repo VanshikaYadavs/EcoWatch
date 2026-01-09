@@ -125,6 +125,7 @@ app.get('/api/ingest/now', async (req, res) => {
       name = await resolveLocationName(lat, lon);
     }
 
+    console.log(`[ingest] coords=(${lat},${lon}) resolvedName="${name}"`);
     const data = await ingestOne({ name, lat, lon });
     res.json({ data });
   } catch (err) {
@@ -253,6 +254,36 @@ async function resolveLocationName(lat, lon) {
     const addr = resp?.data?.address || {};
     const nm = addr.city || addr.town || addr.village || addr.suburb || addr.city_district || addr.state_district || addr.state;
     if (nm) return nm;
+  } catch {}
+
+  // 4) NCR proximity heuristic – prefer major city names by distance
+  try {
+    const KNOWN_CITIES = [
+      { name: 'Noida', lat: 28.5355, lon: 77.3910, radiusKm: 20 },
+      { name: 'Delhi', lat: 28.6139, lon: 77.2090, radiusKm: 25 },
+      { name: 'Ghaziabad', lat: 28.6692, lon: 77.4538, radiusKm: 18 },
+      { name: 'Greater Noida', lat: 28.4744, lon: 77.5030, radiusKm: 15 },
+      { name: 'Gurugram', lat: 28.4595, lon: 77.0266, radiusKm: 20 },
+    ];
+
+    const toRad = n => n * Math.PI / 180;
+    const haversineKm = (lat1, lon1, lat2, lon2) => {
+      const R = 6371; // km
+      const dLat = toRad(lat2 - lat1);
+      const dLon = toRad(lon2 - lon1);
+      const a = Math.sin(dLat/2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon/2) ** 2;
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    };
+
+    let best = null;
+    for (const c of KNOWN_CITIES) {
+      const d = haversineKm(lat, lon, c.lat, c.lon);
+      if (d <= c.radiusKm) {
+        if (!best || d < best.d) best = { name: c.name, d };
+      }
+    }
+    if (best?.name) return best.name;
   } catch {}
 
   // Final fallback
