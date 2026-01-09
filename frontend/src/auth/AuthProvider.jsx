@@ -20,7 +20,7 @@ export const AuthProvider = ({ children }) => {
     (async () => {
       try {
         // Helper to prevent hangs
-        const withTimeout = (p, ms = 2000) =>
+        const withTimeout = (p, ms = 8000) =>
           Promise.race([
             p,
             new Promise((_, reject) => setTimeout(() => reject(new Error('auth_timeout')), ms)),
@@ -37,17 +37,20 @@ export const AuthProvider = ({ children }) => {
             // Guard against hanging on network by timing out validation
             const { data: userData, error } = await withTimeout(supabase.auth.getUser());
             if (error || !userData?.user) {
-              await supabase.auth.signOut();
-              sess = null;
-              usr = null;
+              // If validation times out, assume session is valid temporarily
+              if (error?.message === 'auth_timeout') {
+                usr = sess.user;
+              } else {
+                await supabase.auth.signOut();
+                sess = null;
+                usr = null;
+              }
             } else {
               usr = userData.user;
             }
-          } catch {
-            // On unexpected error, fail closed (treat as signed out)
-            await supabase.auth.signOut();
-            sess = null;
-            usr = null;
+          } catch (e) {
+            // On timeout or unexpected error, prefer keeping current session to avoid login loops
+            usr = sess?.user ?? null;
           }
         }
 
@@ -67,24 +70,29 @@ export const AuthProvider = ({ children }) => {
       // On any auth change, validate the user from server
       if (sess) {
         try {
-          const withTimeout = (p, ms = 2000) =>
+          const withTimeout = (p, ms = 8000) =>
             Promise.race([
               p,
               new Promise((_, reject) => setTimeout(() => reject(new Error('auth_timeout')), ms)),
             ]);
           const { data: userData, error } = await withTimeout(supabase.auth.getUser());
-        if (error || !userData?.user) {
-          await supabase.auth.signOut();
-          setSession(null);
-          setUser(null);
-        } else {
+          if (error || !userData?.user) {
+            if (error?.message === 'auth_timeout') {
+              setSession(sess);
+              setUser(sess.user);
+            } else {
+              await supabase.auth.signOut();
+              setSession(null);
+              setUser(null);
+            }
+          } else {
+            setSession(sess);
+            setUser(userData.user);
+          }
+        } catch (e) {
+          // On timeout or unexpected error, keep session
           setSession(sess);
-          setUser(userData.user);
-        }
-        } catch {
-          await supabase.auth.signOut();
-          setSession(null);
-          setUser(null);
+          setUser(sess?.user ?? null);
         }
       } else {
         setSession(null);

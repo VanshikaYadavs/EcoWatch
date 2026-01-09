@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
 import morgan from 'morgan';
+import axios from 'axios';
 import { createClient } from '@supabase/supabase-js';
 import { ingestOne } from './ingest.mjs';
 
@@ -20,6 +21,9 @@ if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
 export const supabaseAdmin = SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
   ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
   : null;
+
+// Alias used in collection helpers below
+const supabase = supabaseAdmin;
 
 // Health route
 app.get('/health', (_req, res) => {
@@ -45,24 +49,21 @@ app.get('/', (_req, res) => {
   `);
 });
 
-// Example: fetch latest readings for a location or sensor type
+// Example: fetch latest environment readings for a location
 app.get('/api/readings/latest', async (req, res) => {
   try {
     if (!supabaseAdmin) return res.status(500).json({ error: 'Supabase not configured' });
 
-    const { location_id, type, limit = 50 } = req.query;
+    const { location, limit = 50 } = req.query;
 
     let query = supabaseAdmin
-      .from('readings')
+      .from('environment_readings')
       .select('*')
-      .order('timestamp', { ascending: false })
+      .order('recorded_at', { ascending: false })
       .limit(Number(limit));
 
-    if (location_id) {
-      query = query.eq('location_id', location_id);
-    }
-    if (type) {
-      query = query.eq('type', type);
+    if (location) {
+      query = query.eq('location', location);
     }
 
     const { data, error } = await query;
@@ -74,16 +75,28 @@ app.get('/api/readings/latest', async (req, res) => {
   }
 });
 
-// Example: insert a new reading (server trusted path)
+// Example: insert a new environment reading (server trusted path)
 app.post('/api/readings', async (req, res) => {
   try {
     if (!supabaseAdmin) return res.status(500).json({ error: 'Supabase not configured' });
 
     const body = req.body;
-    // Expecting: { sensor_id, location_id, type, metric, value, unit, timestamp }
+    // Expecting: { location, latitude, longitude, aqi, temperature, humidity, noise_level, source, recorded_at? }
+    const payload = {
+      location: body.location ?? null,
+      latitude: body.latitude ?? null,
+      longitude: body.longitude ?? null,
+      aqi: body.aqi ?? null,
+      temperature: body.temperature ?? null,
+      humidity: body.humidity ?? null,
+      noise_level: body.noise_level ?? null,
+      source: body.source ?? 'api',
+      recorded_at: body.recorded_at ?? new Date().toISOString(),
+    };
+
     const { data, error } = await supabaseAdmin
-      .from('readings')
-      .insert([{ ...body, timestamp: body.timestamp ?? new Date().toISOString() }])
+      .from('environment_readings')
+      .insert([payload])
       .select('*')
       .single();
 
@@ -111,5 +124,78 @@ app.get('/api/ingest/now', async (req, res) => {
 app.listen(PORT, () => {
   console.log(`EcoWatch backend listening on http://localhost:${PORT}`);
 });
+
+// -----------------------------
+// Simple one-off data collection
+// -----------------------------
+
+async function fetchAQI(lat, lon) {
+  const token = process.env.WAQI_API_KEY || process.env.WAQI_TOKEN;
+  if (!token) throw new Error('Missing WAQI API key');
+  const url = `https://api.waqi.info/feed/geo:${lat};${lon}/?token=${token}`;
+  const res = await axios.get(url);
+  if (res?.data?.status !== 'ok') {
+    throw new Error('WAQI fetch failed');
+  }
+  return res.data.data.aqi;
+}
+
+async function fetchWeather(lat, lon) {
+  const key = process.env.OPENWEATHER_API_KEY;
+  if (!key) throw new Error('Missing OpenWeather API key');
+  const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${key}&units=metric`;
+  const res = await axios.get(url);
+  return {
+    temperature: res.data?.main?.temp,
+    humidity: res.data?.main?.humidity,
+  };
+}
+
+function simulateNoiseLevel() {
+  return Math.floor(Math.random() * (85 - 40 + 1)) + 40;
+}
+
+async function storeReading(payload) {
+  if (!supabase) {
+    console.warn('Supabase not configured; skip storeReading');
+    return;
+  }
+  const { error } = await supabase.from('environment_readings').insert([payload]);
+  if (error) {
+    console.error('DB insert failed:', error.message);
+  } else {
+    console.log('✅ Environmental data stored');
+  }
+}
+
+async function collectEnvironmentalData() {
+  try {
+    const location = 'Delhi';
+    const lat = 28.6139;
+    const lon = 77.2090;
+
+    const aqi = await fetchAQI(lat, lon);
+    const weather = await fetchWeather(lat, lon);
+    const noise = simulateNoiseLevel();
+
+    await storeReading({
+      location,
+      latitude: lat,
+      longitude: lon,
+      aqi,
+      temperature: weather.temperature,
+      humidity: weather.humidity,
+      noise_level: noise,
+      source: 'WAQI + OpenWeather',
+    });
+  } catch (err) {
+    console.error('❌ Data collection error:', err?.message || String(err));
+  }
+}
+
+// Run a one-time collection at startup if enabled
+if (process.env.COLLECT_ON_STARTUP === '1') {
+  collectEnvironmentalData();
+}
 
 

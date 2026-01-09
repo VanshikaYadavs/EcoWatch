@@ -9,8 +9,9 @@
     "ingest": "node src/ingest.mjs"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.45.0",
-    "dotenv": "^16.4.5",
+    "@supabase/supabase-js": "^2.90.1",
+    "axios": "^1.13.2",
+    "dotenv": "^16.6.1",
     "express": "^4.19.2",
     "morgan": "^1.10.0"
   }

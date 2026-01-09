@@ -1,38 +1,58 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { useAuth } from '../../../auth/AuthProvider';
+import { Link, useNavigate } from 'react-router-dom';
+import { supabase } from '../../../utils/supabaseClient';
 import Input from '../../../components/ui/Input';
 import Button from '../../../components/ui/Button';
 import Icon from '../../../components/AppIcon';
 
 const LoginForm = () => {
-  const { signInWithPassword } = useAuth();
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const onSubmit = async (e) => {
-    e?.preventDefault();
-    setError('');
-    if (!email || !/^([^\s@]+)@([^\s@]+)\.[^\s@]+$/.test(email)) {
-      setError('Please enter a valid email');
-      return;
-    }
-    if (!password || password.length < 6) {
-      setError('Please enter your password');
-      return;
-    }
+  const handleLogin = async (e) => {
+    e.preventDefault();
     setLoading(true);
-    const { error: authError } = await signInWithPassword(email, password);
-    setLoading(false);
-    if (authError) {
-      setError(authError.message);
+    setError(null);
+
+    console.log('Login attempt:', email);
+
+    try {
+      if (!email || !password) {
+        setError('Email and password are required');
+        setLoading(false);
+        return;
+      }
+
+      const withTimeout = (p, ms = 7000) =>
+        Promise.race([
+          p,
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Network timeout')), ms)),
+        ]);
+
+      const { data, error: authError } = await withTimeout(
+        supabase.auth.signInWithPassword({ email, password })
+      );
+
+      if (authError) {
+        setError(authError.message);
+        setLoading(false);
+        return;
+      }
+
+      // login successful
+      setLoading(false);
+      navigate('/environmental-dashboard');
+    } catch (err) {
+      setError(err?.message || 'Unexpected error during login');
+      setLoading(false);
     }
   };
 
   return (
-    <form onSubmit={onSubmit} className="space-y-6">
+    <form onSubmit={handleLogin} className="space-y-6">
       <div>
         <Input
           label="Email Address"

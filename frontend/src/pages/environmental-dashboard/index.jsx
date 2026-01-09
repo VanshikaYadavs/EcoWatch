@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MetricCard from './components/MetricCard';
 import SensorMap from './components/SensorMap';
@@ -8,17 +8,33 @@ import QuickStats from './components/QuickStats';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
 import { useEnvironmentReadings, useAlertEvents } from '../../utils/dataHooks';
+import { getLatestReading } from '../../services/environment.service';
 
 const EnvironmentalDashboard = () => {
   const navigate = useNavigate();
   const [timeRange, setTimeRange] = useState('realtime');
   const [location, setLocation] = useState('all');
   const [parameter, setParameter] = useState('all');
+  const [envData, setEnvData] = useState(null);
+  const [envLoading, setEnvLoading] = useState(true);
 
   const { data: readings } = useEnvironmentReadings({ location: location === 'all' ? null : location, limit: 100, realtime: true });
   const { data: alerts } = useAlertEvents({ limit: 20 });
 
   const latest = useMemo(() => readings?.[0] || {}, [readings]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setEnvLoading(true);
+      const data = await getLatestReading();
+      if (!cancelled) {
+        setEnvData(data);
+        setEnvLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
   const avg = useMemo(() => {
     if (!readings?.length) return {};
     const sum = readings.reduce((acc, r) => ({
@@ -40,9 +56,9 @@ const EnvironmentalDashboard = () => {
   const metrics = [
     {
       title: 'Air Quality Index',
-      value: String(latest?.aqi ?? avg.aqi ?? '—'),
+      value: String(envData?.aqi ?? latest?.aqi ?? avg.aqi ?? '—'),
       unit: 'AQI',
-      status: (latest?.aqi ?? avg.aqi) >= 150 ? 'poor' : 'good',
+      status: (envData?.aqi ?? latest?.aqi ?? avg.aqi) >= 150 ? 'poor' : 'good',
       trend: 'up',
       trendValue: '',
       icon: 'Wind',
@@ -51,9 +67,9 @@ const EnvironmentalDashboard = () => {
     },
     {
       title: 'Noise Level',
-      value: String(latest?.noise_level ?? avg.noise ?? '—'),
+      value: String(envData?.noise_level ?? latest?.noise_level ?? avg.noise ?? '—'),
       unit: 'dB',
-      status: (latest?.noise_level ?? avg.noise) >= 85 ? 'critical' : 'moderate',
+      status: (envData?.noise_level ?? latest?.noise_level ?? avg.noise) >= 85 ? 'critical' : 'moderate',
       trend: 'down',
       trendValue: '',
       icon: 'Volume2',
@@ -62,9 +78,9 @@ const EnvironmentalDashboard = () => {
     },
     {
       title: 'Temperature',
-      value: String(latest?.temperature ?? avg.temp ?? '—'),
+      value: String(envData?.temperature ?? latest?.temperature ?? avg.temp ?? '—'),
       unit: '°C',
-      status: (latest?.temperature ?? avg.temp) >= 35 ? 'poor' : 'good',
+      status: (envData?.temperature ?? latest?.temperature ?? avg.temp) >= 35 ? 'poor' : 'good',
       trend: 'up',
       trendValue: '',
       icon: 'Thermometer',
@@ -73,7 +89,7 @@ const EnvironmentalDashboard = () => {
     },
     {
       title: 'Humidity',
-      value: String(latest?.humidity ?? avg.humidity ?? '—'),
+      value: String(envData?.humidity ?? latest?.humidity ?? avg.humidity ?? '—'),
       unit: '%',
       status: 'good',
       trend: 'down',
@@ -106,34 +122,42 @@ const EnvironmentalDashboard = () => {
     }
   ];
 
+  const alertsToday = useMemo(() => {
+    if (!alerts?.length) return 0;
+    const today = new Date();
+    const y = today.getFullYear(), m = today.getMonth(), d = today.getDate();
+    const start = new Date(y, m, d).getTime();
+    return alerts.filter(a => a?.created_at && new Date(a.created_at).getTime() >= start).length;
+  }, [alerts]);
+
   const quickStats = [
     {
       label: 'Total Alerts Today',
-      value: '23',
+      value: String(alertsToday),
       icon: 'Bell',
-      change: '+8',
-      changeType: 'negative'
+      change: '',
+      changeType: 'neutral'
     },
     {
       label: 'Avg Response Time',
-      value: '4.2m',
+      value: '—',
       icon: 'Clock',
-      change: '-1.3m',
-      changeType: 'positive'
+      change: '',
+      changeType: 'neutral'
     },
     {
       label: 'Compliance Rate',
-      value: '94%',
+      value: '—',
       icon: 'CheckCircle',
-      change: '+2%',
-      changeType: 'positive'
+      change: '',
+      changeType: 'neutral'
     },
     {
       label: 'Data Coverage',
-      value: '98%',
+      value: '—',
       icon: 'Activity',
-      change: '+1%',
-      changeType: 'positive'
+      change: '',
+      changeType: 'neutral'
     }
   ];
 
@@ -187,6 +211,14 @@ const EnvironmentalDashboard = () => {
   const handleEmergencyBroadcast = () => {
     console.log('Emergency broadcast initiated');
   };
+
+  if (envLoading) {
+    return <p>Loading environmental data...</p>;
+  }
+
+  if (!envData && !readings?.length) {
+    return <p>No environmental data available yet.</p>;
+  }
 
   return (
     <div className="space-y-6">
