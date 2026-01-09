@@ -215,7 +215,34 @@ if (process.env.COLLECT_ON_STARTUP === '1') {
 // -----------------------------
 
 async function resolveLocationName(lat, lon) {
-  // 1) Prefer WAQI city/station name when available (often more granular for Indian cities)
+  const KNOWN_CITIES = [
+    { name: 'Noida', lat: 28.5355, lon: 77.3910, radiusKm: 20 },
+    { name: 'Delhi', lat: 28.6139, lon: 77.2090, radiusKm: 25 },
+    { name: 'Ghaziabad', lat: 28.6692, lon: 77.4538, radiusKm: 18 },
+    { name: 'Greater Noida', lat: 28.4744, lon: 77.5030, radiusKm: 15 },
+    { name: 'Gurugram', lat: 28.4595, lon: 77.0266, radiusKm: 20 },
+  ];
+  const toRad = n => n * Math.PI / 180;
+  const haversineKm = (lat1, lon1, lat2, lon2) => {
+    const R = 6371;
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+    const a = Math.sin(dLat/2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon/2) ** 2;
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  };
+
+  // 1) If within a known city radius, prefer that label upfront
+  try {
+    let best = null;
+    for (const c of KNOWN_CITIES) {
+      const d = haversineKm(lat, lon, c.lat, c.lon);
+      if (d <= c.radiusKm && (!best || d < best.d)) best = { name: c.name, d };
+    }
+    if (best?.name) return best.name;
+  } catch {}
+
+  // 2) WAQI station/city name
   try {
     const waqiToken = process.env.WAQI_API_KEY || process.env.WAQI_TOKEN;
     if (waqiToken) {
@@ -224,7 +251,6 @@ async function resolveLocationName(lat, lon) {
       if (resp?.data?.status === 'ok') {
         let nm = resp?.data?.data?.city?.name || null;
         if (typeof nm === 'string' && nm.length) {
-          // Clean up station formatting like "Noida - Sector 62, India"
           nm = nm.split(',')[0];
           nm = nm.split(' - ')[0];
           return nm.trim();
@@ -233,7 +259,7 @@ async function resolveLocationName(lat, lon) {
     }
   } catch {}
 
-  // 2) Try OpenWeather reverse geocoding (increase limit to 5 and choose best candidate)
+  // 3) Try OpenWeather reverse geocoding (increase limit to 5 and choose best candidate)
   try {
     const key = process.env.OPENWEATHER_API_KEY;
     if (key) {
@@ -247,43 +273,13 @@ async function resolveLocationName(lat, lon) {
     }
   } catch {}
 
-  // 3) Fallback to OpenStreetMap Nominatim for administrative city/town
+  // 4) Fallback to OpenStreetMap Nominatim for administrative city/town
   try {
     const nomUrl = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&zoom=10&addressdetails=1`;
     const resp = await axios.get(nomUrl, { headers: { 'User-Agent': 'EcoWatch/1.0 (+https://github.com/VanshikaYadavs/EcoWatch)' } });
     const addr = resp?.data?.address || {};
     const nm = addr.city || addr.town || addr.village || addr.suburb || addr.city_district || addr.state_district || addr.state;
     if (nm) return nm;
-  } catch {}
-
-  // 4) NCR proximity heuristic – prefer major city names by distance
-  try {
-    const KNOWN_CITIES = [
-      { name: 'Noida', lat: 28.5355, lon: 77.3910, radiusKm: 20 },
-      { name: 'Delhi', lat: 28.6139, lon: 77.2090, radiusKm: 25 },
-      { name: 'Ghaziabad', lat: 28.6692, lon: 77.4538, radiusKm: 18 },
-      { name: 'Greater Noida', lat: 28.4744, lon: 77.5030, radiusKm: 15 },
-      { name: 'Gurugram', lat: 28.4595, lon: 77.0266, radiusKm: 20 },
-    ];
-
-    const toRad = n => n * Math.PI / 180;
-    const haversineKm = (lat1, lon1, lat2, lon2) => {
-      const R = 6371; // km
-      const dLat = toRad(lat2 - lat1);
-      const dLon = toRad(lon2 - lon1);
-      const a = Math.sin(dLat/2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon/2) ** 2;
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      return R * c;
-    };
-
-    let best = null;
-    for (const c of KNOWN_CITIES) {
-      const d = haversineKm(lat, lon, c.lat, c.lon);
-      if (d <= c.radiusKm) {
-        if (!best || d < best.d) best = { name: c.name, d };
-      }
-    }
-    if (best?.name) return best.name;
   } catch {}
 
   // Final fallback
