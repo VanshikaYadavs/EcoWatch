@@ -122,18 +122,7 @@ app.get('/api/ingest/now', async (req, res) => {
 
     // Optional reverse geocoding to get city name when not provided
     if (!name) {
-      try {
-        const key = process.env.OPENWEATHER_API_KEY;
-        if (key) {
-          const geoUrl = `http://api.openweathermap.org/geo/1.0/reverse?lat=${lat}&lon=${lon}&limit=1&appid=${key}`;
-          const resp = await axios.get(geoUrl);
-          name = resp?.data?.[0]?.name || 'User Location';
-        } else {
-          name = 'User Location';
-        }
-      } catch {
-        name = 'User Location';
-      }
+      name = await resolveLocationName(lat, lon);
     }
 
     const data = await ingestOne({ name, lat, lon });
@@ -218,6 +207,56 @@ async function collectEnvironmentalData() {
 // Run a one-time collection at startup if enabled
 if (process.env.COLLECT_ON_STARTUP === '1') {
   collectEnvironmentalData();
+}
+
+// -----------------------------
+// Reverse geocoding helper
+// -----------------------------
+
+async function resolveLocationName(lat, lon) {
+  // 1) Prefer WAQI city/station name when available (often more granular for Indian cities)
+  try {
+    const waqiToken = process.env.WAQI_API_KEY || process.env.WAQI_TOKEN;
+    if (waqiToken) {
+      const url = `https://api.waqi.info/feed/geo:${lat};${lon}/?token=${waqiToken}`;
+      const resp = await axios.get(url);
+      if (resp?.data?.status === 'ok') {
+        let nm = resp?.data?.data?.city?.name || null;
+        if (typeof nm === 'string' && nm.length) {
+          // Clean up station formatting like "Noida - Sector 62, India"
+          nm = nm.split(',')[0];
+          nm = nm.split(' - ')[0];
+          return nm.trim();
+        }
+      }
+    }
+  } catch {}
+
+  // 2) Try OpenWeather reverse geocoding (increase limit to 5 and choose best candidate)
+  try {
+    const key = process.env.OPENWEATHER_API_KEY;
+    if (key) {
+      const geoUrl = `http://api.openweathermap.org/geo/1.0/reverse?lat=${lat}&lon=${lon}&limit=5&appid=${key}`;
+      const resp = await axios.get(geoUrl);
+      const arr = Array.isArray(resp?.data) ? resp.data : [];
+      // Prefer entries explicitly named 'Noida' or large cities (by heuristic on name length)
+      const exact = arr.find(x => String(x?.name || '').toLowerCase() === 'noida');
+      if (exact?.name) return exact.name;
+      if (arr[0]?.name) return arr[0].name;
+    }
+  } catch {}
+
+  // 3) Fallback to OpenStreetMap Nominatim for administrative city/town
+  try {
+    const nomUrl = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&zoom=10&addressdetails=1`;
+    const resp = await axios.get(nomUrl, { headers: { 'User-Agent': 'EcoWatch/1.0 (+https://github.com/VanshikaYadavs/EcoWatch)' } });
+    const addr = resp?.data?.address || {};
+    const nm = addr.city || addr.town || addr.village || addr.suburb || addr.city_district || addr.state_district || addr.state;
+    if (nm) return nm;
+  } catch {}
+
+  // Final fallback
+  return 'User Location';
 }
 
 
