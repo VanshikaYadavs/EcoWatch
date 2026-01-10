@@ -15,6 +15,7 @@ import AirQualityMonitor from './pages/air-quality-monitor';
 import NotificationSettings from './pages/notification-setting';
 import UserProfile from './pages/user-profile';
 import ComparativeAnalysis from './pages/comparative-analysis';
+import AlertCenter from './pages/alert-center';
 import { useAuth } from './auth/AuthProvider';
 import AuthCallback from './pages/auth-callback';
 import ProfileSetup from './pages/profile-setup';
@@ -66,6 +67,7 @@ const Routes = () => {
           <Route path="/noise-level-tracking" element={<NoiseLevelTracking />} />
           <Route path="/temperature-analytics" element={<TemperatureAnalytics />} />
           <Route path="/historical-reports" element={<HistoricalReports />} />
+          <Route path="/alert-center" element={<AlertCenter />} />
           <Route path="/notification-settings" element={<NotificationSettings />} />
           <Route path="/user-profile" element={<UserProfile />} />
         </Route>
