@@ -1,20 +1,22 @@
-import 'dotenv/config';
+import './loadEnv.mjs';
 import express from 'express';
 import morgan from 'morgan';
 import axios from 'axios';
 import cors from 'cors';
 import { createClient } from '@supabase/supabase-js';
-import { ingestOne } from './ingest.mjs';
+import { startScheduler } from './scheduler.mjs';
 
 const app = express();
 app.use(express.json());
-app.use(morgan('dev'));
+// app.use(morgan('dev'));  // Disable morgan temporarily for testing
 // Allow frontend dev origin for cross-origin requests
 app.use(cors({ origin: process.env.FRONTEND_ORIGIN || 'http://localhost:5173' }));
 
 const PORT = process.env.PORT || 8080;
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+console.log(`[startup] PORT=${PORT}, SUPABASE_URL set=${!!SUPABASE_URL}`);
 
 if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
   console.warn('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in environment. Some routes will not function.');
@@ -33,6 +35,28 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok', service: 'ecowatch-backend' });
 });
 
+// Ping route (simplest possible)
+app.get('/api/ping', (_req, res) => {
+  console.log(`[ping] Received request`);
+  res.json({ pong: true, timestamp: new Date().toISOString() });
+});
+
+// Check Supabase connectivity
+app.get('/api/check-supabase', async (_req, res) => {
+  try {
+    if (!supabaseAdmin) {
+      return res.status(500).json({ error: 'Supabase client not initialized' });
+    }
+    const { data, error } = await supabaseAdmin.from('profiles').select('id').limit(1);
+    if (error) {
+      return res.status(500).json({ error: error.message });
+    }
+    res.json({ ok: true, message: 'Supabase connection OK', rowCount: data?.length || 0 });
+  } catch (err) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
 // Root route – helpful message for developers
 app.get('/', (_req, res) => {
   res.status(200).send(`
@@ -43,6 +67,8 @@ app.get('/', (_req, res) => {
         <p>Available endpoints:</p>
         <ul>
           <li><a href="/health">/health</a> – service status</li>
+          <li><a href="/api/ping">/api/ping</a> – quick ping test</li>
+          <li><a href="/api/check-supabase">/api/check-supabase</a> – Supabase connectivity</li>
           <li><a href="/api/readings/latest">/api/readings/latest</a> – query latest readings</li>
           <li><a href="/api/ingest/now?name=Jaipur&lat=26.91&lon=75.78">/api/ingest/now</a> – trigger one-off ingest</li>
         </ul>
@@ -126,6 +152,8 @@ app.get('/api/ingest/now', async (req, res) => {
     }
 
     console.log(`[ingest] coords=(${lat},${lon}) resolvedName="${name}"`);
+    // import ingest dynamically to avoid circular import during module init
+    const { ingestOne } = await import('./ingest.mjs');
     const data = await ingestOne({ name, lat, lon });
     res.json({ data });
   } catch (err) {
@@ -133,8 +161,49 @@ app.get('/api/ingest/now', async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`EcoWatch backend listening on http://localhost:${PORT}`);
+// Test email endpoint (dev/debug only)
+app.post('/api/test-email', async (req, res) => {
+  try {
+    const { to, subject, message } = req.body;
+    if (!to) return res.status(400).json({ error: 'to email is required' });
+
+    const { sendEmail } = await import('./email.mjs');
+    const result = await sendEmail({
+      to,
+      subject: subject || 'EcoWatch Test Email',
+      text: message || 'This is a test email from EcoWatch. If you received this, email sending works!',
+    });
+
+    if (!result.ok) {
+      return res.status(500).json({ error: result.reason || 'Send failed' });
+    }
+    res.json({ ok: true, message: 'Email sent successfully' });
+  } catch (err) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+const server = app.listen(PORT, 'localhost', () => {
+  console.log(`[${new Date().toISOString()}] ✅ EcoWatch backend listening on http://localhost:${PORT}`);
+  
+  // Start the scheduler for automatic data ingestion and alerts
+  if (process.env.ENABLE_SCHEDULER !== 'false') {
+    startScheduler();
+  }
+});
+
+server.on('error', (err) => {
+  console.error(`[ERROR] Server failed to start: ${err.code} - ${err.message}`);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error(`[ERROR] Unhandled rejection: ${reason}`);
+});
+
+process.on('uncaughtException', (err) => {
+  console.error(`[ERROR] Uncaught exception: ${err.message}`);
+  process.exit(1);
 });
 
 // -----------------------------
