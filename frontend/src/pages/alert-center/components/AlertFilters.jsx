@@ -12,29 +12,31 @@ const AlertFilters = ({
   onSearchChange,
   sortBy,
   onSortChange,
-  alertCount
+  alertCount,
+  viewMode,
+  onViewModeChange
 }) => {
   const severityOptions = [
     { value: 'all', label: 'All Severities' },
-    { value: 'critical', label: 'Critical' },
-    { value: 'high', label: 'High' },
-    { value: 'medium', label: 'Medium' },
-    { value: 'low', label: 'Low' }
+    { value: 'critical', label: '🔴 Critical' },
+    { value: 'high', label: '🟠 High' },
+    { value: 'medium', label: '🟡 Medium' },
+    { value: 'low', label: '🔵 Low' }
   ];
 
   const statusOptions = [
     { value: 'all', label: 'All Status' },
-    { value: 'active', label: 'Active' },
-    { value: 'acknowledged', label: 'Acknowledged' },
-    { value: 'resolved', label: 'Resolved' }
+    { value: 'active', label: '⚡ Active' },
+    { value: 'acknowledged', label: '⏱️ Acknowledged' },
+    { value: 'resolved', label: '✅ Resolved' }
   ];
 
   const typeOptions = [
     { value: 'all', label: 'All Types' },
-    { value: 'aqi', label: 'Air Quality' },
-    { value: 'temperature', label: 'Temperature' },
-    { value: 'noise', label: 'Noise' },
-    { value: 'water', label: 'Water Quality' }
+    { value: 'aqi', label: '💨 Air Quality' },
+    { value: 'temperature', label: '🌡️ Temperature' },
+    { value: 'noise', label: '🔊 Noise' },
+    { value: 'water', label: '💧 Water Quality' }
   ];
 
   const locationOptions = [
@@ -58,76 +60,90 @@ const AlertFilters = ({
     { value: 'severity', label: 'Severity (High to Low)' }
   ];
 
+  const isFiltered = filters.severity !== 'all' || filters.status !== 'all' || filters.type !== 'all' || filters.location !== 'all' || filters.dateRange !== '7days' || searchTerm;
+
   return (
-    <div className="bg-card border border-border rounded-lg p-4 mt-6">
+    <div className="bg-card border border-border rounded-lg p-4 sticky top-4 h-fit">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+      <div className="mb-4 pb-4 border-b border-border">
+        <h3 className="text-lg font-semibold text-foreground flex items-center gap-2 mb-2">
           <Icon name="Sliders" size={20} />
-          Filters & Search
+          Filters
         </h3>
-        <span className="text-sm text-muted-foreground">
-          {alertCount} alert{alertCount !== 1 ? 's' : ''}
-        </span>
+        <p className="text-sm text-muted-foreground">{alertCount} result{alertCount !== 1 ? 's' : ''}</p>
       </div>
 
       {/* Search */}
       <div className="mb-4">
+        <label className="text-sm font-medium text-foreground block mb-2">Search</label>
         <Input
           type="text"
-          placeholder="Search alerts..."
+          placeholder="Alert title..."
           value={searchTerm}
           onChange={(e) => onSearchChange(e.target.value)}
-          icon="search"
+          icon="Search"
         />
       </div>
 
-      {/* Filter Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3 mb-4">
-        <Select
-          label="Severity"
-          value={filters.severity}
-          onChange={(value) => onFilterChange('severity', value)}
-          options={severityOptions}
-        />
+      {/* Filter Sections */}
+      <div className="space-y-4">
+        {/* Severity */}
+        <div>
+          <label className="text-sm font-medium text-foreground block mb-2">Severity</label>
+          <Select
+            value={filters.severity}
+            onChange={(value) => onFilterChange('severity', value)}
+            options={severityOptions}
+          />
+        </div>
 
-        <Select
-          label="Status"
-          value={filters.status}
-          onChange={(value) => onFilterChange('status', value)}
-          options={statusOptions}
-        />
+        {/* Status */}
+        <div>
+          <label className="text-sm font-medium text-foreground block mb-2">Status</label>
+          <Select
+            value={filters.status}
+            onChange={(value) => onFilterChange('status', value)}
+            options={statusOptions}
+          />
+        </div>
 
-        <Select
-          label="Type"
-          value={filters.type}
-          onChange={(value) => onFilterChange('type', value)}
-          options={typeOptions}
-        />
+        {/* Type */}
+        <div>
+          <label className="text-sm font-medium text-foreground block mb-2">Type</label>
+          <Select
+            value={filters.type}
+            onChange={(value) => onFilterChange('type', value)}
+            options={typeOptions}
+          />
+        </div>
 
-        <Select
-          label="Location"
-          value={filters.location}
-          onChange={(value) => onFilterChange('location', value)}
-          options={locationOptions}
-        />
+        {/* Location */}
+        <div>
+          <label className="text-sm font-medium text-foreground block mb-2">Location</label>
+          <Select
+            value={filters.location}
+            onChange={(value) => onFilterChange('location', value)}
+            options={locationOptions}
+          />
+        </div>
 
-        <Select
-          label="Date Range"
-          value={filters.dateRange}
-          onChange={(value) => onFilterChange('dateRange', value)}
-          options={dateRangeOptions}
-        />
-      </div>
+        {/* Date Range */}
+        <div>
+          <label className="text-sm font-medium text-foreground block mb-2">Date Range</label>
+          <Select
+            value={filters.dateRange}
+            onChange={(value) => onFilterChange('dateRange', value)}
+            options={dateRangeOptions}
+          />
+        </div>
 
-      {/* Sort and Actions */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div className="flex items-center gap-3">
-          <label className="text-sm font-medium text-foreground">Sort:</label>
+        {/* Sort */}
+        <div>
+          <label className="text-sm font-medium text-foreground block mb-2">Sort By</label>
           <select
             value={sortBy}
             onChange={(e) => onSortChange(e.target.value)}
-            className="px-3 py-2 bg-background border border-border rounded text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            className="w-full px-3 py-2 bg-background border border-border rounded text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
           >
             {sortOptions.map(option => (
               <option key={option.value} value={option.value}>
@@ -136,15 +152,24 @@ const AlertFilters = ({
             ))}
           </select>
         </div>
+      </div>
 
-        <Button
-          onClick={onReset}
-          variant="outline"
-          size="sm"
-        >
-          <Icon name="RotateCcw" size={16} />
-          Reset Filters
-        </Button>
+      {/* Actions */}
+      <div className="mt-6 pt-4 border-t border-border space-y-2">
+        {isFiltered && (
+          <Button
+            onClick={onReset}
+            variant="outline"
+            size="sm"
+            className="w-full"
+          >
+            <Icon name="RotateCcw" size={16} />
+            Reset Filters
+          </Button>
+        )}
+        <div className="text-xs text-muted-foreground text-center py-2">
+          Real-time monitoring
+        </div>
       </div>
     </div>
   );
