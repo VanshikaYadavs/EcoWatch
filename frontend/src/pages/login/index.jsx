@@ -1,6 +1,7 @@
 import React from 'react';
 import { Helmet } from 'react-helmet';
 import Icon from '../../components/AppIcon';
+import Chatbot from '../../components/Chatbot';
 
 import LoginForm from './components/LoginForm';
 import EnvironmentalPreview from './components/EnvironmentalPreview';
@@ -103,6 +104,8 @@ const Login = () => {
             </div>
           </div>
         </footer>
+
+        <Chatbot />
       </div>
     </>
   );

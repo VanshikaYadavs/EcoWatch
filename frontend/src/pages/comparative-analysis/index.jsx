@@ -116,7 +116,7 @@ const ComparativeAnalysis = () => {
                   size="sm"
                   iconName="Bell"
                   iconPosition="left"
-                  onClick={() => navigate('/alert-management')}
+                  onClick={() => navigate('/alert-center')}
                 >
                   Alerts
                 </Button>

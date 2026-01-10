@@ -6,6 +6,7 @@ import Input from '../../components/ui/Input';
 import Select from '../../components/ui/Select';
 import Button from '../../components/ui/Button';
 import Icon from '../../components/AppIcon';
+import Chatbot from '../../components/Chatbot';
 
 const roleOptions = [
   { value: 'admin', label: 'Administrator' },
@@ -106,6 +107,8 @@ const Signup = () => {
           </div>
         </main>
       </div>
+
+      <Chatbot />
     </>
   );
 };
