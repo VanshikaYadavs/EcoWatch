@@ -41,6 +41,13 @@ const Sidebar = ({ isCollapsed = false, onToggleCollapse }) => {
       roles: ['admin', 'official', 'analyst', 'researcher']
     },
     {
+      label: 'Alerts',
+      path: '/alert-center',
+      icon: 'Bell',
+      description: 'Alert management and monitoring',
+      roles: ['admin', 'official', 'analyst']
+    },
+    {
       label: 'Notifications',
       path: '/notification-settings',
       icon: 'Bell',
