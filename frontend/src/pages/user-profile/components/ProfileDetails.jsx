@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import Icon from '../../../components/AppIcon';
 import Input from '../../../components/ui/Input';
 import Button from '../../../components/ui/Button';
 
 const ProfileDetails = ({ profileData, onProfileChange }) => {
+    const { t } = useTranslation();
   const [isEditing, setIsEditing] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
 
@@ -36,9 +38,9 @@ const ProfileDetails = ({ profileData, onProfileChange }) => {
 
   const handleSave = () => {
     const errors = {};
-    if (!profileData?.name) errors.name = 'Name is required';
-    if (!profileData?.email) errors.email = 'Email is required';
-    else if (!validateEmail(profileData?.email)) errors.email = 'Invalid email format';
+    if (!profileData?.name) errors.name = t('profile.form.errors.nameRequired');
+    if (!profileData?.email) errors.email = t('profile.form.errors.emailRequired');
+    else if (!validateEmail(profileData?.email)) errors.email = t('profile.form.errors.emailInvalid');
     
     if (Object.keys(errors)?.length > 0) {
       setValidationErrors(errors);
@@ -77,7 +79,7 @@ const ProfileDetails = ({ profileData, onProfileChange }) => {
           iconPosition="left"
           onClick={() => isEditing ? handleSave() : setIsEditing(true)}
         >
-          {isEditing ? 'Save' : 'Edit Profile'}
+          {isEditing ? t('profile.form.buttons.save') : t('profile.form.buttons.edit')}
         </Button>
       </div>
 
@@ -85,11 +87,11 @@ const ProfileDetails = ({ profileData, onProfileChange }) => {
       <div className="space-y-4">
         <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
           <Icon name="User" size={20} color="var(--color-primary)" />
-          Personal Information
+          {t('profile.form.sections.personal')}
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Input
-            label="Full Name"
+            label={t('profile.form.fields.name')}
             type="text"
             value={profileData?.name}
             onChange={(e) => handleFieldChange('name', e?.target?.value)}
@@ -98,7 +100,7 @@ const ProfileDetails = ({ profileData, onProfileChange }) => {
             error={validationErrors?.name}
           />
           <Input
-            label="Email Address"
+            label={t('profile.form.fields.email')}
             type="email"
             value={profileData?.email}
             onChange={(e) => handleFieldChange('email', e?.target?.value)}
@@ -107,14 +109,14 @@ const ProfileDetails = ({ profileData, onProfileChange }) => {
             error={validationErrors?.email}
           />
           <Input
-            label="Phone Number"
+            label={t('profile.form.fields.phone')}
             type="tel"
             value={profileData?.phone}
             onChange={(e) => handleFieldChange('phone', e?.target?.value)}
             disabled={!isEditing}
           />
           <Input
-            label="Location"
+            label={t('profile.form.fields.location')}
             type="text"
             value={profileData?.location}
             onChange={(e) => handleFieldChange('location', e?.target?.value)}
@@ -127,18 +129,18 @@ const ProfileDetails = ({ profileData, onProfileChange }) => {
       <div className="space-y-4">
         <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
           <Icon name="Building" size={20} color="var(--color-primary)" />
-          Organization Information
+          {t('profile.form.sections.organization')}
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Input
-            label="Organization"
+            label={t('profile.form.fields.organizationName')}
             type="text"
             value={profileData?.organization}
             onChange={(e) => handleFieldChange('organization', e?.target?.value)}
             disabled={!isEditing}
           />
           <Input
-            label="Department"
+            label={t('profile.form.fields.department')}
             type="text"
             value={profileData?.department}
             onChange={(e) => handleFieldChange('department', e?.target?.value)}
@@ -152,9 +154,9 @@ const ProfileDetails = ({ profileData, onProfileChange }) => {
         <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 flex items-start gap-3">
           <Icon name="AlertCircle" size={20} color="var(--color-error)" className="mt-0.5" />
           <div>
-            <h4 className="font-semibold text-foreground mb-1">Validation Errors</h4>
+            <h4 className="font-semibold text-foreground mb-1">{t('profile.form.errors.title')}</h4>
             <p className="text-sm text-muted-foreground">
-              Please correct the errors above before saving.
+              {t('profile.form.errors.message')}
             </p>
           </div>
         </div>

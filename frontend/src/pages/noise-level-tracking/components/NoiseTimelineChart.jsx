@@ -1,14 +1,17 @@
 import React from 'react';
 import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Area, AreaChart } from 'recharts';
+import { useTranslation } from 'react-i18next';
 
 const NoiseTimelineChart = ({ data, timeRange }) => {
+  const { t } = useTranslation();
+
   const CustomTooltip = ({ active, payload }) => {
     if (active && payload && payload?.length) {
       const value = payload?.[0]?.value;
       const getZoneLabel = (val) => {
-        if (val < 55) return 'Acceptable';
-        if (val < 70) return 'Concerning';
-        return 'Harmful';
+        if (val < 55) return t('noise.status.acceptable');
+        if (val < 70) return t('noise.status.concerning');
+        return t('noise.status.harmful');
       };
 
       return (
@@ -17,7 +20,7 @@ const NoiseTimelineChart = ({ data, timeRange }) => {
             {payload?.[0]?.payload?.time}
           </p>
           <p className="text-lg font-bold text-foreground">
-            {value} dB
+            {value} {t('noise.unit.db')}
           </p>
           <p className="text-xs text-muted-foreground mt-1">
             {getZoneLabel(value)}
@@ -32,25 +35,25 @@ const NoiseTimelineChart = ({ data, timeRange }) => {
     <div className="bg-card rounded-xl border border-border p-4 md:p-6 lg:p-8 shadow-md">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4 md:mb-6">
         <h2 className="text-xl md:text-2xl lg:text-3xl font-semibold text-foreground">
-          Noise Level Timeline
+          {t('noise.timeline.title')}
         </h2>
         <div className="flex items-center gap-2 text-xs md:text-sm">
-          <span className="text-muted-foreground">Time Range:</span>
+          <span className="text-muted-foreground">{t('noise.timeline.timeRangeLabel')}</span>
           <span className="font-medium text-foreground">{timeRange}</span>
         </div>
       </div>
       <div className="mb-4 md:mb-6 flex flex-wrap items-center gap-3 md:gap-4">
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 md:w-4 md:h-4 rounded-full bg-success"></div>
-          <span className="text-xs md:text-sm text-muted-foreground">Acceptable (&lt;55 dB)</span>
+          <span className="text-xs md:text-sm text-muted-foreground">{t('noise.legend.acceptable')}</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 md:w-4 md:h-4 rounded-full bg-warning"></div>
-          <span className="text-xs md:text-sm text-muted-foreground">Concerning (55-70 dB)</span>
+          <span className="text-xs md:text-sm text-muted-foreground">{t('noise.legend.concerning')}</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 md:w-4 md:h-4 rounded-full bg-error"></div>
-          <span className="text-xs md:text-sm text-muted-foreground">Harmful (&gt;70 dB)</span>
+          <span className="text-xs md:text-sm text-muted-foreground">{t('noise.legend.harmful')}</span>
         </div>
       </div>
       <div className="w-full h-64 md:h-80 lg:h-96" aria-label="Noise Level Timeline Chart">
@@ -74,7 +77,7 @@ const NoiseTimelineChart = ({ data, timeRange }) => {
               tick={{ fontSize: 12 }}
               tickMargin={8}
               domain={[0, 100]}
-              label={{ value: 'dB', angle: -90, position: 'insideLeft', style: { fontSize: 12, fill: 'var(--color-muted-foreground)' } }}
+              label={{ value: t('noise.unit.db'), angle: -90, position: 'insideLeft', style: { fontSize: 12, fill: 'var(--color-muted-foreground)' } }}
             />
             <Tooltip content={<CustomTooltip />} />
             <ReferenceLine y={55} stroke="var(--color-success)" strokeDasharray="5 5" strokeWidth={2} />
@@ -93,25 +96,25 @@ const NoiseTimelineChart = ({ data, timeRange }) => {
       <div className="mt-4 md:mt-6 pt-4 md:pt-6 border-t border-border">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
           <div className="text-center">
-            <div className="text-xs md:text-sm text-muted-foreground mb-1">Min Level</div>
+            <div className="text-xs md:text-sm text-muted-foreground mb-1">{t('noise.stats.minLevel')}</div>
             <div className="text-lg md:text-xl font-bold text-foreground">
-              {Math.min(...data?.map(d => d?.level))} dB
+              {Math.min(...data?.map(d => d?.level))} {t('noise.unit.db')}
             </div>
           </div>
           <div className="text-center">
-            <div className="text-xs md:text-sm text-muted-foreground mb-1">Max Level</div>
+            <div className="text-xs md:text-sm text-muted-foreground mb-1">{t('noise.stats.maxLevel')}</div>
             <div className="text-lg md:text-xl font-bold text-foreground">
-              {Math.max(...data?.map(d => d?.level))} dB
+              {Math.max(...data?.map(d => d?.level))} {t('noise.unit.db')}
             </div>
           </div>
           <div className="text-center">
-            <div className="text-xs md:text-sm text-muted-foreground mb-1">Avg Level</div>
+            <div className="text-xs md:text-sm text-muted-foreground mb-1">{t('noise.stats.avgLevel')}</div>
             <div className="text-lg md:text-xl font-bold text-foreground">
-              {(data?.reduce((sum, d) => sum + d?.level, 0) / data?.length)?.toFixed(1)} dB
+              {(data?.reduce((sum, d) => sum + d?.level, 0) / data?.length)?.toFixed(1)} {t('noise.unit.db')}
             </div>
           </div>
           <div className="text-center">
-            <div className="text-xs md:text-sm text-muted-foreground mb-1">Data Points</div>
+            <div className="text-xs md:text-sm text-muted-foreground mb-1">{t('noise.stats.dataPoints')}</div>
             <div className="text-lg md:text-xl font-bold text-foreground">
               {data?.length}
             </div>

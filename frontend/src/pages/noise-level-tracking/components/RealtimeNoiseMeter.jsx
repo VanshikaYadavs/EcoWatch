@@ -1,7 +1,9 @@
 import React from 'react';
 import Icon from '../../../components/AppIcon';
+import { useTranslation } from 'react-i18next';
 
 const RealtimeNoiseMeter = ({ currentLevel, peakLevel, averageLevel, status }) => {
+  const { t } = useTranslation();
   const getStatusColor = (level) => {
     if (level < 55) return 'text-success';
     if (level < 70) return 'text-warning';
@@ -15,9 +17,9 @@ const RealtimeNoiseMeter = ({ currentLevel, peakLevel, averageLevel, status }) =
   };
 
   const getStatusLabel = (level) => {
-    if (level < 55) return 'Acceptable';
-    if (level < 70) return 'Concerning';
-    return 'Harmful';
+    if (level < 55) return t('noise.status.acceptable');
+    if (level < 70) return t('noise.status.concerning');
+    return t('noise.status.harmful');
   };
 
   const getMeterRotation = (level) => {
@@ -31,7 +33,7 @@ const RealtimeNoiseMeter = ({ currentLevel, peakLevel, averageLevel, status }) =
     <div className="bg-card rounded-xl border border-border p-4 md:p-6 lg:p-8 shadow-md">
       <div className="flex items-center justify-between mb-4 md:mb-6">
         <h2 className="text-xl md:text-2xl lg:text-3xl font-semibold text-foreground">
-          Real-Time Noise Monitor
+          {t('noise.realtime.title')}
         </h2>
         <div className={`px-3 py-1.5 md:px-4 md:py-2 rounded-full ${getStatusBg(currentLevel)}`}>
           <span className={`text-xs md:text-sm font-medium ${getStatusColor(currentLevel)}`}>
@@ -96,26 +98,26 @@ const RealtimeNoiseMeter = ({ currentLevel, peakLevel, averageLevel, status }) =
           <div className="bg-muted rounded-lg p-4 md:p-6">
             <div className="flex items-center gap-2 mb-2 md:mb-3">
               <Icon name="TrendingUp" size={18} color="var(--color-error)" />
-              <span className="text-xs md:text-sm text-muted-foreground">Peak Level</span>
+              <span className="text-xs md:text-sm text-muted-foreground">{t('noise.realtime.peak')}</span>
             </div>
             <div className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground">
               {peakLevel}
             </div>
             <div className="text-xs md:text-sm text-muted-foreground mt-1">
-              dB
+              {t('noise.unit.db')}
             </div>
           </div>
 
           <div className="bg-muted rounded-lg p-4 md:p-6">
             <div className="flex items-center gap-2 mb-2 md:mb-3">
               <Icon name="Activity" size={18} color="var(--color-primary)" />
-              <span className="text-xs md:text-sm text-muted-foreground">Average Level</span>
+              <span className="text-xs md:text-sm text-muted-foreground">{t('noise.realtime.average')}</span>
             </div>
             <div className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground">
               {averageLevel}
             </div>
             <div className="text-xs md:text-sm text-muted-foreground mt-1">
-              dB
+              {t('noise.unit.db')}
             </div>
           </div>
 
@@ -124,10 +126,10 @@ const RealtimeNoiseMeter = ({ currentLevel, peakLevel, averageLevel, status }) =
               <Icon name="Info" size={20} color="var(--color-primary)" className="flex-shrink-0 mt-1" />
               <div>
                 <h3 className="text-sm md:text-base font-medium text-foreground mb-1">
-                  WHO Guidelines
+                  {t('noise.guidelines.title')}
                 </h3>
                 <p className="text-xs md:text-sm text-muted-foreground">
-                  Acceptable: &lt;55 dB • Concerning: 55-70 dB • Harmful: &gt;70 dB
+                  {t('noise.guidelines.summary')}
                 </p>
               </div>
             </div>
@@ -136,10 +138,10 @@ const RealtimeNoiseMeter = ({ currentLevel, peakLevel, averageLevel, status }) =
       </div>
       <div className="mt-4 md:mt-6 pt-4 md:pt-6 border-t border-border">
         <div className="flex items-center justify-between text-xs md:text-sm text-muted-foreground">
-          <span>Last updated: {new Date()?.toLocaleTimeString()}</span>
+          <span>{t('noise.lastUpdated', { time: new Date()?.toLocaleTimeString() })}</span>
           <span className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-success animate-pulse"></span>
-            Live Monitoring
+            {t('noise.live')}
           </span>
         </div>
       </div>

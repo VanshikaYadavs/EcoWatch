@@ -1,5 +1,6 @@
 import React from 'react';
 import Icon from '../../../components/AppIcon';
+import { useTranslation } from 'react-i18next';
 
 const AlertCard = ({ 
   title, 
@@ -11,27 +12,29 @@ const AlertCard = ({
   threshold,
   onClick 
 }) => {
+  const { t } = useTranslation();
+
   const severityConfig = {
     critical: {
       bgColor: 'bg-error/10',
       textColor: 'text-error',
       borderColor: 'border-error/20',
       icon: 'AlertTriangle',
-      label: 'Critical'
+      label: t('alert.severity.critical')
     },
     high: {
       bgColor: 'bg-warning/10',
       textColor: 'text-warning',
       borderColor: 'border-warning/20',
       icon: 'AlertCircle',
-      label: 'High'
+      label: t('alert.severity.high')
     },
     medium: {
       bgColor: 'bg-warning/10',
       textColor: 'text-warning',
       borderColor: 'border-warning/20',
       icon: 'Info',
-      label: 'Medium'
+      label: t('alert.severity.medium')
     }
   };
 
@@ -41,10 +44,10 @@ const AlertCard = ({
     const now = new Date();
     const diff = Math.floor((now - date) / 1000 / 60);
     
-    if (diff < 1) return 'Just now';
-    if (diff < 60) return `${diff}m ago`;
-    if (diff < 1440) return `${Math.floor(diff / 60)}h ago`;
-    return date?.toLocaleDateString('en-IN');
+    if (diff < 1) return t('time.justNow');
+    if (diff < 60) return t('time.minutesAgo', { count: diff });
+    if (diff < 1440) return t('time.hoursAgo', { count: Math.floor(diff / 60) });
+    return date?.toLocaleDateString();
   };
 
   return (
@@ -77,7 +80,7 @@ const AlertCard = ({
           <p className={`text-lg md:text-xl font-bold font-data ${config?.textColor}`}>{value}</p>
         </div>
         <div className="text-right">
-          <p className="text-xs font-caption text-muted-foreground mb-1">Threshold</p>
+          <p className="text-xs font-caption text-muted-foreground mb-1">{t('alert.threshold')}</p>
           <p className="text-sm md:text-base font-data text-foreground">{threshold}</p>
         </div>
       </div>

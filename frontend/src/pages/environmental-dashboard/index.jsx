@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import MetricCard from './components/MetricCard';
 import SensorMap from './components/SensorMap';
@@ -13,6 +14,7 @@ import { getCurrentLocation } from '../../utils/location';
 import axios from 'axios';
 
 const EnvironmentalDashboard = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [timeRange, setTimeRange] = useState('realtime');
   const [location, setLocation] = useState('all');
@@ -89,7 +91,7 @@ const EnvironmentalDashboard = () => {
 
   const metrics = [
     {
-      title: 'Air Quality Index',
+      title: t('env.metrics.aqi.title'),
       value: String(envData?.aqi ?? latest?.aqi ?? avg.aqi ?? '—'),
       unit: 'AQI',
       status: (envData?.aqi ?? latest?.aqi ?? avg.aqi) >= 150 ? 'poor' : 'good',
@@ -100,7 +102,7 @@ const EnvironmentalDashboard = () => {
       onClick: () => navigate('/air-quality-monitor')
     },
     {
-      title: 'Noise Level',
+      title: t('env.metrics.noise.title'),
       value: String(envData?.noise_level ?? latest?.noise_level ?? avg.noise ?? '—'),
       unit: 'dB',
       status: (envData?.noise_level ?? latest?.noise_level ?? avg.noise) >= 85 ? 'critical' : 'moderate',
@@ -111,7 +113,7 @@ const EnvironmentalDashboard = () => {
       onClick: () => navigate('/noise-level-tracking')
     },
     {
-      title: 'Temperature',
+      title: t('env.metrics.temperature.title'),
       value: String(envData?.temperature ?? latest?.temperature ?? avg.temp ?? '—'),
       unit: '°C',
       status: (envData?.temperature ?? latest?.temperature ?? avg.temp) >= 35 ? 'poor' : 'good',
@@ -122,7 +124,7 @@ const EnvironmentalDashboard = () => {
       onClick: () => navigate('/temperature-analytics')
     },
     {
-      title: 'Humidity',
+      title: t('env.metrics.humidity.title'),
       value: String(envData?.humidity ?? latest?.humidity ?? avg.humidity ?? '—'),
       unit: '%',
       status: 'good',
@@ -133,7 +135,7 @@ const EnvironmentalDashboard = () => {
       onClick: () => {}
     },
     {
-      title: 'Active Hotspots',
+      title: t('env.metrics.hotspots'),
       value: String(alerts?.length ?? 0),
       unit: 'events',
       status: alerts?.length ? 'critical' : 'good',
@@ -144,7 +146,7 @@ const EnvironmentalDashboard = () => {
       onClick: () => {}
     },
     {
-      title: 'Active Sensors',
+      title: t('env.metrics.sensors'),
       value: String(avg?.sensors ?? readings?.length ?? 0),
       unit: 'online',
       status: 'good',
@@ -166,28 +168,28 @@ const EnvironmentalDashboard = () => {
 
   const quickStats = [
     {
-      label: 'Total Alerts Today',
+      label: t('env.stats.totalAlerts'),
       value: String(alertsToday),
       icon: 'Bell',
       change: '',
       changeType: 'neutral'
     },
     {
-      label: 'Avg Response Time',
+      label: t('env.stats.avgResponse'),
       value: '—',
       icon: 'Clock',
       change: '',
       changeType: 'neutral'
     },
     {
-      label: 'Compliance Rate',
+      label: t('env.stats.compliance'),
       value: '—',
       icon: 'CheckCircle',
       change: '',
       changeType: 'neutral'
     },
     {
-      label: 'Data Coverage',
+      label: t('env.stats.coverage'),
       value: '—',
       icon: 'Activity',
       change: '',
@@ -247,11 +249,11 @@ const EnvironmentalDashboard = () => {
   };
 
   if (envLoading) {
-    return <p>Loading environmental data...</p>;
+    return <p>{t('env.loading')}</p>;
   }
 
   if (!envData && !readings?.length) {
-    return <p>No environmental data available yet.</p>;
+    return <p>{t('env.noData')}</p>;
   }
 
   return (
@@ -259,10 +261,10 @@ const EnvironmentalDashboard = () => {
       <div>
         <div className="flex items-center gap-3 mb-1">
           <Icon name="LayoutDashboard" size={22} color="var(--color-primary)" />
-          <h1 className="text-xl md:text-2xl font-semibold text-foreground">Environmental Dashboard</h1>
+          <h1 className="text-xl md:text-2xl font-semibold text-foreground">{t('env.title')}</h1>
         </div>
         <p className="text-sm md:text-base text-muted-foreground">
-          Real-time environmental monitoring and analysis for smart city management
+          {t('env.subtitle')}
         </p>
       </div>
 
@@ -295,7 +297,7 @@ const EnvironmentalDashboard = () => {
 
         <div className="bg-card rounded-lg border border-border p-4 md:p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-base md:text-lg font-semibold">Quick Actions</h3>
+            <h3 className="text-base md:text-lg font-semibold">{t('env.quickActions')}</h3>
             <Icon name="Zap" size={20} color="var(--color-primary)" />
           </div>
 
@@ -307,7 +309,7 @@ const EnvironmentalDashboard = () => {
               fullWidth
               onClick={handleEmergencyBroadcast}
             >
-              Emergency Broadcast
+              {t('env.actions.emergency')}
             </Button>
 
             <Button
@@ -317,7 +319,7 @@ const EnvironmentalDashboard = () => {
               fullWidth
               onClick={() => navigate('/historical-reports')}
             >
-              View Reports
+              {t('env.actions.viewReports')}
             </Button>
 
             <Button
@@ -326,7 +328,7 @@ const EnvironmentalDashboard = () => {
               iconPosition="left"
               fullWidth
             >
-              Configure Alerts
+              {t('env.actions.configureAlerts')}
             </Button>
 
             <Button
@@ -335,24 +337,24 @@ const EnvironmentalDashboard = () => {
               iconPosition="left"
               fullWidth
             >
-              Manage Team
+              {t('env.actions.manageTeam')}
             </Button>
           </div>
 
           <div className="mt-6 pt-6 border-t border-border">
-            <h4 className="text-sm font-medium mb-3">System Status</h4>
+            <h4 className="text-sm font-medium mb-3">{t('env.system.status')}</h4>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs md:text-sm text-muted-foreground">API Status</span>
-                <span className="text-xs md:text-sm text-success font-medium">Operational</span>
+                <span className="text-xs md:text-sm text-muted-foreground">{t('env.system.api')}</span>
+                <span className="text-xs md:text-sm text-success font-medium">{t('env.system.operational')}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-xs md:text-sm text-muted-foreground">Database</span>
-                <span className="text-xs md:text-sm text-success font-medium">Connected</span>
+                <span className="text-xs md:text-sm text-muted-foreground">{t('env.system.database')}</span>
+                <span className="text-xs md:text-sm text-success font-medium">{t('env.system.connected')}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-xs md:text-sm text-muted-foreground">WebSocket</span>
-                <span className="text-xs md:text-sm text-success font-medium">Active</span>
+                <span className="text-xs md:text-sm text-muted-foreground">{t('env.system.websocket')}</span>
+                <span className="text-xs md:text-sm text-success font-medium">{t('env.system.active')}</span>
               </div>
             </div>
           </div>
@@ -363,10 +365,10 @@ const EnvironmentalDashboard = () => {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <Icon name="AlertTriangle" size={20} color="var(--color-error)" />
-            <h3 className="text-base md:text-lg font-semibold">Active Hotspots</h3>
+            <h3 className="text-base md:text-lg font-semibold">{t('env.hotspots.title')}</h3>
           </div>
           <span className="text-xs md:text-sm text-muted-foreground">
-            {hotspots?.length} active alerts
+            {hotspots?.length} {t('env.hotspots.activeAlerts')}
           </span>
         </div>
 

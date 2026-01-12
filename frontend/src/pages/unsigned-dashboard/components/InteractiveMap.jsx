@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import HotspotMarker from './HotspotMarker';
 
 const InteractiveMap = ({ hotspots }) => {
+  const { t } = useTranslation();
   const [activeHotspot, setActiveHotspot] = useState(null);
 
   return (
@@ -10,7 +12,7 @@ const InteractiveMap = ({ hotspots }) => {
         width="100%"
         height="100%"
         loading="lazy"
-        title="Rajasthan Environmental Hotspots Map"
+        title={t('sections.hotspotsMap')}
         referrerPolicy="no-referrer-when-downgrade"
         src="https://www.google.com/maps?q=26.9124,75.7873&z=8&output=embed"
         className="w-full h-full"
@@ -39,17 +41,17 @@ const InteractiveMap = ({ hotspots }) => {
         </div>
       </div>
       <div className="absolute bottom-4 left-4 right-4 md:bottom-6 md:left-6 md:right-6 flex flex-wrap gap-2 pointer-events-auto">
-        <div className="flex items-center gap-2 px-3 py-2 bg-card/90 backdrop-blur-sm rounded-lg border border-border">
+          <div className="flex items-center gap-2 px-3 py-2 bg-card/90 backdrop-blur-sm rounded-lg border border-border">
           <div className="w-3 h-3 rounded-full bg-error" />
-          <span className="text-xs md:text-sm font-caption text-foreground">High Severity</span>
+          <span className="text-xs md:text-sm font-caption text-foreground">{t('hotspot.severity.high')}</span>
         </div>
         <div className="flex items-center gap-2 px-3 py-2 bg-card/90 backdrop-blur-sm rounded-lg border border-border">
           <div className="w-3 h-3 rounded-full bg-warning" />
-          <span className="text-xs md:text-sm font-caption text-foreground">Medium Severity</span>
+          <span className="text-xs md:text-sm font-caption text-foreground">{t('hotspot.severity.medium')}</span>
         </div>
         <div className="flex items-center gap-2 px-3 py-2 bg-card/90 backdrop-blur-sm rounded-lg border border-border">
           <div className="w-3 h-3 rounded-full bg-success" />
-          <span className="text-xs md:text-sm font-caption text-foreground">Low Severity</span>
+          <span className="text-xs md:text-sm font-caption text-foreground">{t('hotspot.severity.low')}</span>
         </div>
       </div>
     </div>

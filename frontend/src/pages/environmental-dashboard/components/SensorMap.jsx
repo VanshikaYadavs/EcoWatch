@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Icon from '../../../components/AppIcon';
+import { useTranslation } from 'react-i18next';
 
 const SensorMap = ({ sensors, onSensorClick }) => {
   const [selectedSensor, setSelectedSensor] = useState(null);
@@ -21,14 +22,16 @@ const SensorMap = ({ sensors, onSensorClick }) => {
     return colors?.[status] || colors?.good;
   };
 
+  const { t } = useTranslation();
+
   return (
     <div className="bg-card rounded-lg border border-border p-4 md:p-6 h-full">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-base md:text-lg font-semibold">Sensor Locations</h3>
+        <h3 className="text-base md:text-lg font-semibold">{t('smap.title')}</h3>
         <div className="flex items-center gap-2">
           <span className="refresh-indicator live">
             <span className="refresh-indicator-pulse" />
-            <span className="caption">Live</span>
+            <span className="caption">{t('smap.live')}</span>
           </span>
         </div>
       </div>
@@ -46,7 +49,7 @@ const SensorMap = ({ sensors, onSensorClick }) => {
         <div className="absolute top-4 right-4 bg-card rounded-lg shadow-lg p-3 max-w-xs">
           <div className="flex items-center gap-2 mb-2">
             <Icon name="MapPin" size={16} color="var(--color-primary)" />
-            <span className="text-xs md:text-sm font-medium">Active Sensors: {sensors?.length}</span>
+            <span className="text-xs md:text-sm font-medium">{t('smap.active', { count: sensors?.length })}</span>
           </div>
           <div className="space-y-1">
             {['good', 'moderate', 'poor', 'critical']?.map(status => (
@@ -55,7 +58,7 @@ const SensorMap = ({ sensors, onSensorClick }) => {
                   className="w-3 h-3 rounded-full" 
                   style={{ backgroundColor: getStatusColor(status) }}
                 />
-                <span className="text-xs capitalize">{status}</span>
+                <span className="text-xs">{t(`smap.status.${status}`)}</span>
               </div>
             ))}
           </div>
@@ -77,11 +80,11 @@ const SensorMap = ({ sensors, onSensorClick }) => {
           </div>
           <div className="grid grid-cols-2 gap-2 mt-3">
             <div>
-              <span className="text-xs text-muted-foreground">AQI</span>
+              <span className="text-xs text-muted-foreground">{t('smap.label.aqi')}</span>
               <p className="text-sm md:text-base font-medium">{selectedSensor?.aqi}</p>
             </div>
             <div>
-              <span className="text-xs text-muted-foreground">Noise</span>
+              <span className="text-xs text-muted-foreground">{t('smap.label.noise')}</span>
               <p className="text-sm md:text-base font-medium">{selectedSensor?.noise} dB</p>
             </div>
           </div>

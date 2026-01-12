@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthProvider';
 import Input from '../../components/ui/Input';
@@ -17,6 +18,7 @@ const roleOptions = [
 ];
 
 const ProfileSetup = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { state } = useLocation();
   const { user } = useAuth();
@@ -52,8 +54,8 @@ const ProfileSetup = () => {
             <Icon name="UserPlus" size={22} color="#FFFFFF" />
           </div>
           <div>
-            <h1 className="text-xl md:text-2xl font-semibold text-foreground">Complete Your Profile</h1>
-            <p className="text-sm text-muted-foreground">Set your role and basic details to personalize your dashboard</p>
+            <h1 className="text-xl md:text-2xl font-semibold text-foreground">{t('profileSetup.title')}</h1>
+            <p className="text-sm text-muted-foreground">{t('profileSetup.subtitle')}</p>
           </div>
         </div>
 

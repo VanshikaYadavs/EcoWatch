@@ -1,22 +1,26 @@
 import React from 'react';
 import { Checkbox } from '../../../components/ui/Checkbox';
 import Icon from '../../../components/AppIcon';
+import { useTranslation } from 'react-i18next';
 
 const CitySelector = ({ selectedCities, onCityToggle, maxSelections = 5 }) => {
+  const { t } = useTranslation();
   const cities = [
-    { id: 'jaipur', name: 'Jaipur', region: 'Central', currentAQI: 156 },
-    { id: 'jodhpur', name: 'Jodhpur', region: 'Western', currentAQI: 142 },
-    { id: 'udaipur', name: 'Udaipur', region: 'Southern', currentAQI: 98 },
-    { id: 'kota', name: 'Kota', region: 'Eastern', currentAQI: 178 },
-    { id: 'ajmer', name: 'Ajmer', region: 'Central', currentAQI: 134 },
-    { id: 'bikaner', name: 'Bikaner', region: 'Northern', currentAQI: 165 },
-    { id: 'alwar', name: 'Alwar', region: 'Eastern', currentAQI: 123 },
-    { id: 'bharatpur', name: 'Bharatpur', region: 'Eastern', currentAQI: 145 },
-    { id: 'sikar', name: 'Sikar', region: 'Northern', currentAQI: 112 },
-    { id: 'pali', name: 'Pali', region: 'Western', currentAQI: 128 },
-    { id: 'tonk', name: 'Tonk', region: 'Central', currentAQI: 149 },
-    { id: 'bhilwara', name: 'Bhilwara', region: 'Southern', currentAQI: 118 }
+    { id: 'jaipur', region: 'Central', currentAQI: 156 },
+    { id: 'jodhpur', region: 'Western', currentAQI: 142 },
+    { id: 'udaipur', region: 'Southern', currentAQI: 98 },
+    { id: 'kota', region: 'Eastern', currentAQI: 178 },
+    { id: 'ajmer', region: 'Central', currentAQI: 134 },
+    { id: 'bikaner', region: 'Northern', currentAQI: 165 },
+    { id: 'alwar', region: 'Eastern', currentAQI: 123 },
+    { id: 'bharatpur', region: 'Eastern', currentAQI: 145 },
+    { id: 'sikar', region: 'Northern', currentAQI: 112 },
+    { id: 'pali', region: 'Western', currentAQI: 128 },
+    { id: 'tonk', region: 'Central', currentAQI: 149 },
+    { id: 'bhilwara', region: 'Southern', currentAQI: 118 }
   ];
+
+  const cityName = (id) => t(`cities.${id}`, { defaultValue: id });
 
   const getAQIColor = (aqi) => {
     if (aqi <= 50) return 'text-success';
@@ -32,17 +36,17 @@ const CitySelector = ({ selectedCities, onCityToggle, maxSelections = 5 }) => {
         <div className="flex items-center gap-2">
           <Icon name="MapPin" size={20} color="var(--color-primary)" />
           <h3 className="text-base md:text-lg font-semibold text-foreground">
-            Select Cities to Compare
+            {t('comp.selector.title')}
           </h3>
         </div>
         <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10">
           <span className="text-xs md:text-sm font-data text-primary font-medium">
-            {selectedCities?.length}/{maxSelections}
+            {t('comp.selector.counter', { count: selectedCities?.length || 0, max: maxSelections })}
           </span>
         </div>
       </div>
       <p className="text-xs md:text-sm text-muted-foreground mb-4">
-        Select up to {maxSelections} cities for comprehensive environmental comparison
+        {t('comp.selector.helper', { max: maxSelections })}
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {cities?.map((city) => {
@@ -68,16 +72,16 @@ const CitySelector = ({ selectedCities, onCityToggle, maxSelections = 5 }) => {
                 />
                 <div className="flex flex-col min-w-0">
                   <span className="text-sm font-medium text-foreground truncate">
-                    {city?.name}
+                    {cityName(city?.id)}
                   </span>
                   <span className="text-xs font-caption text-muted-foreground">
-                    {city?.region} Rajasthan
+                    {t('comp.selector.region', { region: city?.region })}
                   </span>
                 </div>
               </div>
               <div className="flex items-center gap-1 ml-2">
                 <span className={`text-xs font-data font-medium whitespace-nowrap ${getAQIColor(city?.currentAQI)}`}>
-                  AQI {city?.currentAQI}
+                  {t('comp.selector.aqiLabel', { value: city?.currentAQI })}
                 </span>
               </div>
             </div>
@@ -88,7 +92,7 @@ const CitySelector = ({ selectedCities, onCityToggle, maxSelections = 5 }) => {
         <div className="mt-4 flex items-center gap-2 p-3 rounded-lg bg-warning/10 border border-warning/20">
           <Icon name="AlertCircle" size={16} color="var(--color-warning)" />
           <p className="text-xs md:text-sm text-warning">
-            Maximum {maxSelections} cities selected. Deselect a city to choose another.
+            {t('comp.selector.maxReached', { max: maxSelections })}
           </p>
         </div>
       )}

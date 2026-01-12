@@ -3,8 +3,10 @@ import Icon from '../../../components/AppIcon';
 import Input from '../../../components/ui/Input';
 import Button from '../../../components/ui/Button';
 import { Checkbox } from '../../../components/ui/Checkbox';
+import { useTranslation } from 'react-i18next';
 
 const AlertConfiguration = ({ onSave }) => {
+  const { t } = useTranslation();
   const [config, setConfig] = useState({
     heatWarning: 32,
     coldWarning: 5,
@@ -27,15 +29,15 @@ const AlertConfiguration = ({ onSave }) => {
           <Icon name="Bell" size={20} color="var(--color-warning)" />
         </div>
         <div>
-          <h3 className="text-lg font-semibold text-foreground">Alert Configuration</h3>
-          <p className="caption text-muted-foreground">Set temperature thresholds for notifications</p>
+          <h3 className="text-lg font-semibold text-foreground">{t('temp.alerts.title')}</h3>
+          <p className="caption text-muted-foreground">{t('temp.alerts.subtitle')}</p>
         </div>
       </div>
       <div className="space-y-6">
         <div>
           <Checkbox
-            label="Enable Heat Warnings"
-            description="Receive alerts when temperature exceeds threshold"
+            label={t('temp.alerts.enableHeat')}
+            description={t('temp.alerts.enableHeat.desc')}
             checked={config?.enableHeatAlerts}
             onChange={(e) => setConfig({ ...config, enableHeatAlerts: e?.target?.checked })}
             className="mb-3"
@@ -43,10 +45,10 @@ const AlertConfiguration = ({ onSave }) => {
           {config?.enableHeatAlerts && (
             <Input
               type="number"
-              label="Heat Warning Threshold"
+              label={t('temp.alerts.heatThreshold')}
               value={config?.heatWarning}
               onChange={(e) => setConfig({ ...config, heatWarning: e?.target?.value })}
-              placeholder="Enter temperature in °C"
+              placeholder={t('temp.alerts.thresholdPlaceholder')}
               min={25}
               max={50}
             />
@@ -55,8 +57,8 @@ const AlertConfiguration = ({ onSave }) => {
 
         <div>
           <Checkbox
-            label="Enable Cold Weather Advisories"
-            description="Receive alerts when temperature drops below threshold"
+            label={t('temp.alerts.enableCold')}
+            description={t('temp.alerts.enableCold.desc')}
             checked={config?.enableColdAlerts}
             onChange={(e) => setConfig({ ...config, enableColdAlerts: e?.target?.checked })}
             className="mb-3"
@@ -64,10 +66,10 @@ const AlertConfiguration = ({ onSave }) => {
           {config?.enableColdAlerts && (
             <Input
               type="number"
-              label="Cold Warning Threshold"
+              label={t('temp.alerts.coldThreshold')}
               value={config?.coldWarning}
               onChange={(e) => setConfig({ ...config, coldWarning: e?.target?.value })}
-              placeholder="Enter temperature in °C"
+              placeholder={t('temp.alerts.thresholdPlaceholder')}
               min={-10}
               max={15}
             />
@@ -76,8 +78,8 @@ const AlertConfiguration = ({ onSave }) => {
 
         <div>
           <Checkbox
-            label="Enable Rapid Change Alerts"
-            description="Receive alerts for sudden temperature fluctuations"
+            label={t('temp.alerts.enableChange')}
+            description={t('temp.alerts.enableChange.desc')}
             checked={config?.enableChangeAlerts}
             onChange={(e) => setConfig({ ...config, enableChangeAlerts: e?.target?.checked })}
             className="mb-3"
@@ -85,10 +87,10 @@ const AlertConfiguration = ({ onSave }) => {
           {config?.enableChangeAlerts && (
             <Input
               type="number"
-              label="Temperature Change Threshold"
+              label={t('temp.alerts.changeThreshold')}
               value={config?.rapidChange}
               onChange={(e) => setConfig({ ...config, rapidChange: e?.target?.value })}
-              placeholder="Enter change in °C per hour"
+              placeholder={t('temp.alerts.changePlaceholder')}
               min={1}
               max={15}
             />
@@ -102,7 +104,7 @@ const AlertConfiguration = ({ onSave }) => {
           onClick={handleSave}
           fullWidth
         >
-          Save Alert Configuration
+          {t('temp.alerts.button.save')}
         </Button>
       </div>
     </div>

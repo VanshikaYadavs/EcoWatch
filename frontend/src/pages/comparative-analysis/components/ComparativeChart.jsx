@@ -1,8 +1,10 @@
 import React, { useMemo } from 'react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import Icon from '../../../components/AppIcon';
+import { useTranslation } from 'react-i18next';
 
 const ComparativeChart = ({ selectedCities, selectedParameters, timeRange, chartType }) => {
+  const { t } = useTranslation();
   const cityColors = {
     jaipur: '#2D7D32',
     jodhpur: '#FF6F00',
@@ -18,20 +20,7 @@ const ComparativeChart = ({ selectedCities, selectedParameters, timeRange, chart
     bhilwara: '#E64A19'
   };
 
-  const cityNames = {
-    jaipur: 'Jaipur',
-    jodhpur: 'Jodhpur',
-    udaipur: 'Udaipur',
-    kota: 'Kota',
-    ajmer: 'Ajmer',
-    bikaner: 'Bikaner',
-    alwar: 'Alwar',
-    bharatpur: 'Bharatpur',
-    sikar: 'Sikar',
-    pali: 'Pali',
-    tonk: 'Tonk',
-    bhilwara: 'Bhilwara'
-  };
+  const cityName = (id) => t(`cities.${id}`, { defaultValue: id });
 
   const generateMockData = useMemo(() => {
     const dataPoints = timeRange === '24h' ? 24 : timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : 90;
@@ -99,7 +88,7 @@ const ComparativeChart = ({ selectedCities, selectedParameters, timeRange, chart
                     style={{ backgroundColor: entry?.color }}
                   />
                   <span className="text-xs text-foreground">
-                    {cityNames?.[cityId]} - {param?.toUpperCase()}
+                    {cityName(cityId)} - {param?.toUpperCase()}
                   </span>
                 </div>
                 <span className="text-xs font-data font-medium text-foreground">
@@ -123,10 +112,10 @@ const ComparativeChart = ({ selectedCities, selectedParameters, timeRange, chart
           </div>
           <div>
             <h3 className="text-base md:text-lg font-semibold text-foreground mb-2">
-              No Data to Display
+              {t('comp.chart.emptyTitle')}
             </h3>
             <p className="text-xs md:text-sm text-muted-foreground max-w-md">
-              Select at least one city and one parameter to view comparative analysis
+              {t('comp.chart.emptyDesc')}
             </p>
           </div>
         </div>
@@ -143,13 +132,13 @@ const ComparativeChart = ({ selectedCities, selectedParameters, timeRange, chart
         <div className="flex items-center gap-2">
           <Icon name="TrendingUp" size={20} color="var(--color-primary)" />
           <h3 className="text-base md:text-lg font-semibold text-foreground">
-            Comparative Analysis
+            {t('comp.chart.title')}
           </h3>
         </div>
         <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10">
           <Icon name="Activity" size={14} color="var(--color-primary)" />
           <span className="text-xs font-caption text-primary">
-            Live Data
+            {t('comp.chart.live')}
           </span>
         </div>
       </div>
@@ -172,7 +161,7 @@ const ComparativeChart = ({ selectedCities, selectedParameters, timeRange, chart
               wrapperStyle={{ fontSize: '12px' }}
               formatter={(value) => {
                 const [cityId, param] = value?.split('_');
-                return `${cityNames?.[cityId]} - ${param?.toUpperCase()}`;
+                return `${cityName(cityId)} - ${param?.toUpperCase()}`;
               }}
             />
             {selectedCities?.map(cityId => 
@@ -198,7 +187,7 @@ const ComparativeChart = ({ selectedCities, selectedParameters, timeRange, chart
               style={{ backgroundColor: cityColors?.[cityId] }}
             />
             <span className="text-xs font-medium text-foreground">
-              {cityNames?.[cityId]}
+              {cityName(cityId)}
             </span>
           </div>
         ))}

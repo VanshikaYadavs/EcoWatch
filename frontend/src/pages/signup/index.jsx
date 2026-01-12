@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Helmet } from 'react-helmet';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthProvider';
 import Input from '../../components/ui/Input';
@@ -17,6 +18,7 @@ const roleOptions = [
 ];
 
 const Signup = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { signUpWithPassword } = useAuth();
 
@@ -53,7 +55,7 @@ const Signup = () => {
   return (
     <>
       <Helmet>
-        <title>Sign up - EchoWatch</title>
+        <title>{`${t('signup.title')} - EcoWatch`}</title>
       </Helmet>
       <div className="min-h-screen bg-background flex flex-col">
         <header className="bg-card border-b border-border shadow-sm">
@@ -75,8 +77,8 @@ const Signup = () => {
         <main className="flex-1 container mx-auto px-4 md:px-6 lg:px-8 py-8 md:py-12">
           <div className="max-w-2xl mx-auto bg-card border border-border rounded-2xl shadow-xl p-6 md:p-8 lg:p-10">
             <div className="mb-6">
-              <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">Create your account</h2>
-              <p className="text-sm text-muted-foreground">Enter your details to sign up. We'll send you a verification email.</p>
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">{t('signup.title')}</h2>
+              <p className="text-sm text-muted-foreground">{t('signup.subtitle')}</p>
             </div>
 
             {sent ? (

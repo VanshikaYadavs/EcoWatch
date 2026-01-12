@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import RealtimeNoiseMeter from './components/RealtimeNoiseMeter';
 import NoiseTimelineChart from './components/NoiseTimelineChart';
 import LocationFilter from './components/LocationFilter';
@@ -10,6 +11,7 @@ import { RAJASTHAN_PLACES } from '../../utils/rajasthanLocations';
 import { useEnvironmentReadings } from '../../utils/dataHooks';
 
 const NoiseLevelTracking = () => {
+  const { t } = useTranslation();
   
 
   const [selectedLocation, setSelectedLocation] = useState('all');
@@ -37,8 +39,8 @@ const NoiseLevelTracking = () => {
     if (base.length) return base;
     // Fallback demo locations
     return [
-      { id: RAJASTHAN_PLACES?.[0]?.value || 'Jaipur', name: RAJASTHAN_PLACES?.[0]?.label || 'MI Road, Jaipur', type: 'Commercial', sensors: 12, density: 'High' },
-      { id: RAJASTHAN_PLACES?.[1]?.value || 'Jodhpur', name: RAJASTHAN_PLACES?.[1]?.label || 'Clock Tower, Jodhpur', type: 'Educational', sensors: 8, density: 'Medium' },
+      { id: RAJASTHAN_PLACES?.[0]?.value || 'Jaipur', name: RAJASTHAN_PLACES?.[0]?.label || t('locations.miRoad'), type: 'Commercial', sensors: 12, density: 'High' },
+      { id: RAJASTHAN_PLACES?.[1]?.value || 'Jodhpur', name: RAJASTHAN_PLACES?.[1]?.label || t('locations.clockTower'), type: 'Educational', sensors: 8, density: 'Medium' },
     ];
   }, [readings]);
 
@@ -75,11 +77,11 @@ const NoiseLevelTracking = () => {
   });
 
   const [comparativeZones, setComparativeZones] = useState([
-    { id: 1, name: RAJASTHAN_PLACES?.[0]?.label || 'MI Road, Jaipur', type: 'Commercial', sensors: 12, currentLevel: 68, peakLevel: 82, averageLevel: 61, trend: 8, compliant: false },
-    { id: 2, name: RAJASTHAN_PLACES?.[1]?.label || 'Clock Tower, Jodhpur', type: 'Educational', sensors: 8, currentLevel: 52, peakLevel: 58, averageLevel: 48, trend: -3, compliant: true },
-    { id: 3, name: RAJASTHAN_PLACES?.[2]?.label || 'Lake Pichola, Udaipur', type: 'Healthcare', sensors: 15, currentLevel: 48, peakLevel: 55, averageLevel: 45, trend: 2, compliant: true },
-    { id: 4, name: RAJASTHAN_PLACES?.[3]?.label || 'Pushkar Road, Ajmer', type: 'Residential', sensors: 10, currentLevel: 58, peakLevel: 65, averageLevel: 54, trend: 5, compliant: false },
-    { id: 5, name: RAJASTHAN_PLACES?.[4]?.label || 'Industrial Area, Tonk', type: 'Industrial', sensors: 6, currentLevel: 75, peakLevel: 88, averageLevel: 72, trend: 12, compliant: false }
+    { id: 1, name: RAJASTHAN_PLACES?.[0]?.label || t('locations.miRoad'), type: 'Commercial', sensors: 12, currentLevel: 68, peakLevel: 82, averageLevel: 61, trend: 8, compliant: false },
+    { id: 2, name: RAJASTHAN_PLACES?.[1]?.label || t('locations.clockTower'), type: 'Educational', sensors: 8, currentLevel: 52, peakLevel: 58, averageLevel: 48, trend: -3, compliant: true },
+    { id: 3, name: RAJASTHAN_PLACES?.[2]?.label || t('locations.lakePichola'), type: 'Healthcare', sensors: 15, currentLevel: 48, peakLevel: 55, averageLevel: 45, trend: 2, compliant: true },
+    { id: 4, name: RAJASTHAN_PLACES?.[3]?.label || t('locations.pushkarRoad'), type: 'Residential', sensors: 10, currentLevel: 58, peakLevel: 65, averageLevel: 54, trend: 5, compliant: false },
+    { id: 5, name: RAJASTHAN_PLACES?.[4]?.label || t('locations.industrialTonk'), type: 'Industrial', sensors: 6, currentLevel: 75, peakLevel: 88, averageLevel: 72, trend: 12, compliant: false }
   ]);
 
   const [exportSettings, setExportSettings] = useState({
@@ -128,8 +130,8 @@ const NoiseLevelTracking = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl md:text-2xl font-semibold text-foreground">Noise Level Tracking</h1>
-        <p className="text-sm text-muted-foreground">Acoustic monitoring and compliance insights</p>
+        <h1 className="text-xl md:text-2xl font-semibold text-foreground">{t('noise.title')}</h1>
+        <p className="text-sm text-muted-foreground">{t('noise.subtitle')}</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8">

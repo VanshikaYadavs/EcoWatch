@@ -3,8 +3,10 @@ import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 import Select from '../../../components/ui/Select';
 import { Checkbox } from '../../../components/ui/Checkbox';
+import { useTranslation } from 'react-i18next';
 
 const ExportReportPanel = ({ onExport }) => {
+  const { t } = useTranslation();
   const [exportConfig, setExportConfig] = useState({
     format: 'pdf',
     period: 'monthly',
@@ -15,18 +17,18 @@ const ExportReportPanel = ({ onExport }) => {
   });
 
   const formatOptions = [
-    { value: 'pdf', label: 'PDF Document', description: 'Formatted report with charts' },
-    { value: 'excel', label: 'Excel Spreadsheet', description: 'Raw data for analysis' },
-    { value: 'csv', label: 'CSV File', description: 'Comma-separated values' },
-    { value: 'json', label: 'JSON Data', description: 'Structured data format' }
+    { value: 'pdf', label: t('temp.export.format.pdf'), description: t('temp.export.format.pdf.desc') },
+    { value: 'excel', label: t('temp.export.format.excel'), description: t('temp.export.format.excel.desc') },
+    { value: 'csv', label: t('temp.export.format.csv'), description: t('temp.export.format.csv.desc') },
+    { value: 'json', label: t('temp.export.format.json'), description: t('temp.export.format.json.desc') }
   ];
 
   const periodOptions = [
-    { value: 'daily', label: 'Daily Report' },
-    { value: 'weekly', label: 'Weekly Summary' },
-    { value: 'monthly', label: 'Monthly Analysis' },
-    { value: 'quarterly', label: 'Quarterly Review' },
-    { value: 'yearly', label: 'Annual Report' }
+    { value: 'daily', label: t('temp.export.period.daily') },
+    { value: 'weekly', label: t('temp.export.period.weekly') },
+    { value: 'monthly', label: t('temp.export.period.monthly') },
+    { value: 'quarterly', label: t('temp.export.period.quarterly') },
+    { value: 'yearly', label: t('temp.export.period.yearly') }
   ];
 
   const handleExport = () => {
@@ -42,52 +44,52 @@ const ExportReportPanel = ({ onExport }) => {
           <Icon name="Download" size={20} color="var(--color-success)" />
         </div>
         <div>
-          <h3 className="text-lg font-semibold text-foreground">Export Climate Report</h3>
-          <p className="caption text-muted-foreground">Generate reports for planning and analysis</p>
+          <h3 className="text-lg font-semibold text-foreground">{t('temp.export.title')}</h3>
+          <p className="caption text-muted-foreground">{t('temp.export.subtitle')}</p>
         </div>
       </div>
       <div className="space-y-4">
         <Select
-          label="Report Format"
+          label={t('temp.export.select.format')}
           options={formatOptions}
           value={exportConfig?.format}
           onChange={(value) => setExportConfig({ ...exportConfig, format: value })}
         />
 
         <Select
-          label="Time Period"
+          label={t('temp.export.select.period')}
           options={periodOptions}
           value={exportConfig?.period}
           onChange={(value) => setExportConfig({ ...exportConfig, period: value })}
         />
 
         <div className="space-y-3 pt-2">
-          <p className="text-sm font-medium text-foreground">Include in Report:</p>
+          <p className="text-sm font-medium text-foreground">{t('temp.export.includeTitle')}</p>
           
           <Checkbox
-            label="Temperature Charts"
-            description="Visual representations of temperature trends"
+            label={t('temp.export.include.charts')}
+            description={t('temp.export.include.charts.desc')}
             checked={exportConfig?.includeCharts}
             onChange={(e) => setExportConfig({ ...exportConfig, includeCharts: e?.target?.checked })}
           />
 
           <Checkbox
-            label="Statistical Analysis"
-            description="Mean, median, variance, and distribution data"
+            label={t('temp.export.include.stats')}
+            description={t('temp.export.include.stats.desc')}
             checked={exportConfig?.includeStatistics}
             onChange={(e) => setExportConfig({ ...exportConfig, includeStatistics: e?.target?.checked })}
           />
 
           <Checkbox
-            label="Alert History"
-            description="Record of temperature warnings and advisories"
+            label={t('temp.export.include.alerts')}
+            description={t('temp.export.include.alerts.desc')}
             checked={exportConfig?.includeAlerts}
             onChange={(e) => setExportConfig({ ...exportConfig, includeAlerts: e?.target?.checked })}
           />
 
           <Checkbox
-            label="Location Comparison"
-            description="Comparative analysis between monitoring zones"
+            label={t('temp.export.include.comparison')}
+            description={t('temp.export.include.comparison.desc')}
             checked={exportConfig?.includeComparison}
             onChange={(e) => setExportConfig({ ...exportConfig, includeComparison: e?.target?.checked })}
           />
@@ -101,7 +103,7 @@ const ExportReportPanel = ({ onExport }) => {
           fullWidth
           className="mt-6"
         >
-          Generate Report
+          {t('temp.export.button.generate')}
         </Button>
       </div>
     </div>

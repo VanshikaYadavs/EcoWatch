@@ -3,8 +3,10 @@ import Icon from '../../../components/AppIcon';
 import Input from '../../../components/ui/Input';
 import Button from '../../../components/ui/Button';
 import { Checkbox } from '../../../components/ui/Checkbox';
+import { useTranslation } from 'react-i18next';
 
 const ChannelConfiguration = ({ settings, onSettingsChange }) => {
+  const { t } = useTranslation();
   const [contactInfo, setContactInfo] = useState({
     email: 'user@example.com',
     phone: '+1234567890',
@@ -37,34 +39,34 @@ const ChannelConfiguration = ({ settings, onSettingsChange }) => {
   const channels = [
     {
       id: 'email',
-      label: 'Email Notifications',
+      label: t('notif.channel.email.label'),
       icon: 'Mail',
       color: 'var(--color-primary)',
-      description: 'Receive detailed alerts and reports via email',
+      description: t('notif.channel.email.desc'),
       features: ['Detailed alert information', 'Attached reports and charts', 'Customizable templates', 'Delivery confirmation']
     },
     {
       id: 'sms',
-      label: 'SMS Notifications',
+      label: t('notif.channel.sms.label'),
       icon: 'MessageSquare',
       color: 'var(--color-success)',
-      description: 'Receive urgent alerts via text message',
+      description: t('notif.channel.sms.desc'),
       features: ['Instant delivery', 'Critical alerts only', 'No internet required', 'Character limit: 160']
     },
     {
       id: 'push',
-      label: 'Push Notifications',
+      label: t('notif.channel.push.label'),
       icon: 'Bell',
       color: 'var(--color-warning)',
-      description: 'Receive real-time browser notifications',
+      description: t('notif.channel.push.desc'),
       features: ['Real-time delivery', 'Interactive actions', 'Works when app is closed', 'Requires browser permission']
     },
     {
       id: 'dashboard',
-      label: 'Dashboard Alerts',
+      label: t('notif.channel.dashboard.label'),
       icon: 'LayoutDashboard',
       color: 'var(--color-error)',
-      description: 'Display alerts on the main dashboard',
+      description: t('notif.channel.dashboard.desc'),
       features: ['Always visible', 'Persistent until dismissed', 'Visual indicators', 'Quick access to details']
     }
   ];
@@ -75,16 +77,16 @@ const ChannelConfiguration = ({ settings, onSettingsChange }) => {
       <div className="bg-muted rounded-lg p-4 md:p-6">
         <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
           <Icon name="User" size={20} color="var(--color-primary)" />
-          Contact Information
+          {t('notif.contact.title')}
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Input
-              label="Email Address"
+              label={t('notif.contact.email.label')}
               type="email"
               value={contactInfo?.email}
               onChange={(e) => setContactInfo({ ...contactInfo, email: e?.target?.value })}
-              description={contactInfo?.verified?.email ? '✓ Verified' : 'Not verified'}
+              description={contactInfo?.verified?.email ? t('notif.contact.verified') : t('notif.contact.notVerified')}
             />
             {!contactInfo?.verified?.email && (
               <Button
@@ -94,17 +96,17 @@ const ChannelConfiguration = ({ settings, onSettingsChange }) => {
                 iconPosition="left"
                 onClick={() => handleVerifyContact('email')}
               >
-                Verify Email
+                {t('notif.contact.verifyEmail')}
               </Button>
             )}
           </div>
           <div className="space-y-2">
             <Input
-              label="Phone Number"
+              label={t('notif.contact.phone.label')}
               type="tel"
               value={contactInfo?.phone}
               onChange={(e) => setContactInfo({ ...contactInfo, phone: e?.target?.value })}
-              description={contactInfo?.verified?.phone ? '✓ Verified' : 'Not verified'}
+              description={contactInfo?.verified?.phone ? t('notif.contact.verified') : t('notif.contact.notVerified')}
             />
             {!contactInfo?.verified?.phone && (
               <Button
@@ -114,7 +116,7 @@ const ChannelConfiguration = ({ settings, onSettingsChange }) => {
                 iconPosition="left"
                 onClick={() => handleVerifyContact('phone')}
               >
-                Verify Phone
+                {t('notif.contact.verifyPhone')}
               </Button>
             )}
           </div>
@@ -123,7 +125,7 @@ const ChannelConfiguration = ({ settings, onSettingsChange }) => {
 
       {/* Notification Channels */}
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-foreground">Notification Channels</h3>
+        <h3 className="text-lg font-semibold text-foreground">{t('notif.channel.title')}</h3>
         {channels?.map((channel) => (
           <div
             key={channel?.id}
@@ -139,7 +141,7 @@ const ChannelConfiguration = ({ settings, onSettingsChange }) => {
                     <h4 className="text-base font-semibold text-foreground">{channel?.label}</h4>
                     {settings?.channels?.[channel?.id] && (
                       <span className="px-2 py-0.5 bg-success/10 text-success text-xs font-medium rounded-full">
-                        Active
+                        {t('notif.channel.active')}
                       </span>
                     )}
                   </div>
@@ -154,7 +156,7 @@ const ChannelConfiguration = ({ settings, onSettingsChange }) => {
 
             {settings?.channels?.[channel?.id] && (
               <div className="mt-4 pt-4 border-t border-border">
-                <h5 className="text-sm font-medium text-foreground mb-2">Features:</h5>
+                <h5 className="text-sm font-medium text-foreground mb-2">{t('notif.channel.features')}</h5>
                 <ul className="space-y-1 mb-4">
                   {channel?.features?.map((feature, index) => (
                     <li key={index} className="text-sm text-muted-foreground flex items-center gap-2">
@@ -183,10 +185,9 @@ const ChannelConfiguration = ({ settings, onSettingsChange }) => {
         <div className="flex items-start gap-3">
           <Icon name="Info" size={20} color="var(--color-primary)" className="mt-0.5" />
           <div>
-            <h4 className="font-semibold text-foreground mb-1">Channel Priority</h4>
+            <h4 className="font-semibold text-foreground mb-1">{t('notif.channel.priority.title')}</h4>
             <p className="text-sm text-muted-foreground">
-              Critical alerts will be sent through all enabled channels. Standard alerts will use email and dashboard only.
-              SMS notifications are reserved for high-priority and critical alerts to avoid message overload.
+              {t('notif.channel.priority.desc')}
             </p>
           </div>
         </div>

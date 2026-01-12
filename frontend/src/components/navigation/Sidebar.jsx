@@ -1,57 +1,59 @@
 import React, { useMemo, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import Icon from '../AppIcon';
 import { useAuth } from '../../auth/AuthProvider';
 import { useMyProfile } from '../../utils/profileHooks';
 
 const Sidebar = ({ isCollapsed = false, onToggleCollapse }) => {
+  const { t } = useTranslation();
   const location = useLocation();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   const navigationItems = [
     {
-      label: 'Dashboard',
+      label: t('nav.dashboard'),
       path: '/environmental-dashboard',
       icon: 'LayoutDashboard',
-      description: 'Real-time environmental overview'
+      description: t('nav.dashboard.desc')
     },
     {
-      label: 'Air Quality',
+      label: t('nav.airQuality'),
       path: '/air-quality-monitor',
       icon: 'Wind',
-      description: 'AQI monitoring and analysis'
+      description: t('nav.airQuality.desc')
     },
     {
-      label: 'Noise Monitoring',
+      label: t('nav.noiseMonitoring'),
       path: '/noise-level-tracking',
       icon: 'Volume2',
-      description: 'Acoustic pollution tracking'
+      description: t('nav.noiseMonitoring.desc')
     },
     {
-      label: 'Temperature',
+      label: t('nav.temperature'),
       path: '/temperature-analytics',
       icon: 'Thermometer',
-      description: 'Thermal analytics and trends'
+      description: t('nav.temperature.desc')
     },
     {
-      label: 'Reports',
+      label: t('nav.reports'),
       path: '/historical-reports',
       icon: 'FileText',
-      description: 'Historical analysis and compliance',
+      description: t('nav.reports.desc'),
       roles: ['admin', 'official', 'analyst', 'researcher']
     },
     {
-      label: 'Notifications',
+      label: t('nav.notifications'),
       path: '/notification-settings',
       icon: 'Bell',
-      description: 'Alert preferences and settings',
+      description: t('nav.notifications.desc'),
       roles: ['admin', 'official']
     },
     {
-      label: 'Profile',
+      label: t('nav.profile'),
       path: '/user-profile',
       icon: 'User',
-      description: 'Account settings and preferences'
+      description: t('nav.profile.desc')
     }
   ];
 
@@ -121,7 +123,7 @@ const Sidebar = ({ isCollapsed = false, onToggleCollapse }) => {
         {!isCollapsed && (
           <div className="absolute bottom-8 left-4 right-4 p-4 bg-muted rounded-lg">
             <p className="caption text-muted-foreground text-center">
-              Environmental Monitoring System
+              {t('app.subtitle')}
             </p>
             <p className="caption text-muted-foreground text-center mt-1">
               v2.1.0 • 2026

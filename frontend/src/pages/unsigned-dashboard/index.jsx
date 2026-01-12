@@ -10,6 +10,7 @@ import InteractiveMap from './components/InteractiveMap';
 import AlertCard from './components/AlertCard';
 import ParameterFilterChip from './components/ParameterFilterChip';
 import QuickStatsPanel from './components/QuickStatsPanel';
+import { useTranslation } from 'react-i18next';
 
 const EnvironmentalDashboard = () => {
   const navigate = useNavigate();
@@ -18,66 +19,68 @@ const EnvironmentalDashboard = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
 
+  const { t } = useTranslation();
+
   const currentMetrics = [
   {
     id: 1,
-    title: "Air Quality Index",
+    title: t('metrics.aqi.title'),
     value: 156,
     unit: "AQI",
     status: "moderate",
     trend: "up",
     icon: "Wind",
-    description: "Moderate air quality. Sensitive groups should limit outdoor exposure."
+    description: t('metrics.aqi.desc')
   },
   {
     id: 2,
-    title: "Noise Level",
+    title: t('metrics.noise.title'),
     value: 72,
     unit: "dB",
     status: "moderate",
     trend: "stable",
     icon: "Volume2",
-    description: "Noise levels within acceptable range for urban areas."
+    description: t('metrics.noise.desc')
   },
   {
     id: 3,
-    title: "Temperature",
+    title: t('metrics.temperature.title'),
     value: 34,
     unit: "°C",
     status: "good",
     trend: "up",
     icon: "Thermometer",
-    description: "Temperature rising. Stay hydrated and avoid direct sun exposure."
+    description: t('metrics.temperature.desc')
   },
   {
     id: 4,
-    title: "Humidity",
+    title: t('metrics.humidity.title'),
     value: 45,
     unit: "%",
     status: "good",
     trend: "down",
     icon: "Droplets",
-    description: "Comfortable humidity levels for outdoor activities."
+    description: t('metrics.humidity.desc')
   },
   {
     id: 5,
-    title: "PM2.5 Levels",
+    title: t('metrics.pm25.title'),
     value: 89,
     unit: "µg/m³",
     status: "moderate",
     trend: "up",
     icon: "Cloud",
-    description: "Particulate matter levels elevated. Use masks if sensitive."
+    description: t('metrics.pm25.desc')
   },
   {
     id: 6,
-    title: "UV Index",
+    title: t('metrics.uv.title'),
     value: 8,
     unit: "UV",
     status: "unhealthy",
     trend: "up",
     icon: "Sun",
-    description: "Very high UV levels. Use sunscreen and protective clothing."
+    description: t('metrics.uv.desc')
   }];
 
 
@@ -159,35 +162,35 @@ const EnvironmentalDashboard = () => {
   const hotspots = [
   {
     id: 1,
-    location: "MI Road, Jaipur",
+    location: t('locations.miRoad'),
     severity: "high",
     type: "AQI",
     value: "198 AQI"
   },
   {
     id: 2,
-    location: "Clock Tower, Jodhpur",
+    location: t('locations.clockTower'),
     severity: "medium",
     type: "Noise",
     value: "85 dB"
   },
   {
     id: 3,
-    location: "Lake Pichola, Udaipur",
+    location: t('locations.lakePichola'),
     severity: "low",
     type: "Temperature",
     value: "31°C"
   },
   {
     id: 4,
-    location: "Pushkar Road, Ajmer",
+    location: t('locations.pushkarRoad'),
     severity: "high",
     type: "PM2.5",
     value: "156 µg/m³"
   },
   {
     id: 5,
-    location: "Industrial Area, Tonk",
+    location: t('locations.industrialTonk'),
     severity: "medium",
     type: "AQI",
     value: "145 AQI"
@@ -198,7 +201,7 @@ const EnvironmentalDashboard = () => {
   {
     id: 1,
     title: "High AQI Detected",
-    location: "MI Road, Jaipur",
+    location: t('locations.miRoad'),
     severity: "critical",
     timestamp: new Date(Date.now() - 15 * 60000),
     parameter: "Air Quality Index",
@@ -208,7 +211,7 @@ const EnvironmentalDashboard = () => {
   {
     id: 2,
     title: "Elevated Noise Levels",
-    location: "Clock Tower, Jodhpur",
+    location: t('locations.clockTower'),
     severity: "high",
     timestamp: new Date(Date.now() - 45 * 60000),
     parameter: "Noise Level",
@@ -218,7 +221,7 @@ const EnvironmentalDashboard = () => {
   {
     id: 3,
     title: "PM2.5 Threshold Exceeded",
-    location: "Pushkar Road, Ajmer",
+    location: t('locations.pushkarRoad'),
     severity: "critical",
     timestamp: new Date(Date.now() - 90 * 60000),
     parameter: "PM2.5 Concentration",
@@ -228,7 +231,7 @@ const EnvironmentalDashboard = () => {
   {
     id: 4,
     title: "Temperature Alert",
-    location: "Industrial Area, Bikaner",
+    location: t('locations.bikanerIndustrial'),
     severity: "medium",
     timestamp: new Date(Date.now() - 120 * 60000),
     parameter: "Temperature",
@@ -238,42 +241,42 @@ const EnvironmentalDashboard = () => {
 
 
   const filterOptions = [
-  { id: 'all', label: 'All Parameters', icon: 'LayoutGrid', count: 6 },
-  { id: 'aqi', label: 'Air Quality', icon: 'Wind', count: 2 },
-  { id: 'noise', label: 'Noise', icon: 'Volume2', count: 1 },
-  { id: 'temperature', label: 'Temperature', icon: 'Thermometer', count: 1 },
-  { id: 'humidity', label: 'Humidity', icon: 'Droplets', count: 1 },
-  { id: 'pm25', label: 'PM2.5', icon: 'Cloud', count: 1 }];
+  { id: 'all', label: t('filters.all'), icon: 'LayoutGrid', count: 6 },
+  { id: 'aqi', label: t('filters.aqi'), icon: 'Wind', count: 2 },
+  { id: 'noise', label: t('filters.noise'), icon: 'Volume2', count: 1 },
+  { id: 'temperature', label: t('filters.temperature'), icon: 'Thermometer', count: 1 },
+  { id: 'humidity', label: t('filters.humidity'), icon: 'Droplets', count: 1 },
+  { id: 'pm25', label: t('filters.pm25'), icon: 'Cloud', count: 1 }];
 
 
   const quickStats = [
   {
-    label: "Cities Monitored",
+    label: t('stats.citiesMonitored'),
     value: "10",
     icon: "MapPin",
     color: "var(--color-primary)",
     bgColor: "bg-primary/10"
   },
   {
-    label: "Active Alerts",
+    label: t('stats.activeAlerts'),
     value: "24",
     icon: "Bell",
     color: "var(--color-error)",
     bgColor: "bg-error/10",
-    change: "12% from yesterday",
+    change: t('stats.alertsChange', { percent: '12%' }),
     changeType: "negative"
   },
   {
-    label: "Avg AQI Today",
+    label: t('stats.avgAqi'),
     value: "142",
     icon: "TrendingUp",
     color: "var(--color-warning)",
     bgColor: "bg-warning/10",
-    change: "8% improvement",
+    change: t('stats.aqiImprovement', { percent: '8%' }),
     changeType: "positive"
   },
   {
-    label: "Hotspots",
+    label: t('stats.hotspots'),
     value: "5",
     icon: "AlertTriangle",
     color: "var(--color-accent)",
@@ -305,10 +308,10 @@ const EnvironmentalDashboard = () => {
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
               <div>
                 <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-2">
-                  Environmental Dashboard
+                  {t('page.title')}
                 </h1>
                 <p className="text-sm md:text-base text-muted-foreground">
-                  Real-time environmental monitoring across Rajasthan • Updated {new Date()?.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+                  {t('page.subtitle')} • {t('page.updatedAt', { time: new Date()?.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) })}
                 </p>
               </div>
               <div className="flex flex-col sm:flex-row gap-3">
@@ -318,7 +321,7 @@ const EnvironmentalDashboard = () => {
                   iconPosition="left"
                   onClick={() => navigate('/comparative-analysis')}>
 
-                  Compare Cities
+                  {t('buttons.compareCities')}
                 </Button>
                 <Button
                   variant="default"
@@ -326,7 +329,7 @@ const EnvironmentalDashboard = () => {
                   iconPosition="left"
                   onClick={() => navigate('/login')}>
 
-                  Sign In for Alerts
+                  {t('buttons.signInAlerts')}
                 </Button>
               </div>
             </div>
@@ -339,7 +342,7 @@ const EnvironmentalDashboard = () => {
 
               <Input
                 type="search"
-                placeholder="Search for cities, parameters, or locations..."
+                placeholder={t('placeholders.search')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e?.target?.value)}
                 className="pl-12 pr-4 py-3 md:py-4 text-base" />
@@ -354,7 +357,7 @@ const EnvironmentalDashboard = () => {
           <div className="mb-8 md:mb-10 lg:mb-12">
             <div className="flex items-center justify-between mb-4 md:mb-6">
               <h2 className="text-xl md:text-2xl lg:text-3xl font-bold text-foreground">
-                Filter by Parameter
+                {t('sections.filterBy')}
               </h2>
             </div>
             <div className="flex gap-2 md:gap-3 overflow-x-auto pb-2 scroll-padding-top smooth-scroll">
@@ -374,7 +377,7 @@ const EnvironmentalDashboard = () => {
           <div className="mb-8 md:mb-10 lg:mb-12">
             <div className="flex items-center justify-between mb-4 md:mb-6">
               <h2 className="text-xl md:text-2xl lg:text-3xl font-bold text-foreground">
-                Current Environmental Metrics
+                {t('sections.currentMetrics')}
               </h2>
               <div className="hidden md:flex gap-2">
                 <button
@@ -407,7 +410,7 @@ const EnvironmentalDashboard = () => {
           <div className="mb-8 md:mb-10 lg:mb-12">
             <div className="flex items-center justify-between mb-4 md:mb-6">
               <h2 className="text-xl md:text-2xl lg:text-3xl font-bold text-foreground">
-                City-wise Environmental Data
+                {t('sections.cityData')}
               </h2>
               <div className="hidden md:flex gap-2">
                 <button
@@ -441,11 +444,11 @@ const EnvironmentalDashboard = () => {
           <div className="mb-8 md:mb-10 lg:mb-12">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4 md:mb-6">
               <h2 className="text-xl md:text-2xl lg:text-3xl font-bold text-foreground">
-                Environmental Hotspots Map
+                {t('sections.hotspotsMap')}
               </h2>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Icon name="MapPin" size={16} />
-                <span>Click markers for detailed information</span>
+                <span>{t('sections.clickMarkers')}</span>
               </div>
             </div>
             <InteractiveMap hotspots={hotspots} />
@@ -454,7 +457,7 @@ const EnvironmentalDashboard = () => {
           <div>
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4 md:mb-6">
               <h2 className="text-xl md:text-2xl lg:text-3xl font-bold text-foreground">
-                Recent Environmental Alerts
+                {t('sections.recentAlerts')}
               </h2>
               <Button
                 variant="outline"
@@ -463,7 +466,7 @@ const EnvironmentalDashboard = () => {
                 iconPosition="left"
                 onClick={() => navigate('/login')}>
 
-                Sign In to Manage Alerts
+                {t('buttons.signInManage')}
               </Button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5 lg:gap-6">
@@ -483,10 +486,10 @@ const EnvironmentalDashboard = () => {
                 <Icon name="Bell" size={32} color="var(--color-primary)" className="md:w-10 md:h-10" />
               </div>
               <h3 className="text-2xl md:text-3xl font-bold text-foreground mb-3 md:mb-4">
-                Get Real-time Environmental Alerts
+                {t('cta.title')}
               </h3>
               <p className="text-base md:text-lg text-muted-foreground mb-6 md:mb-8">
-                Sign in to receive instant notifications when environmental thresholds are exceeded in your area. Stay informed and take timely action.
+                {t('cta.description')}
               </p>
               <Button
                 variant="default"
@@ -495,7 +498,7 @@ const EnvironmentalDashboard = () => {
                 iconPosition="left"
                 onClick={() => navigate('/login')}>
 
-                Create Free Account
+                {t('buttons.createAccount')}
               </Button>
             </div>
           </div>
@@ -505,49 +508,46 @@ const EnvironmentalDashboard = () => {
         <div className="max-w-[1600px] mx-auto px-4 md:px-6 lg:px-8 py-8 md:py-10 lg:py-12">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
             <div>
-              <div className="flex items-center gap-3 mb-4">
+                <div className="flex items-center gap-3 mb-4">
                 <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10">
                   <Icon name="Wind" size={24} color="var(--color-primary)" />
                 </div>
-                <span className="text-xl font-heading font-semibold text-foreground">EchoWatch</span>
+                <span className="text-xl font-heading font-semibold text-foreground">{t('brand.name')}</span>
               </div>
               <p className="text-sm text-muted-foreground">
-                Real-time environmental monitoring for a sustainable Rajasthan.
+                {t('brand.tagline')}
               </p>
             </div>
-
             <div>
-              <h4 className="text-sm font-semibold text-foreground mb-4">Quick Links</h4>
+              <h4 className="text-sm font-semibold text-foreground mb-4">{t('footer.quickLinks')}</h4>
               <ul className="space-y-2">
                 <li>
                   <button onClick={() => navigate('/environmental-dashboard')} className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                    Dashboard
+                    {t('footer.links.dashboard')}
                   </button>
                 </li>
                 <li>
                   <button onClick={() => navigate('/comparative-analysis')} className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                    Compare Cities
+                    {t('footer.links.compare')}
                   </button>
                 </li>
                 <li>
                   <button onClick={() => navigate('/alert-management')} className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                    Alert Center
+                    {t('footer.links.alerts')}
                   </button>
                 </li>
               </ul>
             </div>
-
             <div>
-              <h4 className="text-sm font-semibold text-foreground mb-4">Resources</h4>
+              <h4 className="text-sm font-semibold text-foreground mb-4">{t('footer.resources.title')}</h4>
               <ul className="space-y-2">
-                <li><a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">About AQI</a></li>
-                <li><a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">Health Guidelines</a></li>
-                <li><a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">Data Sources</a></li>
+                <li><a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">{t('footer.resources.about')}</a></li>
+                <li><a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">{t('footer.resources.health')}</a></li>
+                <li><a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">{t('footer.resources.data')}</a></li>
               </ul>
             </div>
-
             <div>
-              <h4 className="text-sm font-semibold text-foreground mb-4">Contact</h4>
+              <h4 className="text-sm font-semibold text-foreground mb-4">{t('footer.contact.title')}</h4>
               <ul className="space-y-2">
                 <li className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Icon name="Mail" size={16} />
@@ -563,7 +563,7 @@ const EnvironmentalDashboard = () => {
 
           <div className="pt-6 border-t border-border text-center">
             <p className="text-sm text-muted-foreground">
-              © {new Date()?.getFullYear()} EchoWatch. All rights reserved. | Monitoring Rajasthan's Environment
+              © {new Date()?.getFullYear()} {t('brand.name')}. {t('footer.rights')} | {t('footer.monitoring')}
             </p>
           </div>
         </div>

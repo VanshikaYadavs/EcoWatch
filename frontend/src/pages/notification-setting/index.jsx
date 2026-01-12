@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
 import ThresholdConfiguration from './components/ThresholdConfiguration';
@@ -9,6 +10,7 @@ import { useAuth } from '../../auth/AuthProvider';
 import { loadUserPreferences, saveUserPreferences } from '../../utils/preferences';
 
 const NotificationSettings = () => {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('thresholds');
   const { user } = useAuth();
   const [loadingPrefs, setLoadingPrefs] = useState(false);
@@ -148,37 +150,37 @@ const NotificationSettings = () => {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground">
-            Notification Settings
+            {t('notif.title')}
           </h1>
           <p className="text-sm md:text-base text-muted-foreground mt-2">
-            Configure alert thresholds, channels, and frequency for environmental monitoring
+            {t('notif.subtitle')}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button
+            <Button
             variant="outline"
             iconName="Download"
             iconPosition="left"
             onClick={handleExportConfig}
           >
-            Export Config
+            {t('buttons.export')}
           </Button>
-          <Button
+            <Button
             variant="outline"
             iconName="TestTube"
             iconPosition="left"
             onClick={handleTestNotification}
           >
-            Test Alerts
+            {t('buttons.alerts')}
           </Button>
-          <Button
+            <Button
             variant="default"
             iconName="Save"
             iconPosition="left"
             onClick={handleSaveSettings}
             disabled={!canSave}
           >
-            Save Settings
+            {t('buttons.save')}
           </Button>
         </div>
       </div>

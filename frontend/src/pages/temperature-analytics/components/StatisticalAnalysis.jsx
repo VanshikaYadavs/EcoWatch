@@ -1,15 +1,18 @@
 import React from 'react';
 import Icon from '../../../components/AppIcon';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { useTranslation } from 'react-i18next';
 
 const StatisticalAnalysis = ({ data, period = 'monthly' }) => {
+  const { t } = useTranslation();
+
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload?.length) {
       return (
         <div className="bg-card border border-border rounded-lg p-3 shadow-lg">
           <p className="caption font-medium text-foreground mb-2">{label}</p>
           <p className="caption text-muted-foreground">
-            Average: <span className="font-medium text-foreground">{payload?.[0]?.value}°C</span>
+            {t('temp.stats.average')}: <span className="font-medium text-foreground">{payload?.[0]?.value}°C</span>
           </p>
         </div>
       );
@@ -24,31 +27,31 @@ const StatisticalAnalysis = ({ data, period = 'monthly' }) => {
           <Icon name="BarChart3" size={20} color="var(--color-accent)" />
         </div>
         <div>
-          <h3 className="text-lg font-semibold text-foreground">Statistical Analysis</h3>
-          <p className="caption text-muted-foreground">Temperature trends and variance over time</p>
+          <h3 className="text-lg font-semibold text-foreground">{t('temp.stats.title')}</h3>
+          <p className="caption text-muted-foreground">{t('temp.stats.subtitle')}</p>
         </div>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <div className="p-4 bg-muted rounded-lg">
-          <p className="caption text-muted-foreground mb-1">Mean Temp</p>
+          <p className="caption text-muted-foreground mb-1">{t('temp.stats.mean')}</p>
           <p className="text-xl font-semibold text-foreground data-text">
             {data?.statistics?.mean}°C
           </p>
         </div>
         <div className="p-4 bg-muted rounded-lg">
-          <p className="caption text-muted-foreground mb-1">Median</p>
+          <p className="caption text-muted-foreground mb-1">{t('temp.stats.median')}</p>
           <p className="text-xl font-semibold text-foreground data-text">
             {data?.statistics?.median}°C
           </p>
         </div>
         <div className="p-4 bg-muted rounded-lg">
-          <p className="caption text-muted-foreground mb-1">Std Dev</p>
+          <p className="caption text-muted-foreground mb-1">{t('temp.stats.stdDev')}</p>
           <p className="text-xl font-semibold text-foreground data-text">
             ±{data?.statistics?.stdDev}°C
           </p>
         </div>
         <div className="p-4 bg-muted rounded-lg">
-          <p className="caption text-muted-foreground mb-1">Range</p>
+          <p className="caption text-muted-foreground mb-1">{t('temp.stats.range')}</p>
           <p className="text-xl font-semibold text-foreground data-text">
             {data?.statistics?.range}°C
           </p>
@@ -81,9 +84,9 @@ const StatisticalAnalysis = ({ data, period = 'monthly' }) => {
         <div className="flex items-start gap-3">
           <Icon name="TrendingUp" size={20} color="var(--color-success)" />
           <div>
-            <p className="text-sm font-medium text-foreground mb-1">Climate Change Indicator</p>
+            <p className="text-sm font-medium text-foreground">{t('temp.climate.title')}</p>
             <p className="caption text-muted-foreground">
-              Average temperature has increased by <span className="font-medium text-warning">+{data?.climateChange?.increase}°C</span> over the past {data?.climateChange?.years} years, indicating a warming trend consistent with urban heat island effects.
+              {t('temp.climate.description', { increase: `+${data?.climateChange?.increase}°C`, years: data?.climateChange?.years })}
             </p>
           </div>
         </div>

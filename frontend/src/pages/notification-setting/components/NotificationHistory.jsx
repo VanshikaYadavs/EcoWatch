@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 import Select from '../../../components/ui/Select';
 
 const NotificationHistory = () => {
+  const { t } = useTranslation();
   const [filterType, setFilterType] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
 
@@ -13,7 +15,7 @@ const NotificationHistory = () => {
       id: 1,
       type: 'airQuality',
       title: 'High AQI Alert',
-      message: 'AQI exceeded threshold of 100 at MI Road, Jaipur',
+      message: `AQI exceeded threshold of 100 at ${t('locations.miRoad')}`,
       timestamp: '2026-01-06 18:30:00',
       status: 'delivered',
       channels: ['email', 'push'],
@@ -24,7 +26,7 @@ const NotificationHistory = () => {
       id: 2,
       type: 'noise',
       title: 'Noise Regulation Violation',
-      message: 'Noise level of 95 dB detected at Clock Tower, Jodhpur',
+      message: `Noise level of 95 dB detected at ${t('locations.clockTower')}`,
       timestamp: '2026-01-06 17:45:00',
       status: 'delivered',
       channels: ['email', 'sms', 'push'],
@@ -35,7 +37,7 @@ const NotificationHistory = () => {
       id: 3,
       type: 'temperature',
       title: 'Heat Warning',
-      message: 'Temperature reached 35°C at Pushkar Road, Ajmer',
+      message: `Temperature reached 35°C at ${t('locations.pushkarRoad')}`,
       timestamp: '2026-01-06 16:20:00',
       status: 'delivered',
       channels: ['email', 'dashboard'],
@@ -46,7 +48,7 @@ const NotificationHistory = () => {
       id: 4,
       type: 'emergency',
       title: 'System Failure Alert',
-      message: 'Sensor offline at Industrial Area, Bikaner',
+      message: `Sensor offline at ${t('locations.bikanerIndustrial')}`,
       timestamp: '2026-01-06 15:10:00',
       status: 'failed',
       channels: ['email'],
@@ -57,7 +59,7 @@ const NotificationHistory = () => {
       id: 5,
       type: 'airQuality',
       title: 'PM2.5 Threshold Exceeded',
-      message: 'PM2.5 level of 45 µg/m³ at Lake Pichola, Udaipur',
+      message: `PM2.5 level of 45 µg/m³ at ${t('locations.lakePichola')}`,
       timestamp: '2026-01-06 14:00:00',
       status: 'delivered',
       channels: ['email', 'push', 'dashboard'],

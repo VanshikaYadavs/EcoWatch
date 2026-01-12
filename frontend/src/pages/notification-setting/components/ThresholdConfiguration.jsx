@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import Icon from '../../../components/AppIcon';
 import Input from '../../../components/ui/Input';
 import Select from '../../../components/ui/Select';
 import { Checkbox } from '../../../components/ui/Checkbox';
 
 const ThresholdConfiguration = ({ settings, onSettingsChange }) => {
+  const { t } = useTranslation();
   const [expandedSection, setExpandedSection] = useState('airQuality');
 
   const userRoleOptions = [
@@ -86,11 +88,11 @@ const ThresholdConfiguration = ({ settings, onSettingsChange }) => {
       {/* Role Selection */}
       <div className="bg-muted rounded-lg p-4 mb-6">
         <Select
-          label="User Role"
+          label={t('alert.input.userRole')}
           options={userRoleOptions}
           value={settings?.userRole}
           onChange={(value) => onSettingsChange({ ...settings, userRole: value })}
-          description="Select your role for role-based default thresholds"
+          description={t('alert.input.userRoleDesc')}
         />
       </div>
 
