@@ -69,8 +69,12 @@ create table if not exists profiles (
   full_name text,
   role text check (role in ('admin','official','researcher','analyst','leader','viewer')) default 'viewer',
   organization text,
+  phone text,
   updated_at timestamptz not null default now()
 );
+
+-- Backfill/migration safety for existing databases
+alter table profiles add column if not exists phone text;
 
 -- Compact, denormalized environmental snapshots (publicly readable by default)
 create table if not exists environment_readings (

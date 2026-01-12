@@ -49,7 +49,7 @@ const UserProfile = () => {
     const email = user?.email || '';
     const organization = profile?.organization || user?.user_metadata?.organization || '';
     const role = profile?.role || user?.user_metadata?.role || 'viewer';
-    const phone = user?.user_metadata?.phone || '';
+    const phone = profile?.phone || user?.user_metadata?.phone || '';
     setProfileData((prev) => ({
       ...prev,
       name: fullName,
@@ -76,6 +76,7 @@ const UserProfile = () => {
         full_name: profileData?.name,
         role: profileData?.role || 'viewer',
         organization: profileData?.organization || null,
+        phone: profileData?.phone || null,
       });
     } catch (e) {
       console.error('Failed to save profile:', e?.message || e);
