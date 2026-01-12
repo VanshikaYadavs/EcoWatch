@@ -70,6 +70,11 @@ app.get('/', (_req, res) => {
           <li><a href="/api/ping">/api/ping</a> – quick ping test</li>
           <li><a href="/api/check-supabase">/api/check-supabase</a> – Supabase connectivity</li>
           <li><a href="/api/readings/latest">/api/readings/latest</a> – query latest readings</li>
+          <li><a href="/api/readings/latest-by-city">/api/readings/latest-by-city</a> – latest row per configured city</li>
+          <li><a href="/api/readings/latest-by-cluster?name=noida">/api/readings/latest-by-cluster</a> – latest row per city for a cluster</li>
+          <li><a href="/api/ingest/all?demo=1">/api/ingest/all</a> – trigger parallel ingest for preset cities (dev)</li>
+          <li><a href="/api/ingest/cluster?name=noida&demo=1">/api/ingest/cluster</a> – ingest all cities in a cluster</li>
+          <li><a href="/api/ingest/clusters?demo=1">/api/ingest/clusters</a> – ingest all clusters in parallel</li>
           <li><a href="/api/ingest/now?name=Your%20Location&lat=28.56&lon=77.89&demo=1">/api/ingest/now</a> – trigger one-off ingest (dev demo link)</li>
         </ul>
         <p>If you expected the frontend UI, run it separately at <code>npm start</code> in the <strong>frontend</strong> folder.</p>
@@ -183,7 +188,9 @@ app.get('/api/ingest/now', requireAuth, async (req, res) => {
     console.log(`[ingest] coords=(${lat},${lon}) finalName="${finalName}" clientName="${name || ''}"`);
     // import ingest dynamically to avoid circular import during module init
     const { ingestOne } = await import('./ingest.mjs');
-    const data = await ingestOne({ name: finalName, lat, lon, user_id });
+    const nearbyFlag = String(req.query?.nearby || '').trim() === '1';
+    const targetTable = nearbyFlag ? 'nearby_environment_readings' : 'environment_readings';
+    const data = await ingestOne({ name: finalName, lat, lon, user_id, targetTable });
     // Redact user_id from API response to avoid exposing identity
     const redacted = data ? {
       id: data.id,
@@ -191,6 +198,10 @@ app.get('/api/ingest/now', requireAuth, async (req, res) => {
       latitude: data.latitude,
       longitude: data.longitude,
       aqi: data.aqi,
+        pm25: data.pm25,
+        pm10: data.pm10,
+        o3: data.o3,
+        no2: data.no2,
       temperature: data.temperature,
       humidity: data.humidity,
       noise_level: data.noise_level,
@@ -198,7 +209,249 @@ app.get('/api/ingest/now', requireAuth, async (req, res) => {
       recorded_at: data.recorded_at,
       created_at: data.created_at,
     } : null;
-    res.json({ data: redacted });
+      // Additionally route into cluster table based on coordinates
+      try {
+        const resolvedCluster = resolveClusterByCoords(lat, lon);
+        if (resolvedCluster && supabaseAdmin && data) {
+          // Try to fetch station name from WAQI; ignore errors
+          let stationName = null;
+          try { const { fetchAQI } = await import('./ingest.mjs'); const a = await fetchAQI(lat, lon); stationName = a?.station_name || null; } catch {}
+          const payload = {
+            city: resolvedCluster.name,
+            station_name: stationName,
+            latitude: lat,
+            longitude: lon,
+            aqi: data.aqi ?? null,
+            pm25: data.pm25 ?? null,
+            pm10: data.pm10 ?? null,
+            o3: data.o3 ?? null,
+            no2: data.no2 ?? null,
+            recorded_at: data.recorded_at || new Date().toISOString(),
+          };
+          const { error: clErr } = await supabaseAdmin.from(resolvedCluster.table).insert([payload]);
+          if (clErr) console.warn(`[cluster-insert] ${resolvedCluster.name} failed:`, clErr.message);
+        }
+      } catch (e) {
+        console.warn('[cluster-insert] error:', e?.message || e);
+      }
+      res.json({ data: redacted });
+  } catch (err) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// Utility: default city list with approximate coordinates (expandable via env)
+function getDefaultCities() {
+  // Base NCR set aligned with resolver preferences
+  const base = [
+    { name: 'Noida', lat: 28.5355, lon: 77.3910 },
+    { name: 'Delhi', lat: 28.6139, lon: 77.2090 },
+    { name: 'Ghaziabad', lat: 28.6692, lon: 77.4538 },
+    { name: 'Faridabad', lat: 28.4089, lon: 77.3178 },
+    { name: 'Gurugram', lat: 28.4595, lon: 77.0266 },
+    { name: 'Dadri', lat: 28.5680, lon: 77.5570 },
+    { name: 'Greater Noida', lat: 28.4744, lon: 77.5030 },
+    // Rajasthan cluster examples
+    { name: 'Jaipur', lat: 26.9124, lon: 75.7873 },
+    { name: 'Tonk', lat: 26.1667, lon: 75.7833 },
+    { name: 'Jodhpur', lat: 26.2389, lon: 73.0243 },
+    { name: 'Udaipur', lat: 24.5854, lon: 73.7125 },
+    { name: 'Ajmer', lat: 26.4499, lon: 74.6399 },
+  ];
+  try {
+    // Optional override via JSON array in env: [{"name":"City","lat":..,"lon":..}, ...]
+    if (process.env.INGEST_CITIES_JSON) {
+      const arr = JSON.parse(process.env.INGEST_CITIES_JSON);
+      if (Array.isArray(arr) && arr.length) return arr;
+    }
+  } catch {}
+  return base;
+}
+
+// Trigger parallel ingest for a set of cities
+app.get('/api/ingest/all', requireAuth, async (req, res) => {
+  try {
+    const user_id = req.user_id;
+    const namesParam = (req.query?.cities || '').toString().trim();
+    let cities = getDefaultCities();
+    if (namesParam) {
+      const want = namesParam.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+      cities = cities.filter(c => want.includes(c.name.toLowerCase()));
+    }
+    if (!cities.length) return res.status(400).json({ error: 'no cities resolved' });
+
+    const { ingestOne } = await import('./ingest.mjs');
+    // Soft concurrency control
+    const concurrency = Math.min(5, Number(req.query?.concurrency || 4));
+    const queue = [...cities];
+    const results = [];
+    async function worker() {
+      while (queue.length) {
+        const c = queue.shift();
+        try {
+          const data = await ingestOne({ name: c.name, lat: c.lat, lon: c.lon, user_id, targetTable: 'environment_readings' });
+          results.push({ city: c.name, ok: true, id: data?.id, recorded_at: data?.recorded_at });
+        } catch (e) {
+          results.push({ city: c.name, ok: false, error: e?.message || String(e) });
+        }
+      }
+    }
+    await Promise.all(Array.from({ length: concurrency }, () => worker()));
+    res.json({ ok: true, count: results.length, results });
+  } catch (err) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// Latest row per configured city
+app.get('/api/readings/latest-by-city', async (req, res) => {
+  try {
+    if (!supabaseAdmin) return res.status(500).json({ error: 'Supabase not configured' });
+    const namesParam = (req.query?.cities || '').toString().trim();
+    let cities = getDefaultCities().map(c => c.name);
+    if (namesParam) cities = namesParam.split(',').map(s => s.trim()).filter(Boolean);
+    const out = {};
+    await Promise.all(cities.map(async (city) => {
+      const { data, error } = await supabaseAdmin
+        .from('environment_readings')
+        .select('*')
+        .eq('location', city)
+        .order('recorded_at', { ascending: false })
+        .limit(1)
+        .single();
+      out[city] = error ? null : data || null;
+    }));
+    res.json({ data: out });
+  } catch (err) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// -----------------------------
+// Cluster ingestion and latest fetch
+// -----------------------------
+
+export const CLUSTERS = {
+  noida: [
+    { name: 'Ghaziabad', lat: 28.6692, lon: 77.4538 },
+    { name: 'Faridabad', lat: 28.4089, lon: 77.3178 },
+    { name: 'Delhi', lat: 28.6139, lon: 77.2090 },
+    { name: 'Dadri', lat: 28.5680, lon: 77.5570 },
+  ],
+  yamunapuram: [
+    { name: 'Ghaziabad', lat: 28.6692, lon: 77.4538 },
+    { name: 'Faridabad', lat: 28.4089, lon: 77.3178 },
+    { name: 'Delhi', lat: 28.6139, lon: 77.2090 },
+    { name: 'Dadri', lat: 28.5680, lon: 77.5570 },
+  ],
+  jaipur: [
+    { name: 'Jodhpur', lat: 26.2389, lon: 73.0243 },
+    { name: 'Udaipur', lat: 24.5854, lon: 73.7125 },
+    { name: 'Ajmer', lat: 26.4499, lon: 74.6399 },
+    { name: 'Tonk', lat: 26.1533, lon: 75.7863 },
+  ],
+};
+
+const TABLE_MAP = {
+  noida: 'noida_cluster_readings',
+  yamunapuram: 'yamunapuram_cluster_readings',
+  jaipur: 'jaipur_cluster_readings',
+};
+
+// City cluster geographic bounds (approximate, sufficient for hackathon)
+export const CITY_BOUNDS = {
+  jaipur: { name: 'Jaipur', latMin: 26.7, latMax: 27.1, lonMin: 75.6, lonMax: 76.0, table: 'jaipur_cluster_readings' },
+  noida: { name: 'Noida', latMin: 28.4, latMax: 28.7, lonMin: 77.2, lonMax: 77.6, table: 'noida_cluster_readings' },
+  yamunapuram: { name: 'Yamunapuram', latMin: 28.5, latMax: 28.7, lonMin: 77.7, lonMax: 78.0, table: 'yamunapuram_cluster_readings' },
+};
+
+export function resolveClusterByCoords(lat, lon) {
+  for (const key of Object.keys(CITY_BOUNDS)) {
+    const c = CITY_BOUNDS[key];
+    if (lat >= c.latMin && lat <= c.latMax && lon >= c.lonMin && lon <= c.lonMax) {
+      return c;
+    }
+  }
+  return null;
+}
+
+async function ingestCluster(clusterName) {
+  const cities = CLUSTERS[clusterName];
+  const defaultTable = TABLE_MAP[clusterName];
+  if (!cities || !defaultTable) throw new Error('Invalid cluster');
+  const { fetchAQI } = await import('./ingest.mjs');
+  await Promise.all(cities.map(async (c) => {
+    try {
+      const aqiData = await fetchAQI(c.lat, c.lon);
+      const resolved = resolveClusterByCoords(c.lat, c.lon) || { name: c.name, table: defaultTable };
+      const payload = {
+        city: resolved.name,
+        station_name: aqiData.station_name || null,
+        latitude: c.lat,
+        longitude: c.lon,
+        aqi: aqiData.aqi ?? null,
+        pm25: aqiData.pm25 ?? null,
+        pm10: aqiData.pm10 ?? null,
+        o3: aqiData.o3 ?? null,
+        no2: aqiData.no2 ?? null,
+        recorded_at: new Date().toISOString(),
+      };
+      const { error } = await supabaseAdmin.from(resolved.table || defaultTable).insert([payload]);
+      if (error) throw new Error(error.message);
+    } catch (e) {
+      console.warn(`[ingestCluster] ${clusterName}/${c.name} failed:`, e?.message || e);
+    }
+  }));
+}
+
+async function ingestAllClusters() {
+  await Promise.all([
+    ingestCluster('noida'),
+    ingestCluster('yamunapuram'),
+    ingestCluster('jaipur'),
+  ]);
+}
+
+// API: ingest a single cluster
+app.get('/api/ingest/cluster', requireAuth, async (req, res) => {
+  try {
+    const name = (req.query?.name || '').toString().toLowerCase();
+    if (!CLUSTERS[name]) return res.status(400).json({ error: 'invalid cluster name' });
+    await ingestCluster(name);
+    res.json({ ok: true, cluster: name });
+  } catch (err) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// API: ingest all clusters
+app.get('/api/ingest/clusters', requireAuth, async (_req, res) => {
+  try {
+    await ingestAllClusters();
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// API: latest per city for a cluster
+app.get('/api/readings/latest-by-cluster', async (req, res) => {
+  try {
+    const name = (req.query?.name || '').toString().toLowerCase();
+    const table = TABLE_MAP[name];
+    if (!table) return res.status(400).json({ error: 'invalid cluster name' });
+    const { data, error } = await supabaseAdmin
+      .from(table)
+      .select('*')
+      .order('city', { ascending: true })
+      .order('recorded_at', { ascending: false });
+    if (error) return res.status(400).json({ error: error.message });
+    const latestByCity = {};
+    for (const row of data || []) {
+      if (!row?.city) continue;
+      if (!latestByCity[row.city]) latestByCity[row.city] = row;
+    }
+    res.json({ data: latestByCity });
   } catch (err) {
     res.status(500).json({ error: String(err) });
   }
@@ -417,12 +670,15 @@ if (process.env.COLLECT_ON_STARTUP === '1') {
 // -----------------------------
 
 async function resolveLocationName(lat, lon) {
-  const KNOWN_CITIES = [
-    { name: 'Noida', lat: 28.5355, lon: 77.3910, radiusKm: 20 },
-    { name: 'Delhi', lat: 28.6139, lon: 77.2090, radiusKm: 25 },
+  // Preference cities with tighter radii to reduce overlap
+  const PREFERRED_CITIES = [
+    { name: 'Noida', lat: 28.5355, lon: 77.3910, radiusKm: 18 },
+    { name: 'Delhi', lat: 28.6139, lon: 77.2090, radiusKm: 22 },
     { name: 'Ghaziabad', lat: 28.6692, lon: 77.4538, radiusKm: 18 },
-    { name: 'Greater Noida', lat: 28.4744, lon: 77.5030, radiusKm: 15 },
-    { name: 'Gurugram', lat: 28.4595, lon: 77.0266, radiusKm: 20 },
+    { name: 'Faridabad', lat: 28.4089, lon: 77.3178, radiusKm: 18 },
+    { name: 'Gurugram', lat: 28.4595, lon: 77.0266, radiusKm: 18 },
+    { name: 'Dadri', lat: 28.5680, lon: 77.5570, radiusKm: 12 },
+    { name: 'Greater Noida', lat: 28.4744, lon: 77.5030, radiusKm: 14 },
   ];
   const toRad = n => n * Math.PI / 180;
   const haversineKm = (lat1, lon1, lat2, lon2) => {
@@ -434,17 +690,7 @@ async function resolveLocationName(lat, lon) {
     return R * c;
   };
 
-  // 1) If within a known city radius, prefer that label upfront
-  try {
-    let best = null;
-    for (const c of KNOWN_CITIES) {
-      const d = haversineKm(lat, lon, c.lat, c.lon);
-      if (d <= c.radiusKm && (!best || d < best.d)) best = { name: c.name, d };
-    }
-    if (best?.name) return best.name;
-  } catch {}
-
-  // 2) WAQI station/city name
+  // 1) WAQI station/city name (closest to physical sensor identity)
   try {
     const waqiToken = process.env.WAQI_API_KEY || process.env.WAQI_TOKEN;
     if (waqiToken) {
@@ -461,27 +707,41 @@ async function resolveLocationName(lat, lon) {
     }
   } catch {}
 
-  // 3) Try OpenWeather reverse geocoding (increase limit to 5 and choose best candidate)
+  // 2) OpenWeather reverse geocoding (try to pick exact match among common cities)
   try {
     const key = process.env.OPENWEATHER_API_KEY;
     if (key) {
       const geoUrl = `http://api.openweathermap.org/geo/1.0/reverse?lat=${lat}&lon=${lon}&limit=5&appid=${key}`;
       const resp = await axios.get(geoUrl);
       const arr = Array.isArray(resp?.data) ? resp.data : [];
-      // Prefer entries explicitly named 'Noida' or large cities (by heuristic on name length)
-      const exact = arr.find(x => String(x?.name || '').toLowerCase() === 'noida');
-      if (exact?.name) return exact.name;
+      const prefer = ['noida','delhi','ghaziabad','faridabad','gurugram'];
+      for (const p of prefer) {
+        const exact = arr.find(x => String(x?.name || '').toLowerCase() === p);
+        if (exact?.name) return exact.name;
+      }
       if (arr[0]?.name) return arr[0].name;
     }
   } catch {}
 
-  // 4) Fallback to OpenStreetMap Nominatim for administrative city/town
+  // 3) OpenStreetMap Nominatim administrative city/town
   try {
     const nomUrl = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&zoom=10&addressdetails=1`;
     const resp = await axios.get(nomUrl, { headers: { 'User-Agent': 'EcoWatch/1.0 (+https://github.com/VanshikaYadavs/EcoWatch)' } });
     const addr = resp?.data?.address || {};
     const nm = addr.city || addr.town || addr.village || addr.suburb || addr.city_district || addr.state_district || addr.state;
     if (nm) return nm;
+  } catch {}
+
+  // 4) Preference list by NEAREST within threshold (not first-by-order)
+  try {
+    let best = null;
+    for (const c of PREFERRED_CITIES) {
+      const d = haversineKm(lat, lon, c.lat, c.lon);
+      if (d <= c.radiusKm) {
+        if (!best || d < best.d) best = { name: c.name, d };
+      }
+    }
+    if (best) return best.name;
   } catch {}
 
   // Final fallback

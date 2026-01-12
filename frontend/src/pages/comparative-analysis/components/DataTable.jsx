@@ -21,7 +21,9 @@ const DataTable = ({ selectedCities, selectedParameters, timeRange, refreshToken
     temperature: 'Temp (°C)',
     humidity: 'Humidity (%)',
     pm25: 'PM2.5 (µg/m³)',
-    pm10: 'PM10 (µg/m³)'
+    pm10: 'PM10 (µg/m³)',
+    o3: 'Ozone (O₃)',
+    no2: 'NO₂'
   };
 
   const chosenLocations = useMemo(() => {

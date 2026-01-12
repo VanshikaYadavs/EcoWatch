@@ -137,30 +137,34 @@ const AQIChart = ({ data, timeRange, selectedPollutants }) => {
         </ResponsiveContainer>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-border">
+        {(() => { const n = Math.max(1, data?.length || 0); const last = data?.[data?.length - 1] || {}; const vals = (data||[]).map(d=>d?.aqi||0); return (
+        <>
         <div className="text-center">
           <p className="text-xs text-muted-foreground mb-1">Current AQI</p>
           <p className="text-2xl font-bold" style={{ color: getAQIColor(data?.[data?.length - 1]?.aqi || 0) }}>
-            {data?.[data?.length - 1]?.aqi || 0}
+            {last?.aqi || 0}
           </p>
         </div>
         <div className="text-center">
           <p className="text-xs text-muted-foreground mb-1">24h Average</p>
           <p className="text-2xl font-bold text-foreground">
-            {Math.round(data?.reduce((sum, d) => sum + d?.aqi, 0) / data?.length)}
+            {Math.round(((data||[]).reduce((sum, d) => sum + (d?.aqi || 0), 0) / n))}
           </p>
         </div>
         <div className="text-center">
           <p className="text-xs text-muted-foreground mb-1">Peak Value</p>
           <p className="text-2xl font-bold text-error">
-            {Math.max(...data?.map(d => d?.aqi))}
+            {vals.length ? Math.max(...vals) : 0}
           </p>
         </div>
         <div className="text-center">
           <p className="text-xs text-muted-foreground mb-1">Lowest Value</p>
           <p className="text-2xl font-bold text-success">
-            {Math.min(...data?.map(d => d?.aqi))}
+            {vals.length ? Math.min(...vals) : 0}
           </p>
         </div>
+        </>
+        ); })()}
       </div>
     </div>
   );

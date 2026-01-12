@@ -9,7 +9,9 @@ const ParameterFilter = ({ selectedParameters, onParameterToggle }) => {
     { id: 'temperature', name: 'Temperature', icon: 'Thermometer', color: 'var(--color-error)' },
     { id: 'humidity', name: 'Humidity', icon: 'Droplets', color: 'var(--color-secondary)' },
     { id: 'pm25', name: 'PM2.5', icon: 'CloudFog', color: 'var(--color-warning)' },
-    { id: 'pm10', name: 'PM10', icon: 'Cloud', color: 'var(--color-muted-foreground)' }
+    { id: 'pm10', name: 'PM10', icon: 'Cloud', color: 'var(--color-muted-foreground)' },
+    { id: 'o3', name: 'Ozone (O₃)', icon: 'Zap', color: 'var(--color-primary)' },
+    { id: 'no2', name: 'NO₂', icon: 'FlaskConical', color: 'var(--color-accent)' }
   ];
 
   return (

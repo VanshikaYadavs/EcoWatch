@@ -16,12 +16,26 @@ async function fetchJSON(url) {
 }
 
 export async function fetchAQI(lat, lon) {
-  if (!WAQI_TOKEN) return { aqi: null, source: null };
+  if (!WAQI_TOKEN) return { aqi: null, pm25: null, pm10: null, o3: null, no2: null, station_name: null, source: null };
   const url = `https://api.waqi.info/feed/geo:${lat};${lon}/?token=${WAQI_TOKEN}`;
   const data = await fetchJSON(url);
   if (data?.status !== 'ok') throw new Error(`WAQI error: ${data?.data || data?.status}`);
-  const aqi = Number(data?.data?.aqi ?? null);
-  return { aqi, source: 'waqi' };
+  const iaqi = data?.data?.iaqi || {};
+  const result = {
+    aqi: data?.data?.aqi ?? null,
+    pm25: iaqi?.pm25?.v ?? null,
+    pm10: iaqi?.pm10?.v ?? null,
+    o3: iaqi?.o3?.v ?? null,
+    no2: iaqi?.no2?.v ?? null,
+    station_name: (data?.data?.city?.name || null),
+    source: 'waqi',
+  };
+  // Normalize numeric values
+  for (const k of ['aqi','pm25','pm10','o3','no2']) {
+    const v = result[k];
+    result[k] = v == null ? null : Number(v);
+  }
+  return result;
 }
 
 export async function fetchWeather(lat, lon) {
@@ -39,7 +53,7 @@ function maybeSimulateNoise() {
   return Math.round((min + Math.random() * (max - min)) * 10) / 10;
 }
 
-export async function ingestOne({ name, lat, lon, user_id, simulateNoise = true }) {
+export async function ingestOne({ name, lat, lon, user_id, simulateNoise = true, targetTable = 'environment_readings' }) {
   if (!hasGlobalFetch) throw new Error('Global fetch is not available. Use Node 18+ or polyfill fetch.');
   // Resolve supabaseAdmin at runtime to avoid circular import issues
   const { supabaseAdmin } = await import('./index.mjs');
@@ -61,6 +75,10 @@ export async function ingestOne({ name, lat, lon, user_id, simulateNoise = true 
     latitude: lat,
     longitude: lon,
     aqi: aqiRes.aqi,
+    pm25: aqiRes.pm25,
+    pm10: aqiRes.pm10,
+    o3: aqiRes.o3,
+    no2: aqiRes.no2,
     temperature: wxRes.temperature,
     humidity: wxRes.humidity,
     noise_level: simulateNoise ? maybeSimulateNoise() : null,
@@ -69,7 +87,7 @@ export async function ingestOne({ name, lat, lon, user_id, simulateNoise = true 
     user_id: user_id ?? null,
   };
 
-  const { data, error } = await supabaseAdmin.from('environment_readings').insert([payload]).select('*').single();
+  const { data, error } = await supabaseAdmin.from(targetTable).insert([payload]).select('*').single();
   if (error) throw new Error(error.message);
   try {
     await evaluateAndRecordAlerts(payload);

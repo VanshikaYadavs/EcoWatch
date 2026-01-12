@@ -1,5 +1,5 @@
 import { getCurrentLocation } from './location';
-import { getNearbyCities } from './nearbyCities';
+import { getNearbyCities, getHardcodedNearby } from './nearbyCities';
 import axios from 'axios';
 import { supabase } from './supabaseClient';
 
@@ -32,6 +32,16 @@ async function resolveCityName(lat, lon) {
 }
 
 const KEY = 'ecw.sessionCities';
+const INGEST_KEY = 'ecw.currentIngestCity';
+
+export function getCurrentIngestCity() {
+  try {
+    const v = localStorage.getItem(INGEST_KEY);
+    return v || null;
+  } catch {
+    return null;
+  }
+}
 
 export async function getSessionCities() {
   try {
@@ -45,8 +55,12 @@ export async function getSessionCities() {
   // Initialize
   try {
     const { lat, lon } = await getCurrentLocation();
-    const nearby = await getNearbyCities(lat, lon);
     const mainName = await resolveCityName(lat, lon);
+    // Prefer hardcoded personalisation clusters when available
+    let nearby = getHardcodedNearby(mainName);
+    if (!nearby?.length) {
+      nearby = await getNearbyCities(lat, lon);
+    }
     const data = { main: { name: mainName, lat, lon }, nearby };
     localStorage.setItem(KEY, JSON.stringify(data));
     return data;
@@ -67,10 +81,17 @@ export async function ingestSessionCities() {
   for (const c of all) {
     try {
       if (userId && token) {
-        await axios.get(
-          `http://localhost:8080/api/ingest/now?lat=${c.lat}&lon=${c.lon}&name=${encodeURIComponent(c.name || '')}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+        const isNearby = c?.name && sess?.main?.name && c.name !== sess.main.name;
+        const url = `http://localhost:8080/api/ingest/now?lat=${c.lat}&lon=${c.lon}&name=${encodeURIComponent(c.name || '')}${isNearby ? '&nearby=1' : ''}`;
+        const resp = await axios.get(url, { headers: { Authorization: `Bearer ${token}` } });
+        // Prefer canonical location returned by backend (finalName) over client name
+        const finalName = resp?.data?.data?.location || c.name || '';
+        try {
+          localStorage.setItem(INGEST_KEY, finalName);
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('ecw:ingestCity', { detail: finalName }));
+          }
+        } catch {}
       }
     } catch {}
   }
