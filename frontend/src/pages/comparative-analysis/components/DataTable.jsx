@@ -1,23 +1,19 @@
 import React, { useState, useMemo } from 'react';
 import Icon from '../../../components/AppIcon';
+import { useLatestCityReadings, useComparativeSeries } from '../../../utils/dataHooks';
 
-const DataTable = ({ selectedCities, selectedParameters, timeRange }) => {
+const DataTable = ({ selectedCities, selectedParameters, timeRange, refreshToken = 0 }) => {
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
 
-  const cityNames = {
-    jaipur: 'Jaipur',
-    jodhpur: 'Jodhpur',
-    udaipur: 'Udaipur',
-    kota: 'Kota',
-    ajmer: 'Ajmer',
-    bikaner: 'Bikaner',
-    alwar: 'Alwar',
-    bharatpur: 'Bharatpur',
-    sikar: 'Sikar',
-    pali: 'Pali',
-    tonk: 'Tonk',
-    bhilwara: 'Bhilwara'
-  };
+  const { data: latestCityReadings } = useLatestCityReadings({ fallbackWindow: 200 });
+  const idToName = useMemo(() => {
+    const map = {};
+    for (const r of latestCityReadings || []) {
+      const id = String(r.location || '').toLowerCase().replace(/\s+/g, '-');
+      map[id] = r.location;
+    }
+    return map;
+  }, [latestCityReadings]);
 
   const parameterLabels = {
     aqi: 'AQI',
@@ -28,49 +24,35 @@ const DataTable = ({ selectedCities, selectedParameters, timeRange }) => {
     pm10: 'PM10 (µg/m³)'
   };
 
+  const chosenLocations = useMemo(() => {
+    const names = (selectedCities || []).map(id => idToName[id]).filter(Boolean);
+    return names;
+  }, [selectedCities, idToName]);
+
+  const { data: series, loading } = useComparativeSeries({ locations: chosenLocations, parameters: selectedParameters, timeRange, refreshToken });
+
   const generateTableData = useMemo(() => {
-    return selectedCities?.map(cityId => {
-      const row = { city: cityNames?.[cityId], cityId };
-      
+    return (selectedCities || []).map(cityId => {
+      const cityName = idToName[cityId] || cityId;
+      const row = { city: cityName, cityId };
       selectedParameters?.forEach(param => {
-        let current, previous;
-        switch(param) {
-          case 'aqi':
-            current = Math.round(Math.random() * 100 + 50);
-            previous = Math.round(Math.random() * 100 + 50);
-            break;
-          case 'noise':
-            current = Math.round(Math.random() * 30 + 50);
-            previous = Math.round(Math.random() * 30 + 50);
-            break;
-          case 'temperature':
-            current = Math.round((Math.random() * 15 + 20) * 10) / 10;
-            previous = Math.round((Math.random() * 15 + 20) * 10) / 10;
-            break;
-          case 'humidity':
-            current = Math.round(Math.random() * 40 + 30);
-            previous = Math.round(Math.random() * 40 + 30);
-            break;
-          case 'pm25':
-            current = Math.round(Math.random() * 50 + 20);
-            previous = Math.round(Math.random() * 50 + 20);
-            break;
-          case 'pm10':
-            current = Math.round(Math.random() * 80 + 40);
-            previous = Math.round(Math.random() * 80 + 40);
-            break;
-          default:
-            current = Math.round(Math.random() * 100);
-            previous = Math.round(Math.random() * 100);
+        const key = `${cityId}_${param}`;
+        let current = null, previous = null;
+        // scan from end for non-null values
+        for (let i = (series || []).length - 1; i >= 0; i--) {
+          const val = series[i]?.[key];
+          if (val != null) {
+            if (current == null) current = val; else { previous = val; break; }
+          }
         }
-        
-        const change = ((current - previous) / previous * 100)?.toFixed(1);
-        row[param] = { current, previous, change: parseFloat(change) };
+        if (current == null) current = 0;
+        if (previous == null) previous = current;
+        const change = previous ? (((current - previous) / previous) * 100) : 0;
+        row[param] = { current: Number(current), previous: Number(previous), change: Number(change.toFixed(1)) };
       });
-      
       return row;
     });
-  }, [selectedCities, selectedParameters]);
+  }, [selectedCities, selectedParameters, series, idToName]);
 
   const sortedData = useMemo(() => {
     if (!sortConfig?.key) return generateTableData;
@@ -123,6 +105,9 @@ const DataTable = ({ selectedCities, selectedParameters, timeRange }) => {
           <h3 className="text-base md:text-lg font-semibold text-foreground">
             Detailed Comparison Data
           </h3>
+          {loading && (
+            <span className="ml-2 text-xs md:text-sm text-muted-foreground">Refreshing…</span>
+          )}
         </div>
       </div>
       <div className="overflow-x-auto">

@@ -7,13 +7,18 @@ import AlertConfiguration from './components/AlertConfiguration';
 import ComparativeAnalysis from './components/ComparativeAnalysis';
 import ExportReports from './components/ExportReports';
 import { RAJASTHAN_PLACES } from '../../utils/rajasthanLocations';
-import { useEnvironmentReadings } from '../../utils/dataHooks';
+import { useEnvironmentReadings, useLatestCityReadings } from '../../utils/dataHooks';
+import { getSessionAllowlist } from '../../utils/sessionCities';
 
 const NoiseLevelTracking = () => {
   
 
   const [selectedLocation, setSelectedLocation] = useState('all');
   const { data: readings, loading } = useEnvironmentReadings({ location: selectedLocation, limit: 100, realtime: true });
+  const [allowlist, setAllowlist] = useState([]);
+  const { data: latestCityReadings } = useLatestCityReadings({ fallbackWindow: 200, allowLocations: allowlist });
+  React.useEffect(() => { (async () => { try { setAllowlist(await getSessionAllowlist()); } catch {} })(); }, []);
+  const { data: allRecent } = useEnvironmentReadings({ location: null, limit: 200, realtime: false });
 
   const currentNoiseData = useMemo(() => {
     const levels = (readings || []).map(r => r?.noise_level).filter(v => typeof v === 'number');
@@ -32,15 +37,17 @@ const NoiseLevelTracking = () => {
   }, [readings]);
 
   const locations = useMemo(() => {
+    if (latestCityReadings?.length) {
+      return latestCityReadings.map(r => ({ id: r.location, name: r.location, type: 'Unknown', sensors: 1, density: 'Unknown' }));
+    }
     const unique = new Set((readings || []).map(r => r.location).filter(Boolean));
     const base = [...unique].map(loc => ({ id: loc, name: loc, type: 'Unknown', sensors: 0, density: 'Unknown' }));
     if (base.length) return base;
-    // Fallback demo locations
     return [
       { id: RAJASTHAN_PLACES?.[0]?.value || 'Jaipur', name: RAJASTHAN_PLACES?.[0]?.label || 'MI Road, Jaipur', type: 'Commercial', sensors: 12, density: 'High' },
       { id: RAJASTHAN_PLACES?.[1]?.value || 'Jodhpur', name: RAJASTHAN_PLACES?.[1]?.label || 'Clock Tower, Jodhpur', type: 'Educational', sensors: 8, density: 'Medium' },
     ];
-  }, [readings]);
+  }, [latestCityReadings, readings]);
 
   
   const [customThresholds, setCustomThresholds] = useState({
@@ -74,13 +81,20 @@ const NoiseLevelTracking = () => {
     standardPriority: false
   });
 
-  const [comparativeZones, setComparativeZones] = useState([
-    { id: 1, name: RAJASTHAN_PLACES?.[0]?.label || 'MI Road, Jaipur', type: 'Commercial', sensors: 12, currentLevel: 68, peakLevel: 82, averageLevel: 61, trend: 8, compliant: false },
-    { id: 2, name: RAJASTHAN_PLACES?.[1]?.label || 'Clock Tower, Jodhpur', type: 'Educational', sensors: 8, currentLevel: 52, peakLevel: 58, averageLevel: 48, trend: -3, compliant: true },
-    { id: 3, name: RAJASTHAN_PLACES?.[2]?.label || 'Lake Pichola, Udaipur', type: 'Healthcare', sensors: 15, currentLevel: 48, peakLevel: 55, averageLevel: 45, trend: 2, compliant: true },
-    { id: 4, name: RAJASTHAN_PLACES?.[3]?.label || 'Pushkar Road, Ajmer', type: 'Residential', sensors: 10, currentLevel: 58, peakLevel: 65, averageLevel: 54, trend: 5, compliant: false },
-    { id: 5, name: RAJASTHAN_PLACES?.[4]?.label || 'Industrial Area, Tonk', type: 'Industrial', sensors: 6, currentLevel: 75, peakLevel: 88, averageLevel: 72, trend: 12, compliant: false }
-  ]);
+  const comparativeZones = useMemo(() => {
+    const zones = (latestCityReadings || []).slice(0, 5).map((r, i) => {
+      const locRows = (allRecent || []).filter(x => x.location === r.location && typeof x.noise_level === 'number');
+      const levels = locRows.map(x => x.noise_level);
+      const current = r.noise_level ?? (levels[0] ?? 0);
+      const peak = levels.length ? Math.max(...levels) : current ?? 0;
+      const avg = levels.length ? Math.round(levels.reduce((a, b) => a + b, 0) / levels.length) : current ?? 0;
+      const trend = (current - (levels[1] ?? current));
+      const compliant = current < 85;
+      return { id: i + 1, name: r.location, type: 'Unknown', sensors: 1, currentLevel: current, peakLevel: peak, averageLevel: avg, trend, compliant };
+    });
+    if (zones.length) return zones;
+    return [];
+  }, [latestCityReadings, allRecent]);
 
   const [exportSettings, setExportSettings] = useState({
     reportType: 'compliance',

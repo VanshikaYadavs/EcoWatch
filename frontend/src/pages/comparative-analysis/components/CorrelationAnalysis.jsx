@@ -2,8 +2,9 @@ import React, { useMemo, useState } from 'react';
 import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ZAxis } from 'recharts';
 import Icon from '../../../components/AppIcon';
 import Select from '../../../components/ui/Select';
+import { useLatestCityReadings, useComparativeSeries } from '../../../utils/dataHooks';
 
-const CorrelationAnalysis = ({ selectedCities, selectedParameters }) => {
+const CorrelationAnalysis = ({ selectedCities, selectedParameters, refreshToken = 0 }) => {
   const [xParameter, setXParameter] = React.useState('aqi');
   const [yParameter, setYParameter] = React.useState('temperature');
 
@@ -16,50 +17,32 @@ const CorrelationAnalysis = ({ selectedCities, selectedParameters }) => {
            param === 'pm25'? 'PM2.5' : 'PM10'
   }));
 
-  const cityNames = {
-    jaipur: 'Jaipur',
-    jodhpur: 'Jodhpur',
-    udaipur: 'Udaipur',
-    kota: 'Kota',
-    ajmer: 'Ajmer',
-    bikaner: 'Bikaner',
-    alwar: 'Alwar',
-    bharatpur: 'Bharatpur',
-    sikar: 'Sikar',
-    pali: 'Pali',
-    tonk: 'Tonk',
-    bhilwara: 'Bhilwara'
-  };
+  const { data: latestCityReadings } = useLatestCityReadings({ fallbackWindow: 200 });
+  const idToName = useMemo(() => {
+    const map = {};
+    for (const r of latestCityReadings || []) {
+      const id = String(r.location || '').toLowerCase().replace(/\s+/g, '-');
+      map[id] = r.location;
+    }
+    return map;
+  }, [latestCityReadings]);
+
+  const chosenLocations = useMemo(() => (selectedCities || []).map(id => idToName[id]).filter(Boolean), [selectedCities, idToName]);
+  const { data: series, loading } = useComparativeSeries({ locations: chosenLocations, parameters: [xParameter, yParameter], timeRange: '24h', refreshToken });
 
   const generateCorrelationData = useMemo(() => {
-    return selectedCities?.map(cityId => {
-      const getRandomValue = (param) => {
-        switch(param) {
-          case 'aqi':
-            return Math.round(Math.random() * 100 + 50);
-          case 'noise':
-            return Math.round(Math.random() * 30 + 50);
-          case 'temperature':
-            return Math.round((Math.random() * 15 + 20) * 10) / 10;
-          case 'humidity':
-            return Math.round(Math.random() * 40 + 30);
-          case 'pm25':
-            return Math.round(Math.random() * 50 + 20);
-          case 'pm10':
-            return Math.round(Math.random() * 80 + 40);
-          default:
-            return Math.round(Math.random() * 100);
+    const points = [];
+    for (const row of series || []) {
+      for (const cityId of selectedCities || []) {
+        const x = row?.[`${cityId}_${xParameter}`];
+        const y = row?.[`${cityId}_${yParameter}`];
+        if (x != null && y != null) {
+          points.push({ city: idToName[cityId] || cityId, x: Number(x), y: Number(y), z: 100 });
         }
-      };
-
-      return {
-        city: cityNames?.[cityId],
-        x: getRandomValue(xParameter),
-        y: getRandomValue(yParameter),
-        z: Math.random() * 100 + 50
-      };
-    });
-  }, [selectedCities, xParameter, yParameter]);
+      }
+    }
+    return points;
+  }, [series, selectedCities, xParameter, yParameter, idToName]);
 
   const CustomTooltip = ({ active, payload }) => {
     if (active && payload && payload?.length) {
@@ -165,6 +148,11 @@ const CorrelationAnalysis = ({ selectedCities, selectedParameters }) => {
             />
           </ScatterChart>
         </ResponsiveContainer>
+        {loading && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="text-xs md:text-sm text-muted-foreground">Refreshing…</span>
+          </div>
+        )}
       </div>
       <div className="mt-4 p-4 rounded-lg bg-muted/50 border border-border">
         <div className="flex items-start gap-2">

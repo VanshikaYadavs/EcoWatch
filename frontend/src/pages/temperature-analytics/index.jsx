@@ -11,7 +11,8 @@ import ComparativeAnalysis from './components/ComparativeAnalysis';
 import Select from '../../components/ui/Select';
 import Button from '../../components/ui/Button';
 import Icon from '../../components/AppIcon';
-import { useEnvironmentReadings } from '../../utils/dataHooks';
+import { useEnvironmentReadings, useLatestCityReadings } from '../../utils/dataHooks';
+import { getSessionAllowlist } from '../../utils/sessionCities';
 
 const TemperatureAnalytics = () => {
   const [selectedLocation, setSelectedLocation] = useState('all');
@@ -19,18 +20,19 @@ const TemperatureAnalytics = () => {
   const [showHeatIndex, setShowHeatIndex] = useState(true);
   const [timePeriod, setTimePeriod] = useState('24h');
   const { data: readings, loading } = useEnvironmentReadings({ location: selectedLocation, limit: 100, realtime: true });
+  const [allowlist, setAllowlist] = useState([]);
+  const { data: latestCityReadings } = useLatestCityReadings({ fallbackWindow: 200, allowLocations: allowlist });
+  React.useEffect(() => { (async () => { try { setAllowlist(await getSessionAllowlist()); } catch {} })(); }, []);
+  const { data: allRecent } = useEnvironmentReadings({ location: null, limit: 200, realtime: false });
   
 
-  const locations = [
-    {
-      id: 'jaipur',
-      name: 'Jaipur City'
-    },
-    {
-      id: 'tonk',
-      name: 'Tonk District'
+  const locations = useMemo(() => {
+    if (latestCityReadings?.length) {
+      return latestCityReadings.map(r => ({ id: r.location, name: r.location }));
     }
-  ];
+    const unique = new Set((readings || []).map(r => r.location).filter(Boolean));
+    return [...unique].map(loc => ({ id: loc, name: loc }));
+  }, [latestCityReadings, readings]);
 
   const temperatureData = useMemo(() => {
     const seq = (readings || []).slice().reverse();
@@ -48,16 +50,9 @@ const TemperatureAnalytics = () => {
     }));
   }, [readings]);
 
-  const heatMapZones = [
-    { id: 1, name: 'MI Road, Jaipur', temperature: 34, lat: 40.7128, lng: -74.0060 },
-    { id: 2, name: 'Industrial Area, Tonk', temperature: 36, lat: 40.7589, lng: -73.9851 },
-    { id: 3, name: 'Lake Pichola, Udaipur', temperature: 28, lat: 40.7489, lng: -73.9680 },
-    { id: 4, name: 'Pushkar Road, Ajmer', temperature: 25, lat: 40.7829, lng: -73.9654 },
-    { id: 5, name: 'Clock Tower, Jodhpur', temperature: 26, lat: 40.7061, lng: -74.0087 },
-    { id: 6, name: 'Industrial Area, Bikaner', temperature: 32, lat: 40.6413, lng: -73.7781 },
-    { id: 7, name: 'Jaipur City', temperature: 29, lat: 40.8448, lng: -73.8648 },
-    { id: 8, name: 'Tonk District', temperature: 24, lat: 40.6892, lng: -74.0445 }
-  ];
+  const heatMapZones = useMemo(() => {
+    return (latestCityReadings || []).map((r, i) => ({ id: i + 1, name: r.location, temperature: r.temperature ?? null, lat: r.latitude ?? 0, lng: r.longitude ?? 0 }));
+  }, [latestCityReadings]);
 
   const statisticalData = {
     statistics: {
@@ -86,13 +81,18 @@ const TemperatureAnalytics = () => {
     }
   };
 
-  const comparativeLocations = [
-    { id: 1, name: 'Jaipur City', current: 34, difference: 0, average24h: 28.5 },
-    { id: 2, name: 'Tonk District', current: 36, difference: 2, average24h: 30.2 },
-    { id: 3, name: 'Udaipur City', current: 28, difference: -6, average24h: 25.8 },
-    { id: 4, name: 'Ajmer City', current: 25, difference: -9, average24h: 23.1 },
-    { id: 5, name: 'Jodhpur City', current: 26, difference: -8, average24h: 24.5 }
-  ];
+  const comparativeLocations = useMemo(() => {
+    const items = (latestCityReadings || []).slice(0, 5).map((r, i) => {
+      const locRows = (allRecent || []).filter(x => x.location === r.location && typeof x.temperature === 'number');
+      const temps = locRows.map(x => x.temperature);
+      const current = r.temperature ?? (temps[0] ?? null);
+      const avg24h = temps.length ? Math.round((temps.reduce((a, b) => a + b, 0) / temps.length) * 10) / 10 : current;
+      const prev = temps[1] ?? current;
+      const diff = current != null && prev != null ? Math.round((current - prev) * 10) / 10 : 0;
+      return { id: i + 1, name: r.location, current, difference: diff, average24h: avg24h };
+    });
+    return items;
+  }, [latestCityReadings, allRecent]);
 
   const timePeriodOptions = [
     { value: '24h', label: 'Last 24 Hours' },

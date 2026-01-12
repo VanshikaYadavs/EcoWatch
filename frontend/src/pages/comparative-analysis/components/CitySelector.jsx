@@ -1,22 +1,19 @@
 import React from 'react';
 import { Checkbox } from '../../../components/ui/Checkbox';
 import Icon from '../../../components/AppIcon';
+import { useLatestCityReadings } from '../../../utils/dataHooks';
+import { getSessionAllowlist } from '../../../utils/sessionCities';
 
 const CitySelector = ({ selectedCities, onCityToggle, maxSelections = 5 }) => {
-  const cities = [
-    { id: 'jaipur', name: 'Jaipur', region: 'Central', currentAQI: 156 },
-    { id: 'jodhpur', name: 'Jodhpur', region: 'Western', currentAQI: 142 },
-    { id: 'udaipur', name: 'Udaipur', region: 'Southern', currentAQI: 98 },
-    { id: 'kota', name: 'Kota', region: 'Eastern', currentAQI: 178 },
-    { id: 'ajmer', name: 'Ajmer', region: 'Central', currentAQI: 134 },
-    { id: 'bikaner', name: 'Bikaner', region: 'Northern', currentAQI: 165 },
-    { id: 'alwar', name: 'Alwar', region: 'Eastern', currentAQI: 123 },
-    { id: 'bharatpur', name: 'Bharatpur', region: 'Eastern', currentAQI: 145 },
-    { id: 'sikar', name: 'Sikar', region: 'Northern', currentAQI: 112 },
-    { id: 'pali', name: 'Pali', region: 'Western', currentAQI: 128 },
-    { id: 'tonk', name: 'Tonk', region: 'Central', currentAQI: 149 },
-    { id: 'bhilwara', name: 'Bhilwara', region: 'Southern', currentAQI: 118 }
-  ];
+  const [allowlist, setAllowlist] = React.useState([]);
+  React.useEffect(() => { (async () => { try { setAllowlist(await getSessionAllowlist()); } catch {} })(); }, []);
+  const { data: latestCityReadings } = useLatestCityReadings({ fallbackWindow: 150, allowLocations: allowlist });
+  const cities = (latestCityReadings || []).map(r => ({
+    id: (r.location || '').toLowerCase().replace(/\s+/g, '-'),
+    name: r.location,
+    region: 'Unknown',
+    currentAQI: typeof r.aqi === 'number' ? r.aqi : null,
+  }));
 
   const getAQIColor = (aqi) => {
     if (aqi <= 50) return 'text-success';
@@ -42,7 +39,7 @@ const CitySelector = ({ selectedCities, onCityToggle, maxSelections = 5 }) => {
         </div>
       </div>
       <p className="text-xs md:text-sm text-muted-foreground mb-4">
-        Select up to {maxSelections} cities for comprehensive environmental comparison
+        Select up to {maxSelections} cities based on live data
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {cities?.map((city) => {
@@ -71,7 +68,7 @@ const CitySelector = ({ selectedCities, onCityToggle, maxSelections = 5 }) => {
                     {city?.name}
                   </span>
                   <span className="text-xs font-caption text-muted-foreground">
-                    {city?.region} Rajasthan
+                    {city?.region}
                   </span>
                 </div>
               </div>

@@ -7,10 +7,13 @@ import HotspotAlert from './components/HotspotAlert';
 import QuickStats from './components/QuickStats';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
-import { useEnvironmentReadings, useAlertEvents } from '../../utils/dataHooks';
+import { useEnvironmentReadings, useAlertEvents, useLatestCityReadings } from '../../utils/dataHooks';
 import { getLatestReading } from '../../services/environment.service';
 import { getCurrentLocation } from '../../utils/location';
+import { getNearbyCities } from '../../utils/nearbyCities';
+import { getSessionAllowlist, recomputeSessionCities } from '../../utils/sessionCities';
 import axios from 'axios';
+import { supabase } from '../../utils/supabaseClient';
 
 const EnvironmentalDashboard = () => {
   const navigate = useNavigate();
@@ -22,49 +25,86 @@ const EnvironmentalDashboard = () => {
 
   const { data: readings } = useEnvironmentReadings({ location: location === 'all' ? null : location, limit: 100, realtime: true });
   const { data: alerts } = useAlertEvents({ limit: 20 });
+  const [allowlist, setAllowlist] = useState([]);
+  const [recomputing, setRecomputing] = useState(false);
+  const { data: latestCityReadings } = useLatestCityReadings({ fallbackWindow: 120, allowLocations: allowlist });
 
   const latest = useMemo(() => readings?.[0] || {}, [readings]);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      if (!allowlist?.length) return; // need a current city
       setEnvLoading(true);
-      const data = await getLatestReading();
+      const currentCity = allowlist[0];
+      const data = await getLatestReading(currentCity);
       if (!cancelled) {
         setEnvData(data);
         setEnvLoading(false);
       }
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [allowlist?.[0]]);
 
-  // On first load, try to ingest based on user's location
+  // When the session allowlist loads, default the page's selected location
+  // to the current city to avoid global reads.
+  useEffect(() => {
+    if (allowlist?.length && location === 'all') {
+      setLocation(allowlist[0]);
+    }
+  }, [allowlist, location]);
+
+  // On first load, ingest user's location and nearby cities
   useEffect(() => {
     let mounted = true;
     (async () => {
+      try {
+        const names = await getSessionAllowlist();
+        if (mounted) setAllowlist(names);
+      } catch {}
       // First: try to get geolocation
       try {
         const { lat, lon } = await getCurrentLocation();
+        const { data: sessData } = await supabase.auth.getSession();
+        const userId = sessData?.session?.user?.id;
+        const token = sessData?.session?.access_token;
+        if (!userId) {
+          console.warn('Skipping ingest: missing user_id (not signed in)');
+        }
         // Then: request backend ingest for this location
         try {
-          await axios.get(`http://localhost:8080/api/ingest/now?lat=${lat}&lon=${lon}`);
+          if (userId && token) {
+            await axios.get(
+              `http://localhost:8080/api/ingest/now?lat=${lat}&lon=${lon}&name=Your%20Location`,
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
+          }
         } catch (reqErr) {
           console.warn('Location-based ingest failed:', reqErr?.message || reqErr);
           // Do not fallback to Jaipur if the user granted permission; keep existing data
         }
-      } catch (geoErr) {
-        // Only fallback when permission is denied or geolocation is unavailable
-        const denied = geoErr?.code === 1 || /denied/i.test(String(geoErr?.message || ''));
-        if (denied) {
-          try {
-            const jaipur = { lat: 26.9124, lon: 75.7873 };
-            await axios.get(`http://localhost:8080/api/ingest/now?lat=${jaipur.lat}&lon=${jaipur.lon}&name=Jaipur`);
-          } catch (e) {
-            console.warn('Fallback ingest failed:', e?.message || e);
+
+        // Fetch and ingest for nearby cities (3-4)
+        try {
+          const nearby = await getNearbyCities(lat, lon);
+          for (const city of nearby) {
+            try {
+              if (userId && token) {
+                await axios.get(
+                  `http://localhost:8080/api/ingest/now?lat=${city.lat}&lon=${city.lon}&name=${encodeURIComponent(city.name)}`,
+                  { headers: { Authorization: `Bearer ${token}` } }
+                );
+              }
+            } catch (e) {
+              console.warn('Nearby city ingest failed:', city.name, e?.message || e);
+            }
           }
-        } else {
-          console.warn('Geolocation unavailable:', geoErr?.message || geoErr);
+        } catch (nearErr) {
+          console.warn('Nearby cities lookup failed:', nearErr?.message || nearErr);
         }
+      } catch (geoErr) {
+        // Geolocation unavailable or denied — do not fallback to a hardcoded city.
+        console.warn('Geolocation unavailable/denied; skipping default fallback.', geoErr?.message || geoErr);
       }
     })();
     return () => { mounted = false; };
@@ -195,7 +235,8 @@ const EnvironmentalDashboard = () => {
     }
   ];
 
-  const sensors = (readings || []).slice(0, 20).map((r, i) => ({
+  // Use latest-per-city readings for map sensors to avoid duplicates
+  const sensors = (latestCityReadings || []).map((r, i) => ({
     id: i + 1,
     location: r.location || 'Unknown',
     address: r.location,
@@ -244,6 +285,17 @@ const EnvironmentalDashboard = () => {
 
   const handleEmergencyBroadcast = () => {
     console.log('Emergency broadcast initiated');
+  };
+
+  const handleRecomputeNearby = async () => {
+    setRecomputing(true);
+    try {
+      await recomputeSessionCities();
+      const names = await getSessionAllowlist();
+      setAllowlist(names);
+    } finally {
+      setRecomputing(false);
+    }
   };
 
   if (envLoading) {
@@ -300,6 +352,17 @@ const EnvironmentalDashboard = () => {
           </div>
 
           <div className="space-y-3">
+            <Button
+              variant="outline"
+              iconName={recomputing ? 'Loader2' : 'RefreshCw'}
+              iconPosition="left"
+              fullWidth
+              onClick={handleRecomputeNearby}
+              disabled={recomputing}
+            >
+              {recomputing ? 'Recomputing Nearby Cities…' : 'Recompute Nearby Cities'}
+            </Button>
+
             <Button
               variant="destructive"
               iconName="Siren"

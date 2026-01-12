@@ -5,7 +5,13 @@ import SensorDataTable from './components/SensorDataTable';
 import FilterControls from './components/FilterControls';
 import AlertConfiguration from './components/AlertConfiguration';
 import LocationComparison from './components/LocationComparison';
-import { useEnvironmentReadings } from '../../utils/dataHooks';
+import { useEnvironmentReadings, useLatestCityReadings } from '../../utils/dataHooks';
+import { getCurrentLocation } from '../../utils/location';
+import { getNearbyCities } from '../../utils/nearbyCities';
+import axios from 'axios';
+import { getSessionAllowlist, recomputeSessionCities } from '../../utils/sessionCities';
+import Button from '../../components/ui/Button';
+import { supabase } from '../../utils/supabaseClient';
 
 const AirQualityMonitor = () => {
   const [filters, setFilters] = useState({
@@ -19,15 +25,70 @@ const AirQualityMonitor = () => {
   const [sensorData, setSensorData] = useState([]);
   const [comparisonData, setComparisonData] = useState([]);
   const { data: readings, loading } = useEnvironmentReadings({ location: filters.location === 'all' ? null : filters.location, limit: 100, realtime: true });
+  const [allowlist, setAllowlist] = useState([]);
+  const { data: latestCityReadings } = useLatestCityReadings({ fallbackWindow: 150, allowLocations: allowlist });
+  const [recomputing, setRecomputing] = useState(false);
 
   useEffect(() => {
-    if (!readings?.length) return;
-    const series = readings
+    (async () => {
+      try { setAllowlist(await getSessionAllowlist()); } catch {}
+    })();
+  }, []);
+
+  // Ingest user's location + nearby cities on first load (in case user lands here directly)
+  useEffect(() => {
+    (async () => {
+      try {
+        const { lat, lon } = await getCurrentLocation();
+        const { data: sessData } = await supabase.auth.getSession();
+        const userId = sessData?.session?.user?.id;
+        const token = sessData?.session?.access_token;
+        if (!userId) {
+          console.warn('Skipping ingest: missing user_id (not signed in)');
+        }
+        try {
+          if (userId && token) {
+            await axios.get(
+              `http://localhost:8080/api/ingest/now?lat=${lat}&lon=${lon}&name=Your%20Location`,
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
+          }
+        } catch (e) {
+          console.warn('AQM ingest (self) failed:', e?.message || e);
+        }
+        try {
+          const nearby = await getNearbyCities(lat, lon);
+          for (const city of nearby) {
+            try {
+              if (userId && token) {
+                await axios.get(
+                  `http://localhost:8080/api/ingest/now?lat=${city.lat}&lon=${city.lon}&name=${encodeURIComponent(city.name)}`,
+                  { headers: { Authorization: `Bearer ${token}` } }
+                );
+              }
+            } catch (e2) {
+              console.warn('AQM ingest (nearby) failed:', city.name, e2?.message || e2);
+            }
+          }
+        } catch (nearErr) {
+          console.warn('Nearby cities lookup failed:', nearErr?.message || nearErr);
+        }
+      } catch (geoErr) {
+        // Geolocation denied/unavailable — skip hardcoded fallback city to avoid confusion.
+        console.warn('AQM geolocation unavailable/denied:', geoErr?.message || geoErr);
+      }
+    })();
+  }, []);
+
+  useEffect(() => {
+    const srcReadings = latestCityReadings?.length ? latestCityReadings : readings || [];
+    if (!srcReadings?.length) return;
+    const series = (readings || [])
       .slice()
       .reverse()
-      .map(r => ({ time: new Date(r.recorded_at).toLocaleTimeString(), aqi: r.aqi ?? 0 }));
+      .map(r => ({ time: new Date(r.recorded_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), aqi: r.aqi ?? 0 }));
     setChartData(series);
-    const sensors = readings.slice(0, 50).map((r, i) => ({
+    const sensors = srcReadings.slice(0, 50).map((r, i) => ({
       id: i + 1,
       location: r.location,
       zone: r.location,
@@ -36,24 +97,17 @@ const AirQualityMonitor = () => {
       pm10: null,
       ozone: null,
       no2: null,
-      lastUpdate: new Date(r.recorded_at).toLocaleTimeString(),
+      lastUpdate: new Date(r.recorded_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     }));
     setSensorData(sensors);
-    const comp = readings.slice(0, 10).map(r => ({ location: r.location, pm25: 0, pm10: 0, ozone: 0, no2: 0 }));
+    const comp = srcReadings.slice(0, 10).map(r => ({ location: r.location, pm25: 0, pm10: 0, ozone: 0, no2: 0 }));
     setComparisonData(comp);
-  }, [readings]);
+  }, [readings, latestCityReadings]);
 
-  const locationOptions = [
-    { value: 'all', label: 'All Locations' },
-    { value: 'downtown', label: 'MI Road, Jaipur' },
-    { value: 'industrial', label: 'Industrial Area, Tonk' },
-    { value: 'riverside', label: 'Lake Pichola, Udaipur' },
-    { value: 'highway', label: 'Clock Tower, Jodhpur' },
-    { value: 'residential', label: 'Pushkar Road, Ajmer' },
-    { value: 'university', label: 'Jaipur City' },
-    { value: 'airport', label: 'Industrial Area, Bikaner' },
-    { value: 'harbor', label: 'Tonk District' }
-  ];
+  const locationOptions = useMemo(() => {
+    const dynamic = (latestCityReadings || []).map(r => ({ value: r.location, label: r.location }));
+    return [{ value: 'all', label: 'All Locations' }, ...dynamic];
+  }, [latestCityReadings]);
 
   const pollutantOptions = [
     { value: 'pm25', label: 'PM2.5 (Fine Particles)' },
@@ -92,6 +146,17 @@ const AirQualityMonitor = () => {
     alert('Alert configuration saved successfully!');
   };
 
+  async function handleRecomputeNearby() {
+    setRecomputing(true);
+    try {
+      await recomputeSessionCities();
+      const names = await getSessionAllowlist();
+      setAllowlist(names);
+    } finally {
+      setRecomputing(false);
+    }
+  }
+
   return (
     <>
       <Helmet>
@@ -104,6 +169,17 @@ const AirQualityMonitor = () => {
           <p className="text-base md:text-lg text-muted-foreground">
             Real-time AQI tracking and pollutant analysis across monitoring stations
           </p>
+          <div className="flex gap-2 mt-2">
+            <Button
+              variant="outline"
+              iconName={recomputing ? 'Loader2' : 'RefreshCw'}
+              iconPosition="left"
+              onClick={handleRecomputeNearby}
+              disabled={recomputing}
+            >
+              {recomputing ? 'Recomputing Nearby Cities…' : 'Recompute Nearby Cities'}
+            </Button>
+          </div>
         </div>
 
         <FilterControls
@@ -127,7 +203,7 @@ const AirQualityMonitor = () => {
 
         <LocationComparison
           comparisonData={comparisonData}
-          selectedLocations={['MI Road, Jaipur', 'Industrial Area, Tonk', 'Lake Pichola, Udaipur', 'Clock Tower, Jodhpur', 'Pushkar Road, Ajmer']}
+          selectedLocations={(latestCityReadings || []).slice(0, 5).map(r => r.location)}
         />
 
         <AlertConfiguration
