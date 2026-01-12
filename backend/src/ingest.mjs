@@ -1,5 +1,4 @@
-import 'dotenv/config';
-import { supabaseAdmin } from './index.mjs';
+import './loadEnv.mjs';
 import { evaluateAndRecordAlerts } from './alerts.mjs';
 
 const WAQI_TOKEN = process.env.WAQI_TOKEN;
@@ -42,6 +41,8 @@ function maybeSimulateNoise() {
 
 export async function ingestOne({ name, lat, lon, user_id, simulateNoise = true }) {
   if (!hasGlobalFetch) throw new Error('Global fetch is not available. Use Node 18+ or polyfill fetch.');
+  // Resolve supabaseAdmin at runtime to avoid circular import issues
+  const { supabaseAdmin } = await import('./index.mjs');
   if (!supabaseAdmin) throw new Error('Supabase admin client is not configured');
   // Enforce user identity unless explicitly allowed for dev via env flag
   const allowAnon = process.env.ALLOW_ANON_INGEST === '1';

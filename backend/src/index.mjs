@@ -1,20 +1,22 @@
-import 'dotenv/config';
+import './loadEnv.mjs';
 import express from 'express';
 import morgan from 'morgan';
 import axios from 'axios';
 import cors from 'cors';
 import { createClient } from '@supabase/supabase-js';
-import { ingestOne } from './ingest.mjs';
+import { startScheduler } from './scheduler.mjs';
 
 const app = express();
 app.use(express.json());
-app.use(morgan('dev'));
+// app.use(morgan('dev'));  // Disable morgan temporarily for testing
 // Allow frontend dev origin for cross-origin requests
 app.use(cors({ origin: process.env.FRONTEND_ORIGIN || 'http://localhost:5173' }));
 
 const PORT = process.env.PORT || 8080;
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+console.log(`[startup] PORT=${PORT}, SUPABASE_URL set=${!!SUPABASE_URL}`);
 
 if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
   console.warn('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in environment. Some routes will not function.');
@@ -33,6 +35,28 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok', service: 'ecowatch-backend' });
 });
 
+// Ping route (simplest possible)
+app.get('/api/ping', (_req, res) => {
+  console.log(`[ping] Received request`);
+  res.json({ pong: true, timestamp: new Date().toISOString() });
+});
+
+// Check Supabase connectivity
+app.get('/api/check-supabase', async (_req, res) => {
+  try {
+    if (!supabaseAdmin) {
+      return res.status(500).json({ error: 'Supabase client not initialized' });
+    }
+    const { data, error } = await supabaseAdmin.from('profiles').select('id').limit(1);
+    if (error) {
+      return res.status(500).json({ error: error.message });
+    }
+    res.json({ ok: true, message: 'Supabase connection OK', rowCount: data?.length || 0 });
+  } catch (err) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
 // Root route – helpful message for developers
 app.get('/', (_req, res) => {
   res.status(200).send(`
@@ -43,6 +67,8 @@ app.get('/', (_req, res) => {
         <p>Available endpoints:</p>
         <ul>
           <li><a href="/health">/health</a> – service status</li>
+          <li><a href="/api/ping">/api/ping</a> – quick ping test</li>
+          <li><a href="/api/check-supabase">/api/check-supabase</a> – Supabase connectivity</li>
           <li><a href="/api/readings/latest">/api/readings/latest</a> – query latest readings</li>
           <li><a href="/api/ingest/now?name=Your%20Location&lat=28.56&lon=77.89&demo=1">/api/ingest/now</a> – trigger one-off ingest (dev demo link)</li>
         </ul>
@@ -155,6 +181,8 @@ app.get('/api/ingest/now', requireAuth, async (req, res) => {
     const finalName = canonical || name || 'User Location';
 
     console.log(`[ingest] coords=(${lat},${lon}) finalName="${finalName}" clientName="${name || ''}"`);
+    // import ingest dynamically to avoid circular import during module init
+    const { ingestOne } = await import('./ingest.mjs');
     const data = await ingestOne({ name: finalName, lat, lon, user_id });
     // Redact user_id from API response to avoid exposing identity
     const redacted = data ? {
@@ -176,8 +204,132 @@ app.get('/api/ingest/now', requireAuth, async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`EcoWatch backend listening on http://localhost:${PORT}`);
+// Test email endpoint (dev/debug only)
+app.post('/api/test-email', async (req, res) => {
+  try {
+    const { to, subject, message } = req.body;
+    if (!to) return res.status(400).json({ error: 'to email is required' });
+
+    const { sendEmail } = await import('./email.mjs');
+    const result = await sendEmail({
+      to,
+      subject: subject || 'EcoWatch Test Email',
+      text: message || 'This is a test email from EcoWatch. If you received this, email sending works!',
+    });
+
+    if (!result.ok) {
+      return res.status(500).json({ error: result.reason || 'Send failed' });
+    }
+    res.json({ ok: true, message: 'Email sent successfully' });
+  } catch (err) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// Test alert with suggestions endpoint (dev/debug only)
+app.post('/api/test-alert-with-suggestions', async (req, res) => {
+  try {
+    const { to, aqi, noise_level, temperature, location } = req.body;
+    if (!to) return res.status(400).json({ error: 'to email is required' });
+
+    const { generateSuggestions } = await import('./alerts.mjs');
+    const { sendEmail } = await import('./email.mjs');
+
+    // Create a test reading object
+    const testReading = {
+      aqi: aqi || null,
+      noise_level: noise_level || null,
+      temperature: temperature || null,
+      location: location || 'Test Location',
+      recorded_at: new Date().toISOString(),
+    };
+
+    // Generate suggestions
+    const suggestions = generateSuggestions(testReading);
+    const alertType = aqi ? 'AQI' : noise_level ? 'NOISE' : temperature ? 'HEAT' : 'ALERT';
+    
+    const alertColor = alertType === 'NOISE' ? '#FF6B6B' : alertType === 'AQI' ? '#FFA500' : '#FF9800';
+    
+    const html = `
+      <html>
+        <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
+          <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; text-align: center; color: white; border-radius: 8px 8px 0 0;">
+            <h2 style="margin: 0; font-size: 24px;">⚠️ EcoWatch Environmental Alert</h2>
+          </div>
+          
+          <div style="background: #f9f9f9; padding: 30px; border: 1px solid #e0e0e0; border-radius: 0 0 8px 8px;">
+            <div style="background: ${alertColor}; color: white; padding: 15px; border-radius: 6px; margin-bottom: 20px; text-align: center;">
+              <h3 style="margin: 0; font-size: 20px;">${alertType} Alert (Test)</h3>
+            </div>
+            
+            <p style="font-size: 16px; margin: 15px 0;"><strong>📍 Location:</strong> ${testReading.location}</p>
+            <p style="font-size: 16px; margin: 15px 0;"><strong>⏰ Time:</strong> ${new Date(testReading.recorded_at).toLocaleString()}</p>
+            ${aqi ? `<p style="font-size: 16px; margin: 15px 0;"><strong>💨 AQI:</strong> ${aqi}</p>` : ''}
+            ${noise_level ? `<p style="font-size: 16px; margin: 15px 0;"><strong>🔊 Noise:</strong> ${noise_level} dB</p>` : ''}
+            ${temperature ? `<p style="font-size: 16px; margin: 15px 0;"><strong>🌡️ Temperature:</strong> ${temperature}°C</p>` : ''}
+            
+            ${suggestions.length > 0 ? `
+            <div style="background: #f0f8e8; border-left: 4px solid #4caf50; padding: 15px; margin: 20px 0; border-radius: 4px;">
+              <h4 style="margin: 0 0 10px 0; color: #2e7d32; font-size: 14px;">💡 Suggestions:</h4>
+              ${suggestions.map(s => `<p style="margin: 8px 0; font-size: 14px; color: #333;">${s}</p>`).join('')}
+            </div>
+            ` : '<p style="font-size: 14px; color: #999;">No specific suggestions at this time.</p>'}
+            
+            <div style="background: #e8f4f8; border-left: 4px solid #667eea; padding: 15px; margin: 20px 0; border-radius: 4px;">
+              <p style="margin: 0; font-size: 14px; color: #555;">Check your EcoWatch dashboard for more details and adjust your alert thresholds if needed.</p>
+            </div>
+            
+            <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd;">
+              <p style="font-size: 12px; color: #999;">© 2026 EcoWatch. All rights reserved.</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    const result = await sendEmail({
+      to,
+      subject: `🚨 EcoWatch: Test ${alertType} Alert in ${testReading.location}`,
+      text: `Test alert for ${testReading.location}. ${suggestions.join(' ')}`,
+      html,
+    });
+
+    if (!result.ok) {
+      return res.status(500).json({ error: result.reason || 'Send failed' });
+    }
+    
+    res.json({ 
+      ok: true, 
+      message: 'Alert with suggestions sent successfully',
+      suggestions: suggestions,
+      alertType: alertType
+    });
+  } catch (err) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+const server = app.listen(PORT, 'localhost', () => {
+  console.log(`[${new Date().toISOString()}] ✅ EcoWatch backend listening on http://localhost:${PORT}`);
+  
+  // Start the scheduler for automatic data ingestion and alerts
+  if (process.env.ENABLE_SCHEDULER !== 'false') {
+    startScheduler();
+  }
+});
+
+server.on('error', (err) => {
+  console.error(`[ERROR] Server failed to start: ${err.code} - ${err.message}`);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error(`[ERROR] Unhandled rejection: ${reason}`);
+});
+
+process.on('uncaughtException', (err) => {
+  console.error(`[ERROR] Uncaught exception: ${err.message}`);
+  process.exit(1);
 });
 
 // -----------------------------
