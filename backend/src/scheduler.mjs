@@ -15,7 +15,26 @@ const CRON_SCHEDULE = process.env.INGEST_CRON_SCHEDULE || '0 * * * *';
 
 let scheduledTask = null;
 
-export function startScheduler() {
+async function runIngestionCycle() {
+  console.log(`\n[scheduler] ⏰ Running ingestion cycle at ${new Date().toISOString()}`);
+  
+  for (const location of DEFAULT_LOCATIONS) {
+    try {
+      const result = await ingestOne({
+        name: location.name,
+        lat: location.lat,
+        lon: location.lon,
+      });
+      console.log(`[scheduler] ✅ ${location.name}: Reading ID ${result.reading_id}`);
+    } catch (error) {
+      console.error(`[scheduler] ❌ ${location.name}: ${error.message}`);
+    }
+  }
+  
+  console.log(`[scheduler] ✅ Ingestion cycle complete\n`);
+}
+
+export async function startScheduler() {
   console.log(`[scheduler] Starting automated data ingestion...`);
   console.log(`[scheduler] Schedule: ${CRON_SCHEDULE}`);
   console.log(`[scheduler] Monitoring ${DEFAULT_LOCATIONS.length} location(s):`);
@@ -23,24 +42,12 @@ export function startScheduler() {
     console.log(`  - ${loc.name} (${loc.lat}, ${loc.lon})`);
   });
 
-  scheduledTask = cron.schedule(CRON_SCHEDULE, async () => {
-    console.log(`\n[scheduler] ⏰ Running scheduled ingestion at ${new Date().toISOString()}`);
-    
-    for (const location of DEFAULT_LOCATIONS) {
-      try {
-        const result = await ingestOne({
-          name: location.name,
-          lat: location.lat,
-          lon: location.lon,
-        });
-        console.log(`[scheduler] ✅ ${location.name}: Reading ID ${result.reading_id}`);
-      } catch (error) {
-        console.error(`[scheduler] ❌ ${location.name}: ${error.message}`);
-      }
-    }
-    
-    console.log(`[scheduler] ✅ Ingestion cycle complete\n`);
-  });
+  // Run immediately on startup
+  console.log(`[scheduler] 🚀 Running initial ingestion on startup...`);
+  await runIngestionCycle();
+
+  // Schedule recurring ingestions
+  scheduledTask = cron.schedule(CRON_SCHEDULE, runIngestionCycle);
 
   return scheduledTask;
 }

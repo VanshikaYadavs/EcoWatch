@@ -39,6 +39,34 @@ function maybeSimulateNoise() {
   return Math.round((min + Math.random() * (max - min)) * 10) / 10;
 }
 
+/**
+ * Normalize location name using the database mapping table
+ * Falls back to the original name if normalization fails
+ */
+async function normalizeLocationName(locationName, supabaseAdmin) {
+  if (!locationName || !supabaseAdmin) return locationName;
+  
+  try {
+    const { data, error } = await supabaseAdmin
+      .rpc('normalize_location_name', { input_name: locationName });
+    
+    if (error) {
+      console.warn(`[ingest] Location normalization failed for "${locationName}":`, error.message);
+      return locationName;
+    }
+    
+    // If the normalized name is different, log it
+    if (data && data !== locationName) {
+      console.log(`[ingest] Normalized location: "${locationName}" → "${data}"`);
+    }
+    
+    return data || locationName;
+  } catch (err) {
+    console.warn(`[ingest] Location normalization error for "${locationName}":`, err.message);
+    return locationName;
+  }
+}
+
 export async function ingestOne({ name, lat, lon, user_id, simulateNoise = true }) {
   if (!hasGlobalFetch) throw new Error('Global fetch is not available. Use Node 18+ or polyfill fetch.');
   // Resolve supabaseAdmin at runtime to avoid circular import issues
@@ -55,9 +83,12 @@ export async function ingestOne({ name, lat, lon, user_id, simulateNoise = true 
     fetchWeather(lat, lon).catch(() => ({ temperature: null, humidity: null, source: null })),
   ]);
 
+  // Normalize location name for consistent matching
+  const normalizedLocation = await normalizeLocationName(name, supabaseAdmin);
+
   const sources = [aqiRes.source, wxRes.source].filter(Boolean).join(',');
   const payload = {
-    location: name,
+    location: normalizedLocation,
     latitude: lat,
     longitude: lon,
     aqi: aqiRes.aqi,

@@ -12,6 +12,7 @@ else {
 // Simple in-memory rate limiter: map userId/email -> lastSent timestamp
 const lastSent = new Map();
 const MIN_INTERVAL_MS = (process.env.EMAIL_MIN_INTERVAL_MINUTES ? Number(process.env.EMAIL_MIN_INTERVAL_MINUTES) : 15) * 60 * 1000;
+const RATE_LIMIT_ENABLED = process.env.EMAIL_RATE_LIMIT !== 'false';
 
 export async function sendEmail({ to, subject, text, html, userId }) {
   if (!SENDGRID_KEY) {
@@ -19,13 +20,18 @@ export async function sendEmail({ to, subject, text, html, userId }) {
     return { ok: false, reason: 'no_api_key' };
   }
   
-  const key = userId || to;
-  const prev = lastSent.get(key) || 0;
-  const elapsed = Date.now() - prev;
-  
-  if (elapsed < MIN_INTERVAL_MS) {
-    console.warn(`[email] Rate limited for ${to}`);
-    return { ok: false, reason: 'rate_limited' };
+  // Rate limiting check
+  if (RATE_LIMIT_ENABLED) {
+    const key = userId || to;
+    const prev = lastSent.get(key) || 0;
+    const elapsed = Date.now() - prev;
+    
+    if (elapsed < MIN_INTERVAL_MS) {
+      const remainingMs = MIN_INTERVAL_MS - elapsed;
+      const remainingMin = Math.ceil(remainingMs / 60000);
+      console.warn(`[email] Rate limited for ${to} - wait ${remainingMin} more minutes`);
+      return { ok: false, reason: 'rate_limited', remainingMinutes: remainingMin };
+    }
   }
 
   const msg = {
@@ -48,12 +54,15 @@ export async function sendEmail({ to, subject, text, html, userId }) {
 
   try {
     const response = await sgMail.send(msg);
-    lastSent.set(key, Date.now());
-    console.log(`[email] Sent to ${to}`);
+    if (RATE_LIMIT_ENABLED) {
+      const key = userId || to;
+      lastSent.set(key, Date.now());
+    }
+    console.log(`[email] ✅ Sent to ${to} - Subject: "${subject}"`);
     return { ok: true };
   } catch (e) {
     const errorMsg = e?.response?.body?.errors?.[0]?.message || e?.message || String(e);
-    console.error(`[email] SendGrid error: ${errorMsg}`);
+    console.error(`[email] ❌ SendGrid error: ${errorMsg}`);
     return { ok: false, reason: errorMsg };
   }
 }

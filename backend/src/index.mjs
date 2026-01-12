@@ -309,6 +309,184 @@ app.post('/api/test-alert-with-suggestions', async (req, res) => {
   }
 });
 
+// ===================================================
+// LOCATION MANAGEMENT ENDPOINTS
+// ===================================================
+
+// Get user's monitored locations
+app.get('/api/user/locations', requireAuth, async (req, res) => {
+  try {
+    if (!supabaseAdmin) return res.status(500).json({ error: 'Supabase not configured' });
+    const userId = req.user_id;
+
+    const { data, error } = await supabaseAdmin
+      .from('user_alert_preferences')
+      .select('monitored_locations, alert_radius_km, auto_detect_location')
+      .eq('user_id', userId)
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      return res.status(400).json({ error: error.message });
+    }
+
+    res.json({ 
+      monitored_locations: data?.monitored_locations || [],
+      alert_radius_km: data?.alert_radius_km || 50,
+      auto_detect_location: data?.auto_detect_location || false
+    });
+  } catch (err) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// Update user's monitored locations
+app.put('/api/user/locations', requireAuth, async (req, res) => {
+  try {
+    if (!supabaseAdmin) return res.status(500).json({ error: 'Supabase not configured' });
+    const userId = req.user_id;
+    const { monitored_locations, alert_radius_km, auto_detect_location } = req.body;
+
+    // Validate monitored_locations is an array of strings
+    if (monitored_locations && !Array.isArray(monitored_locations)) {
+      return res.status(400).json({ error: 'monitored_locations must be an array' });
+    }
+
+    // Check if preferences exist
+    const { data: existing } = await supabaseAdmin
+      .from('user_alert_preferences')
+      .select('id')
+      .eq('user_id', userId)
+      .single();
+
+    const updates = {};
+    if (monitored_locations !== undefined) updates.monitored_locations = monitored_locations;
+    if (alert_radius_km !== undefined) updates.alert_radius_km = alert_radius_km;
+    if (auto_detect_location !== undefined) updates.auto_detect_location = auto_detect_location;
+
+    if (existing) {
+      // Update existing preferences
+      const { data, error } = await supabaseAdmin
+        .from('user_alert_preferences')
+        .update(updates)
+        .eq('user_id', userId)
+        .select('monitored_locations, alert_radius_km, auto_detect_location')
+        .single();
+
+      if (error) return res.status(400).json({ error: error.message });
+      res.json({ success: true, data });
+    } else {
+      // Create new preferences
+      const { data, error } = await supabaseAdmin
+        .from('user_alert_preferences')
+        .insert([{ user_id: userId, ...updates }])
+        .select('monitored_locations, alert_radius_km, auto_detect_location')
+        .single();
+
+      if (error) return res.status(400).json({ error: error.message });
+      res.json({ success: true, data });
+    }
+  } catch (err) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// Get list of available locations (from location_name_mappings table)
+app.get('/api/locations', async (_req, res) => {
+  try {
+    if (!supabaseAdmin) return res.status(500).json({ error: 'Supabase not configured' });
+
+    const { data, error } = await supabaseAdmin
+      .from('location_name_mappings')
+      .select('canonical_name, latitude, longitude, state')
+      .order('canonical_name');
+
+    if (error) return res.status(400).json({ error: error.message });
+
+    res.json({ locations: data || [] });
+  } catch (err) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// Normalize a location name (convert alternate names to canonical)
+app.post('/api/locations/normalize', async (req, res) => {
+  try {
+    if (!supabaseAdmin) return res.status(500).json({ error: 'Supabase not configured' });
+    const { location_name } = req.body;
+
+    if (!location_name || typeof location_name !== 'string') {
+      return res.status(400).json({ error: 'location_name is required' });
+    }
+
+    // Use the database function we created
+    const { data, error } = await supabaseAdmin
+      .rpc('normalize_location_name', { input_name: location_name });
+
+    if (error) return res.status(400).json({ error: error.message });
+
+    res.json({ normalized_name: data });
+  } catch (err) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// Find nearby locations based on coordinates
+app.get('/api/locations/nearby', async (req, res) => {
+  try {
+    if (!supabaseAdmin) return res.status(500).json({ error: 'Supabase not configured' });
+    
+    const { lat, lon, radius_km } = req.query;
+    
+    if (!lat || !lon) {
+      return res.status(400).json({ error: 'lat and lon query parameters are required' });
+    }
+
+    const latitude = parseFloat(lat);
+    const longitude = parseFloat(lon);
+    const radiusKm = radius_km ? parseFloat(radius_km) : 50;
+
+    if (isNaN(latitude) || isNaN(longitude)) {
+      return res.status(400).json({ error: 'Invalid lat or lon values' });
+    }
+
+    // Get all locations and calculate distances
+    const { data: locations, error } = await supabaseAdmin
+      .from('location_name_mappings')
+      .select('canonical_name, latitude, longitude, state');
+
+    if (error) return res.status(400).json({ error: error.message });
+
+    // Calculate distances using Haversine formula
+    const toRad = n => n * Math.PI / 180;
+    const haversineKm = (lat1, lon1, lat2, lon2) => {
+      const R = 6371; // Earth's radius in km
+      const dLat = toRad(lat2 - lat1);
+      const dLon = toRad(lon2 - lon1);
+      const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    };
+
+    const nearbyLocations = (locations || [])
+      .map(loc => ({
+        ...loc,
+        distance_km: haversineKm(latitude, longitude, parseFloat(loc.latitude), parseFloat(loc.longitude))
+      }))
+      .filter(loc => loc.distance_km <= radiusKm)
+      .sort((a, b) => a.distance_km - b.distance_km);
+
+    res.json({ 
+      user_location: { latitude, longitude },
+      radius_km: radiusKm,
+      nearby_locations: nearbyLocations 
+    });
+  } catch (err) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
 const server = app.listen(PORT, 'localhost', () => {
   console.log(`[${new Date().toISOString()}] ✅ EcoWatch backend listening on http://localhost:${PORT}`);
   
@@ -487,5 +665,6 @@ async function resolveLocationName(lat, lon) {
   // Final fallback
   return 'User Location';
 }
+
 
 

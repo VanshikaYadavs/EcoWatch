@@ -1,8 +1,17 @@
 import { supabaseAdmin } from './index.mjs';
 import { sendBulkAlertSMS } from './smsService.mjs';
+import { sendEmail } from './email.mjs';
+import { generateAlertEmail } from './emailTemplate.mjs';
 
 export async function evaluateAndRecordAlerts(reading) {
   if (!supabaseAdmin) throw new Error('Supabase admin client not configured');
+  
+  console.log(`[alerts] Evaluating reading for ${reading.location}:`, {
+    aqi: reading.aqi,
+    temp: reading.temperature,
+    humidity: reading.humidity,
+    noise: reading.noise_level
+  });
   
   // Fetch user preferences
   const { data: prefs, error } = await supabaseAdmin
@@ -11,26 +20,61 @@ export async function evaluateAndRecordAlerts(reading) {
     .or('email_alerts.eq.true,sms_alerts.eq.true');
   
   if (error) throw new Error(error.message);
-  if (!prefs?.length) return { created: 0, smsSent: 0 };
+  if (!prefs?.length) {
+    console.log('[alerts] No users with alerts enabled');
+    return { created: 0, smsSent: 0, emailSent: 0 };
+  }
   
-  // Fetch phone numbers for users with SMS alerts enabled
-  const smsUserIds = prefs.filter(p => p.sms_alerts).map(p => p.user_id);
-  let phoneMap = {};
-  if (smsUserIds.length > 0) {
-    const { data: profiles } = await supabaseAdmin
+  console.log(`[alerts] Found ${prefs.length} users with alerts enabled`);
+  
+  // Fetch user profiles (phone numbers and emails)
+  const userIds = prefs.map(p => p.user_id);
+  let userProfiles = {};
+  if (userIds.length > 0) {
+    const { data: profiles, error: profileError } = await supabaseAdmin
       .from('profiles')
-      .select('id, phone_number')
-      .in('id', smsUserIds);
-    if (profiles) {
-      phoneMap = Object.fromEntries(profiles.map(p => [p.id, p.phone_number]));
+      .select('id, phone_number, email')
+      .in('id', userIds);
+    if (profileError) {
+      console.error('[alerts] Error fetching profiles:', profileError.message);
+    } else if (profiles) {
+      userProfiles = Object.fromEntries(profiles.map(p => [p.id, p]));
+      const emailCount = profiles.filter(p => p.email).length;
+      const phoneCount = profiles.filter(p => p.phone_number).length;
+      console.log(`[alerts] User profiles: ${emailCount} with email, ${phoneCount} with phone`);
     }
   }
 
   const items = [];
   const smsQueue = [];
+  const emailQueue = [];
   
   for (const p of prefs) {
-    const phoneNumber = phoneMap[p.user_id];
+    const userProfile = userProfiles[p.user_id];
+    const phoneNumber = userProfile?.phone_number;
+    const email = userProfile?.email;
+    
+    // ===== LOCATION FILTERING =====
+    // Skip if user has monitored_locations set and this reading's location is not in their list
+    if (p.monitored_locations && Array.isArray(p.monitored_locations) && p.monitored_locations.length > 0) {
+      // Normalize the reading location for comparison
+      const normalizedReadingLocation = (reading.location || '').trim();
+      console.log(`[alerts] User ${p.user_id} monitors: [${p.monitored_locations.join(', ')}], reading location: "${normalizedReadingLocation}"`);
+      const isMonitored = p.monitored_locations.some(loc => {
+        const normalizedUserLocation = (loc || '').trim();
+        // Case-insensitive partial match to handle variations like "Jaipur" vs "Jaipur Municipal Corporation"
+        return normalizedReadingLocation.toLowerCase().includes(normalizedUserLocation.toLowerCase()) ||
+               normalizedUserLocation.toLowerCase().includes(normalizedReadingLocation.toLowerCase());
+      });
+      
+      if (!isMonitored) {
+        // User is not monitoring this location, skip all alerts for this user
+        console.log(`[alerts] ❌ Skipping user ${p.user_id}: "${normalizedReadingLocation}" not in monitored locations`);
+        continue;
+      }
+      console.log(`[alerts] ✅ User ${p.user_id} monitors this location`);
+    }
+    // ===== END LOCATION FILTERING =====
     
     // AQI threshold
     if (p.aqi_threshold != null && reading.aqi != null && Number(reading.aqi) >= Number(p.aqi_threshold)) {
@@ -54,6 +98,23 @@ export async function evaluateAndRecordAlerts(reading) {
             location: reading.location,
             threshold: p.aqi_threshold,
           },
+        });
+      }
+      
+      // Queue Email if enabled and email exists
+      if (p.email_alerts && email) {
+        const emailContent = generateAlertEmail({
+          type: 'AQI',
+          value: reading.aqi,
+          location: reading.location,
+          threshold: p.aqi_threshold,
+        });
+        emailQueue.push({
+          userId: p.user_id,
+          email,
+          subject: emailContent.subject,
+          text: emailContent.plainText,
+          html: emailContent.html,
         });
       }
     }
@@ -82,6 +143,23 @@ export async function evaluateAndRecordAlerts(reading) {
           },
         });
       }
+      
+      // Queue Email if enabled and email exists
+      if (p.email_alerts && email) {
+        const emailContent = generateAlertEmail({
+          type: 'NOISE',
+          value: reading.noise_level,
+          location: reading.location,
+          threshold: p.noise_threshold,
+        });
+        emailQueue.push({
+          userId: p.user_id,
+          email,
+          subject: emailContent.subject,
+          text: emailContent.plainText,
+          html: emailContent.html,
+        });
+      }
     }
     
     // Temperature threshold
@@ -106,6 +184,23 @@ export async function evaluateAndRecordAlerts(reading) {
             location: reading.location,
             threshold: p.temp_threshold,
           },
+        });
+      }
+      
+      // Queue Email if enabled and email exists
+      if (p.email_alerts && email) {
+        const emailContent = generateAlertEmail({
+          type: 'HEAT',
+          value: reading.temperature,
+          location: reading.location,
+          threshold: p.temp_threshold,
+        });
+        emailQueue.push({
+          userId: p.user_id,
+          email,
+          subject: emailContent.subject,
+          text: emailContent.plainText,
+          html: emailContent.html,
         });
       }
     }
@@ -134,10 +229,32 @@ export async function evaluateAndRecordAlerts(reading) {
           },
         });
       }
+      
+      // Queue Email if enabled and email exists
+      if (p.email_alerts && email) {
+        const emailContent = generateAlertEmail({
+          type: 'HUMIDITY',
+          value: reading.humidity,
+          location: reading.location,
+          threshold: p.humidity_threshold,
+        });
+        emailQueue.push({
+          userId: p.user_id,
+          email,
+          subject: emailContent.subject,
+          text: emailContent.plainText,
+          html: emailContent.html,
+        });
+      }
     }
   }
   
-  if (!items.length) return { created: 0, smsSent: 0 };
+  if (!items.length) {
+    console.log('[alerts] No thresholds exceeded');
+    return { created: 0, smsSent: 0, emailSent: 0 };
+  }
+  
+  console.log(`[alerts] ${items.length} threshold(s) exceeded, ${emailQueue.length} emails queued, ${smsQueue.length} SMS queued`);
 
   // Insert alert events into database
   const { error: insErr } = await supabaseAdmin.from('alert_events').insert(items);
@@ -156,5 +273,35 @@ export async function evaluateAndRecordAlerts(reading) {
     }
   }
   
-  return { created: items.length, smsSent };
+  // Send Email notifications (non-blocking)
+  let emailSent = 0;
+  if (emailQueue.length > 0) {
+    console.log(`[alerts] Sending ${emailQueue.length} email(s)...`);
+    try {
+      for (const emailData of emailQueue) {
+        const result = await sendEmail({
+          to: emailData.email,
+          subject: emailData.subject,
+          text: emailData.text,
+          html: emailData.html,
+          userId: emailData.userId,
+        });
+        if (result.ok) {
+          emailSent++;
+        } else {
+          console.error(`[alerts] Failed to send email to ${emailData.email}: ${result.reason}`);
+        }
+        // Small delay to avoid rate limiting from SendGrid
+        if (emailQueue.length > 1) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+      }
+      console.log(`📧 Sent ${emailSent}/${emailQueue.length} Email alerts`);
+    } catch (emailError) {
+      console.error('Email sending error:', emailError.message);
+      // Don't fail the entire operation if email fails
+    }
+  }
+  
+  return { created: items.length, smsSent, emailSent };
 }
