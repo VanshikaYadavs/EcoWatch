@@ -37,6 +37,12 @@ const NotificationSettings = () => {
       coldWarning: 5,
       rapidChange: 5
     },
+    // Humidity Thresholds (new)
+    humidity: {
+      enabled: true,
+      thresholdExceeded: 80,
+      lowHumidity: 20
+    },
     // Emergency Alerts
     emergency: {
       enabled: true,
@@ -93,9 +99,14 @@ const NotificationSettings = () => {
             ...prev.temperature,
             heatWarning: prefs?.temp_threshold ?? prev.temperature.heatWarning,
           },
+          humidity: {
+            ...prev.humidity,
+            thresholdExceeded: prefs?.humidity_threshold ?? prev.humidity?.thresholdExceeded,
+          },
           channels: {
             ...prev.channels,
             email: prefs?.email_alerts ?? prev.channels.email,
+            sms: prefs?.sms_alerts ?? prev.channels.sms,
           },
         }));
       } catch (e) {

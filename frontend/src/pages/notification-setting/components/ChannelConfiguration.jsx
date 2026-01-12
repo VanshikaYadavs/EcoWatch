@@ -1,18 +1,44 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Icon from '../../../components/AppIcon';
 import Input from '../../../components/ui/Input';
 import Button from '../../../components/ui/Button';
 import { Checkbox } from '../../../components/ui/Checkbox';
+import { useAuth } from '../../../auth/AuthProvider';
+import { loadUserProfile, updatePhoneNumber, isValidPhoneNumber } from '../../../utils/profileService';
 
 const ChannelConfiguration = ({ settings, onSettingsChange }) => {
+  const { user } = useAuth();
   const [contactInfo, setContactInfo] = useState({
-    email: 'user@example.com',
-    phone: '+1234567890',
+    email: user?.email || '',
+    phone: '',
     verified: {
       email: true,
       phone: false
     }
   });
+  const [phoneError, setPhoneError] = useState('');
+  const [savingPhone, setSavingPhone] = useState(false);
+  
+  // Load user profile to get phone number
+  useEffect(() => {
+    if (!user?.id) return;
+    let mounted = true;
+    (async () => {
+      try {
+        const profile = await loadUserProfile(user.id);
+        if (mounted && profile?.phone_number) {
+          setContactInfo(prev => ({
+            ...prev,
+            phone: profile.phone_number,
+            verified: { ...prev.verified, phone: true }
+          }));
+        }
+      } catch (e) {
+        console.error('Failed to load profile:', e);
+      }
+    })();
+    return () => { mounted = false; };
+  }, [user?.id]);
 
   const updateChannel = (channel, value) => {
     onSettingsChange({
@@ -24,9 +50,41 @@ const ChannelConfiguration = ({ settings, onSettingsChange }) => {
     });
   };
 
-  const handleVerifyContact = (type) => {
-    console.log(`Verifying ${type}:`, contactInfo?.[type]);
-    // In real implementation, this would trigger verification flow
+
+  const handleVerifyContact = async (type) => {
+    if (type === 'phone') {
+      setPhoneError('');
+      const phone = contactInfo?.phone?.trim();
+      
+      // Validate phone format
+      if (!phone) {
+        setPhoneError('Phone number is required');
+        return;
+      }
+      
+      if (!isValidPhoneNumber(phone)) {
+        setPhoneError('Invalid format. Use E.164 format (e.g., +911234567890)');
+        return;
+      }
+      
+      // Save phone number
+      setSavingPhone(true);
+      try {
+        await updatePhoneNumber(user.id, phone);
+        setContactInfo(prev => ({
+          ...prev,
+          verified: { ...prev.verified, phone: true }
+        }));
+        console.log('Phone number saved successfully');
+      } catch (e) {
+        setPhoneError('Failed to save phone number: ' + e.message);
+      } finally {
+        setSavingPhone(false);
+      }
+    } else {
+      console.log(`Verifying ${type}:`, contactInfo?.[type]);
+      // Email verification would be handled by Supabase auth
+    }
   };
 
   const handleTestChannel = (channel) => {
@@ -102,9 +160,20 @@ const ChannelConfiguration = ({ settings, onSettingsChange }) => {
             <Input
               label="Phone Number"
               type="tel"
+              placeholder="+911234567890"
               value={contactInfo?.phone}
-              onChange={(e) => setContactInfo({ ...contactInfo, phone: e?.target?.value })}
-              description={contactInfo?.verified?.phone ? '✓ Verified' : 'Not verified'}
+              onChange={(e) => {
+                setContactInfo({ ...contactInfo, phone: e?.target?.value });
+                setPhoneError('');
+              }}
+              description={
+                phoneError 
+                  ? phoneError 
+                  : contactInfo?.verified?.phone 
+                    ? '✓ Verified - SMS alerts enabled' 
+                    : 'Format: +[country code][number] (e.g., +911234567890)'
+              }
+              error={!!phoneError}
             />
             {!contactInfo?.verified?.phone && (
               <Button
@@ -113,8 +182,9 @@ const ChannelConfiguration = ({ settings, onSettingsChange }) => {
                 iconName="CheckCircle"
                 iconPosition="left"
                 onClick={() => handleVerifyContact('phone')}
+                disabled={savingPhone || !contactInfo?.phone}
               >
-                Verify Phone
+                {savingPhone ? 'Saving...' : 'Save Phone Number'}
               </Button>
             )}
           </div>
