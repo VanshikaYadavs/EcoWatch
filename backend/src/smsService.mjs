@@ -54,22 +54,28 @@ export async function sendSMS(to, message) {
 export async function sendEnvironmentalAlertSMS(phoneNumber, alert) {
   const { type, value, location, threshold, message: customMessage } = alert;
   
-  // Format the message
-  let messageBody = customMessage || `🚨 EcoWatch Alert: ${type} alert in ${location}`;
+  // Format simple message without emoji
+  let messageBody;
   
-  // Add details based on alert type
   if (type === 'AQI') {
-    messageBody = `🚨 EcoWatch Alert\nAir Quality: ${value} AQI\nLocation: ${location}\nThreshold: ${threshold}\n⚠️ Poor air quality detected!`;
+    messageBody = `EcoWatch Alert
+AQI: ${value} (limit: ${threshold})
+Location: ${location}`;
   } else if (type === 'NOISE') {
-    messageBody = `🚨 EcoWatch Alert\nNoise Level: ${value} dB\nLocation: ${location}\nThreshold: ${threshold} dB\n⚠️ Excessive noise detected!`;
+    messageBody = `EcoWatch Alert
+Noise: ${value}dB (limit: ${threshold}dB)
+Location: ${location}`;
   } else if (type === 'HEAT') {
-    messageBody = `🚨 EcoWatch Alert\nTemperature: ${value}°C\nLocation: ${location}\nThreshold: ${threshold}°C\n⚠️ High temperature detected!`;
+    messageBody = `EcoWatch Alert
+Temp: ${value}C (limit: ${threshold}C)
+Location: ${location}`;
   } else if (type === 'HUMIDITY') {
-    messageBody = `🚨 EcoWatch Alert\nHumidity: ${value}%\nLocation: ${location}\nThreshold: ${threshold}%\n⚠️ Unusual humidity detected!`;
+    messageBody = `EcoWatch Alert
+Humidity: ${value}% (limit: ${threshold}%)
+Location: ${location}`;
+  } else {
+    messageBody = customMessage || `EcoWatch Alert: ${type} in ${location}`;
   }
-  
-  // Add timestamp
-  messageBody += `\nTime: ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}`;
   
   return sendSMS(phoneNumber, messageBody);
 }
