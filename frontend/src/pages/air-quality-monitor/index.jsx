@@ -6,12 +6,12 @@ import FilterControls from './components/FilterControls';
 import AlertConfiguration from './components/AlertConfiguration';
 import LocationComparison from './components/LocationComparison';
 import { useEnvironmentReadings, useLatestCityReadings } from '../../utils/dataHooks';
-import { getCurrentLocation } from '../../utils/location';
+import { getCurrentLocation, displayLocation } from '../../utils/location';
 import { getNearbyCities } from '../../utils/nearbyCities';
 import axios from 'axios';
 import { getSessionAllowlist, recomputeSessionCities } from '../../utils/sessionCities';
 import Button from '../../components/ui/Button';
-import { supabase } from '../../utils/supabaseClient';
+import { supabase, isSupabaseConfigured } from '../../utils/supabaseClient';
 
 const AirQualityMonitor = () => {
   const [filters, setFilters] = useState({
@@ -28,6 +28,7 @@ const AirQualityMonitor = () => {
   const [allowlist, setAllowlist] = useState([]);
   const { data: latestCityReadings } = useLatestCityReadings({ fallbackWindow: 150, allowLocations: allowlist });
   const [recomputing, setRecomputing] = useState(false);
+  const [backendLatest, setBackendLatest] = useState([]);
 
   useEffect(() => {
     (async () => {
@@ -40,9 +41,12 @@ const AirQualityMonitor = () => {
     (async () => {
       try {
         const { lat, lon } = await getCurrentLocation();
-        const { data: sessData } = await supabase.auth.getSession();
-        const userId = sessData?.session?.user?.id;
-        const token = sessData?.session?.access_token;
+        let userId = null, token = null;
+        if (isSupabaseConfigured && supabase) {
+          const { data: sessData } = await supabase.auth.getSession();
+          userId = sessData?.session?.user?.id;
+          token = sessData?.session?.access_token;
+        }
         if (!userId) {
           console.warn('Skipping ingest: missing user_id (not signed in)');
         }
@@ -80,34 +84,72 @@ const AirQualityMonitor = () => {
     })();
   }, []);
 
+  // Fallback: if Supabase path returns too few rows, fetch server latest-by-city
   useEffect(() => {
-    const srcReadings = latestCityReadings?.length ? latestCityReadings : readings || [];
+    (async () => {
+      try {
+        const names = Array.isArray(allowlist) ? allowlist.filter(Boolean) : [];
+        if (names.length <= 1) { setBackendLatest([]); return; }
+        if ((latestCityReadings || []).length >= Math.min(2, names.length)) { setBackendLatest([]); return; }
+        const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080';
+        const url = `${API_BASE}/api/readings/latest-by-city?cities=${encodeURIComponent(names.join(','))}`;
+        const resp = await axios.get(url);
+        const map = resp?.data?.data || {};
+        const arr = Object.keys(map).map(k => map[k]).filter(Boolean);
+        setBackendLatest(arr);
+      } catch (e) {
+        setBackendLatest([]);
+      }
+    })();
+  }, [Array.isArray(allowlist) ? allowlist.join('|') : '', (latestCityReadings || []).length]);
+
+  useEffect(() => {
+    const srcReadings = backendLatest?.length ? backendLatest : (latestCityReadings?.length ? latestCityReadings : readings || []);
     if (!srcReadings?.length) return;
+    // Build time series including pollutant breakdown
     const series = (readings || [])
       .slice()
       .reverse()
-      .map(r => ({ time: new Date(r.recorded_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), aqi: r.aqi ?? 0 }));
+      .map(r => ({
+        time: new Date(r.recorded_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        aqi: r.aqi ?? 0,
+        pm25: r.pm25 ?? null,
+        pm10: r.pm10 ?? null,
+        ozone: r.o3 ?? null,
+        no2: r.no2 ?? null,
+      }));
     setChartData(series);
+
+    // Sensor rows per location with latest pollutant values
     const sensors = srcReadings.slice(0, 50).map((r, i) => ({
       id: i + 1,
-      location: r.location,
-      zone: r.location,
+      location: displayLocation(r.location, r.location),
+      zone: displayLocation(r.location, r.location),
       aqi: r.aqi ?? 0,
-      pm25: null,
-      pm10: null,
-      ozone: null,
-      no2: null,
+      pm25: r.pm25 ?? null,
+      pm10: r.pm10 ?? null,
+      ozone: r.o3 ?? null,
+      no2: r.no2 ?? null,
       lastUpdate: new Date(r.recorded_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     }));
     setSensorData(sensors);
-    const comp = srcReadings.slice(0, 10).map(r => ({ location: r.location, pm25: 0, pm10: 0, ozone: 0, no2: 0 }));
+
+    // Comparison dataset per city (latest values)
+    const comp = srcReadings.slice(0, 10).map(r => ({
+      location: displayLocation(r.location, r.location),
+      pm25: r.pm25 ?? 0,
+      pm10: r.pm10 ?? 0,
+      ozone: r.o3 ?? 0,
+      no2: r.no2 ?? 0,
+    }));
     setComparisonData(comp);
-  }, [readings, latestCityReadings]);
+  }, [readings, latestCityReadings, backendLatest]);
 
   const locationOptions = useMemo(() => {
-    const dynamic = (latestCityReadings || []).map(r => ({ value: r.location, label: r.location }));
+    const base = backendLatest?.length ? backendLatest : (latestCityReadings || []);
+    const dynamic = base.map(r => ({ value: r.location, label: r.location }));
     return [{ value: 'all', label: 'All Locations' }, ...dynamic];
-  }, [latestCityReadings]);
+  }, [latestCityReadings, backendLatest]);
 
   const pollutantOptions = [
     { value: 'pm25', label: 'PM2.5 (Fine Particles)' },

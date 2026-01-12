@@ -6,6 +6,7 @@ alter table readings enable row level security;
 alter table alerts enable row level security;
 alter table profiles enable row level security;
 alter table environment_readings enable row level security;
+alter table nearby_environment_readings enable row level security;
 alter table user_alert_preferences enable row level security;
 alter table alert_events enable row level security;
 
@@ -70,6 +71,16 @@ create policy if not exists env_readings_insert_service_role on environment_read
 create policy if not exists env_readings_update_delete_service_role on environment_readings for update
   to authenticated using (auth.role() = 'service_role') with check (auth.role() = 'service_role');
 create policy if not exists env_readings_delete_service_role on environment_readings for delete
+  to authenticated using (auth.role() = 'service_role');
+
+-- Nearby environment readings: same policy model
+create policy if not exists nearby_env_readings_read_own on nearby_environment_readings for select
+  to authenticated using (user_id = auth.uid() or auth.role() = 'service_role');
+create policy if not exists nearby_env_readings_insert_service_role on nearby_environment_readings for insert
+  to authenticated with check (auth.role() = 'service_role');
+create policy if not exists nearby_env_readings_update_delete_service_role on nearby_environment_readings for update
+  to authenticated using (auth.role() = 'service_role') with check (auth.role() = 'service_role');
+create policy if not exists nearby_env_readings_delete_service_role on nearby_environment_readings for delete
   to authenticated using (auth.role() = 'service_role');
 
 -- User alert preferences: owner can read/write; service role can do all

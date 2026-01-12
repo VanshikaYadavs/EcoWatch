@@ -19,7 +19,9 @@ const StatisticalView = ({ selectedCities, selectedParameters, refreshToken = 0 
     temperature: 'Temperature',
     humidity: 'Humidity',
     pm25: 'PM2.5',
-    pm10: 'PM10'
+    pm10: 'PM10',
+    o3: 'Ozone (O₃)',
+    no2: 'NO₂'
   };
 
   const chosenLocations = useMemo(() => (selectedCities || []).map(id => idToName[id]).filter(Boolean), [selectedCities, idToName]);

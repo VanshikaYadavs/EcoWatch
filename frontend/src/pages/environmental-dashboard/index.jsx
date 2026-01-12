@@ -7,11 +7,11 @@ import HotspotAlert from './components/HotspotAlert';
 import QuickStats from './components/QuickStats';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
-import { useEnvironmentReadings, useAlertEvents, useLatestCityReadings } from '../../utils/dataHooks';
+import { useEnvironmentReadings, useAlertEvents, useLatestCityReadings, useNearbyLatestCityReadings } from '../../utils/dataHooks';
 import { getLatestReading } from '../../services/environment.service';
-import { getCurrentLocation } from '../../utils/location';
+import { getCurrentLocation, displayLocation } from '../../utils/location';
 import { getNearbyCities } from '../../utils/nearbyCities';
-import { getSessionAllowlist, recomputeSessionCities } from '../../utils/sessionCities';
+import { getSessionAllowlist, recomputeSessionCities, getCurrentIngestCity } from '../../utils/sessionCities';
 import axios from 'axios';
 import { supabase } from '../../utils/supabaseClient';
 
@@ -28,16 +28,45 @@ const EnvironmentalDashboard = () => {
   const [allowlist, setAllowlist] = useState([]);
   const [recomputing, setRecomputing] = useState(false);
   const { data: latestCityReadings } = useLatestCityReadings({ fallbackWindow: 120, allowLocations: allowlist });
+  const { data: nearbyCityReadings } = useNearbyLatestCityReadings({ fallbackWindow: 120, allowLocations: allowlist });
 
   const latest = useMemo(() => readings?.[0] || {}, [readings]);
+
+  // Track current ingest city via localStorage and custom event
+  const [ingestCity, setIngestCity] = useState(null);
+  useEffect(() => {
+    setIngestCity(getCurrentIngestCity());
+    const onIngest = (e) => {
+      const name = (e && e.detail) || null;
+      setIngestCity(name || null);
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('ecw:ingestCity', onIngest);
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('ecw:ingestCity', onIngest);
+      }
+    };
+  }, []);
+
+  // Derive a robust current city for banner and fetches
+  const currentCity = useMemo(() => {
+    if (ingestCity) return ingestCity;
+    if (allowlist?.length) return allowlist[0];
+    if (envData?.location) return envData.location;
+    if (Array.isArray(latestCityReadings) && latestCityReadings[0]?.location) return latestCityReadings[0].location;
+    if (Array.isArray(nearbyCityReadings) && nearbyCityReadings[0]?.location) return nearbyCityReadings[0].location;
+    if (location && location !== 'all') return location;
+    return null;
+  }, [ingestCity, allowlist, envData?.location, latestCityReadings, nearbyCityReadings, location]);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       setEnvLoading(true);
-      const currentCity = allowlist?.length ? allowlist[0] : null;
       try {
-        const data = await getLatestReading(currentCity);
+        const data = await getLatestReading(currentCity || null);
         if (!cancelled) {
           setEnvData(data || null);
         }
@@ -50,17 +79,17 @@ const EnvironmentalDashboard = () => {
       }
     })();
     return () => { cancelled = true; };
-  }, [allowlist?.[0]]);
+  }, [currentCity]);
 
   // When the session allowlist loads, default the page's selected location
   // to the current city to avoid global reads.
   useEffect(() => {
-    if (allowlist?.length && location === 'all') {
-      setLocation(allowlist[0]);
+    if (location === 'all' && currentCity) {
+      setLocation(currentCity);
     }
-  }, [allowlist, location]);
+  }, [currentCity, location]);
 
-  // On first load, ingest user's location and nearby cities
+  // On first load, compute session cities and ingest both current and nearby (with nearby flag)
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -68,49 +97,13 @@ const EnvironmentalDashboard = () => {
         const names = await getSessionAllowlist();
         if (mounted) setAllowlist(names);
       } catch {}
-      // First: try to get geolocation
       try {
-        const { lat, lon } = await getCurrentLocation();
-        const { data: sessData } = await supabase.auth.getSession();
-        const userId = sessData?.session?.user?.id;
-        const token = sessData?.session?.access_token;
-        if (!userId) {
-          console.warn('Skipping ingest: missing user_id (not signed in)');
-        }
-        // Then: request backend ingest for this location
-        try {
-          if (userId && token) {
-            await axios.get(
-              `http://localhost:8080/api/ingest/now?lat=${lat}&lon=${lon}&name=Your%20Location`,
-              { headers: { Authorization: `Bearer ${token}` } }
-            );
-          }
-        } catch (reqErr) {
-          console.warn('Location-based ingest failed:', reqErr?.message || reqErr);
-          // Do not fallback to Jaipur if the user granted permission; keep existing data
-        }
-
-        // Fetch and ingest for nearby cities (3-4)
-        try {
-          const nearby = await getNearbyCities(lat, lon);
-          for (const city of nearby) {
-            try {
-              if (userId && token) {
-                await axios.get(
-                  `http://localhost:8080/api/ingest/now?lat=${city.lat}&lon=${city.lon}&name=${encodeURIComponent(city.name)}`,
-                  { headers: { Authorization: `Bearer ${token}` } }
-                );
-              }
-            } catch (e) {
-              console.warn('Nearby city ingest failed:', city.name, e?.message || e);
-            }
-          }
-        } catch (nearErr) {
-          console.warn('Nearby cities lookup failed:', nearErr?.message || nearErr);
-        }
-      } catch (geoErr) {
-        // Geolocation unavailable or denied — do not fallback to a hardcoded city.
-        console.warn('Geolocation unavailable/denied; skipping default fallback.', geoErr?.message || geoErr);
+        const sess = await recomputeSessionCities();
+        // After recompute, refresh allowlist to include nearby
+        const refreshed = [sess?.main?.name, ...(sess?.nearby || []).map(c => c.name)].filter(Boolean);
+        if (mounted && refreshed.length) setAllowlist(refreshed);
+      } catch (e) {
+        console.warn('Session cities recompute/ingest failed:', e?.message || e);
       }
     })();
     return () => { mounted = false; };
@@ -242,10 +235,18 @@ const EnvironmentalDashboard = () => {
   ];
 
   // Use latest-per-city readings for map sensors to avoid duplicates
-  const sensors = (latestCityReadings || []).map((r, i) => ({
+  const sensorsCombined = [
+    ...(latestCityReadings || []),
+    ...(nearbyCityReadings || []),
+  ];
+  const allowSet = new Set((allowlist || []).map(n => String(n).toLowerCase()));
+  const filteredSensors = allowSet.size
+    ? sensorsCombined.filter(r => allowSet.has(String(r.location || '').toLowerCase()))
+    : sensorsCombined;
+  const sensors = filteredSensors.map((r, i) => ({
     id: i + 1,
-    location: r.location || 'Unknown',
-    address: r.location,
+    location: displayLocation(r.location || 'Unknown', r.location || 'Unknown'),
+    address: displayLocation(r.location || 'Unknown', r.location || 'Unknown'),
     aqi: r.aqi ?? 0,
     noise: r.noise_level ?? 0,
     status: (r.aqi ?? 0) >= 150 ? 'poor' : 'good',
@@ -314,6 +315,13 @@ const EnvironmentalDashboard = () => {
 
   return (
     <div className="space-y-6">
+      {/* Current Location Banner */}
+      {currentCity ? (
+        <div className="bg-primary/10 border border-primary/20 rounded-lg p-3">
+          <span className="text-sm">Current location: </span>
+          <span className="text-sm font-medium">{currentCity}</span>
+        </div>
+      ) : null}
       <div>
         <div className="flex items-center gap-3 mb-1">
           <Icon name="LayoutDashboard" size={22} color="var(--color-primary)" />

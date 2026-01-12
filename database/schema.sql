@@ -83,6 +83,10 @@ create table if not exists environment_readings (
   latitude double precision,
   longitude double precision,
   aqi integer,
+  pm25 double precision,
+  pm10 double precision,
+  o3 double precision,
+  no2 double precision,
   temperature double precision,
   humidity double precision,
   noise_level double precision,
@@ -92,6 +96,41 @@ create table if not exists environment_readings (
   recorded_at timestamptz not null default now(),
   created_at timestamptz not null default now()
 );
+
+-- Nearby station/environment readings (per-user, similar schema)
+create table if not exists nearby_environment_readings (
+  id uuid primary key default gen_random_uuid(),
+  location text,
+  latitude double precision,
+  longitude double precision,
+  aqi integer,
+  pm25 double precision,
+  pm10 double precision,
+  o3 double precision,
+  no2 double precision,
+  temperature double precision,
+  humidity double precision,
+  noise_level double precision,
+  source text,
+  user_id uuid,
+  recorded_at timestamptz not null default now(),
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_nearby_env_readings_recorded_at on nearby_environment_readings (recorded_at desc);
+create index if not exists idx_nearby_env_readings_location_ts on nearby_environment_readings (location, recorded_at desc);
+create index if not exists idx_nearby_env_readings_user_ts on nearby_environment_readings (user_id, recorded_at desc);
+
+-- Backfill/migration safety
+alter table nearby_environment_readings add column if not exists user_id uuid;
+alter table environment_readings add column if not exists pm25 double precision;
+alter table environment_readings add column if not exists pm10 double precision;
+alter table environment_readings add column if not exists o3 double precision;
+alter table environment_readings add column if not exists no2 double precision;
+alter table nearby_environment_readings add column if not exists pm25 double precision;
+alter table nearby_environment_readings add column if not exists pm10 double precision;
+alter table nearby_environment_readings add column if not exists o3 double precision;
+alter table nearby_environment_readings add column if not exists no2 double precision;
 
 -- Per-user alert preferences
 create table if not exists user_alert_preferences (
@@ -128,3 +167,59 @@ create table if not exists alert_events (
 );
 
 create index if not exists idx_alert_events_user_ts on alert_events (user_id, created_at desc);
+
+-- --------------------------------------------------
+-- Cluster tables for hackathon multi-city ingestion
+-- Each table stores readings for multiple cities in its cluster
+-- --------------------------------------------------
+
+create table if not exists noida_cluster_readings (
+  id uuid primary key default gen_random_uuid(),
+  city text,
+  station_name text,
+  latitude double precision,
+  longitude double precision,
+  aqi integer,
+  pm25 double precision,
+  pm10 double precision,
+  o3 double precision,
+  no2 double precision,
+  recorded_at timestamptz not null default now()
+);
+
+create table if not exists yamunapuram_cluster_readings (
+  id uuid primary key default gen_random_uuid(),
+  city text,
+  station_name text,
+  latitude double precision,
+  longitude double precision,
+  aqi integer,
+  pm25 double precision,
+  pm10 double precision,
+  o3 double precision,
+  no2 double precision,
+  recorded_at timestamptz not null default now()
+);
+
+create table if not exists jaipur_cluster_readings (
+  id uuid primary key default gen_random_uuid(),
+  city text,
+  station_name text,
+  latitude double precision,
+  longitude double precision,
+  aqi integer,
+  pm25 double precision,
+  pm10 double precision,
+  o3 double precision,
+  no2 double precision,
+  recorded_at timestamptz not null default now()
+);
+
+create index if not exists idx_noida_cluster_city_ts on noida_cluster_readings (city, recorded_at desc);
+create index if not exists idx_yamunapuram_cluster_city_ts on yamunapuram_cluster_readings (city, recorded_at desc);
+create index if not exists idx_jaipur_cluster_city_ts on jaipur_cluster_readings (city, recorded_at desc);
+
+-- Backfill-safe adds in case tables existed previously without station_name
+alter table noida_cluster_readings add column if not exists station_name text;
+alter table yamunapuram_cluster_readings add column if not exists station_name text;
+alter table jaipur_cluster_readings add column if not exists station_name text;

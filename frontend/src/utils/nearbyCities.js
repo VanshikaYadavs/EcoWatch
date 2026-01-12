@@ -36,6 +36,10 @@ async function fetchNearbyFromOverpass(lat, lon, radiusMeters) {
 }
 
 export async function getNearbyCities(lat, lon) {
+  // Hardcoded personalisation clusters by current location name
+  // Use with resolveCityName() upstream; coordinates approximated
+  // NOTE: This function only has lat/lon, so hardcoded mapping is applied
+  // in sessionCities.js where the city name is available.
   // 1) Try Overpass (city/town within expanding radius) for generality
   try {
     const radii = [200_000, 300_000, 450_000]; // 200–450 km
@@ -74,4 +78,37 @@ export async function getNearbyCities(lat, lon) {
     .filter(c => haversineKm(lat, lon, c.lat, c.lon) > 10)
     .sort((a, b) => haversineKm(lat, lon, a.lat, a.lon) - haversineKm(lat, lon, b.lat, b.lon));
   return distinct.slice(0, 5);
+}
+
+// Export hardcoded mapping by name for personalisation
+export function getHardcodedNearby(mainName) {
+  const nm = String(mainName || '').toLowerCase();
+  const clusters = {
+    // NCR cluster
+    noida: [
+      { name: 'Ghaziabad', lat: 28.6692, lon: 77.4538 },
+      { name: 'Faridabad', lat: 28.4089, lon: 77.3178 },
+      { name: 'Delhi', lat: 28.6139, lon: 77.2090 },
+      { name: 'Dadri', lat: 28.5680, lon: 77.5570 },
+    ],
+    yamunapuram: [
+      { name: 'Ghaziabad', lat: 28.6692, lon: 77.4538 },
+      { name: 'Faridabad', lat: 28.4089, lon: 77.3178 },
+      { name: 'Delhi', lat: 28.6139, lon: 77.2090 },
+      { name: 'Dadri', lat: 28.5680, lon: 77.5570 },
+    ],
+    // Rajasthan cluster
+    jaipur: [
+      { name: 'Jodhpur', lat: 26.2389, lon: 73.0243 },
+      { name: 'Udaipur', lat: 24.5854, lon: 73.7125 },
+      { name: 'Ajmer', lat: 26.4499, lon: 74.6399 },
+      { name: 'Tonk', lat: 26.1533, lon: 75.7863 },
+    ],
+    tonk: [
+      { name: 'Jodhpur', lat: 26.2389, lon: 73.0243 },
+      { name: 'Udaipur', lat: 24.5854, lon: 73.7125 },
+      { name: 'Ajmer', lat: 26.4499, lon: 74.6399 },
+    ],
+  };
+  return clusters[nm] || [];
 }

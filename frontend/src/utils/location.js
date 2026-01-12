@@ -20,3 +20,17 @@ export function getCurrentLocation() {
     );
   });
 }
+
+// Normalize a raw place name for display purposes.
+// If the name appears to be an institutional/administrative label (e.g., Police Commissionerate),
+// fall back to the provided city label.
+// Example: displayLocation('Police Commissionerate', 'Jaipur') -> 'Jaipur'
+export function displayLocation(rawName, city) {
+  const nm = String(rawName || '').trim();
+  const fallback = String(city || '').trim() || nm;
+  if (!nm) return fallback;
+  const blacklist = ['police', 'commissionerate', 'station', 'office'];
+  const lower = nm.toLowerCase();
+  if (blacklist.some(w => lower.includes(w))) return fallback || nm;
+  return nm;
+}

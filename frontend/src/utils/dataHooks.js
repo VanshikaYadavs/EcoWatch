@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { supabase } from './supabaseClient';
+import { supabase, isSupabaseConfigured } from './supabaseClient';
 
 export function useEnvironmentReadings({ location = null, limit = 50, start = null, end = null, realtime = false } = {}) {
   const [data, setData] = useState([]);
@@ -9,6 +9,12 @@ export function useEnvironmentReadings({ location = null, limit = 50, start = nu
   useEffect(() => {
     let cancelled = false;
     const fetchData = async () => {
+      if (!isSupabaseConfigured || !supabase) {
+        setData([]);
+        setError('Supabase is not configured');
+        setLoading(false);
+        return;
+      }
       setLoading(true);
       setError(null);
       let q = supabase
@@ -57,6 +63,12 @@ export function useAlertEvents({ limit = 20 } = {}) {
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      if (!isSupabaseConfigured || !supabase) {
+        setData([]);
+        setError('Supabase is not configured');
+        setLoading(false);
+        return;
+      }
       setLoading(true);
       setError(null);
       const { data: rows, error: err } = await supabase
@@ -86,6 +98,9 @@ export function useLatestCityReadings({ fallbackWindow = 100, allowLocations = n
     let cancelled = false;
 
     const fetchViaView = async () => {
+      if (!isSupabaseConfigured || !supabase) {
+        return { rows: [], err: new Error('Supabase is not configured') };
+      }
       const { data: rows, error: err } = await supabase
         .from('latest_city_readings')
         .select('*');
@@ -93,6 +108,9 @@ export function useLatestCityReadings({ fallbackWindow = 100, allowLocations = n
     };
 
     const fetchAndGroup = async () => {
+      if (!isSupabaseConfigured || !supabase) {
+        return { rows: [], err: new Error('Supabase is not configured') };
+      }
       const { data: rows, error: err } = await supabase
         .from('environment_readings')
         .select('*')
@@ -143,6 +161,59 @@ export function useLatestCityReadings({ fallbackWindow = 100, allowLocations = n
   return { data, loading, error };
 }
 
+// Nearby latest-per-city readings from nearby_environment_readings
+export function useNearbyLatestCityReadings({ fallbackWindow = 100, allowLocations = null } = {}) {
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchAndGroup = async () => {
+      if (!isSupabaseConfigured || !supabase) {
+        return { rows: [], err: new Error('Supabase is not configured') };
+      }
+      const { data: rows, error: err } = await supabase
+        .from('nearby_environment_readings')
+        .select('*')
+        .order('recorded_at', { ascending: false })
+        .limit(fallbackWindow);
+      if (err) return { rows: [], err };
+      const seen = new Set();
+      const grouped = [];
+      for (const r of rows || []) {
+        const loc = r.location || 'Unknown';
+        if (!seen.has(loc)) {
+          seen.add(loc);
+          grouped.push(r);
+        }
+      }
+      return { rows: grouped, err: null };
+    };
+
+    (async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const r = await fetchAndGroup();
+        if (cancelled) return;
+        const filtered = Array.isArray(allowLocations) && allowLocations.length
+          ? (r.rows || []).filter(row => allowLocations.includes(row.location))
+          : r.rows || [];
+        setData(filtered);
+        setLoading(false);
+      } catch (e) {
+        if (!cancelled) { setError(e?.message || String(e)); setLoading(false); }
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [fallbackWindow, Array.isArray(allowLocations) ? allowLocations.join('|') : '']);
+
+  return { data, loading, error };
+}
+
 // Build comparative time-series for selected locations and parameters over a range
 export function useComparativeSeries({ locations = [], parameters = ['aqi'], timeRange = '24h', refreshToken = 0 } = {}) {
   const [data, setData] = useState([]);
@@ -152,6 +223,10 @@ export function useComparativeSeries({ locations = [], parameters = ['aqi'], tim
   const mapParam = (row, p) => {
     switch (p) {
       case 'aqi': return row?.aqi ?? null;
+      case 'pm25': return row?.pm25 ?? null;
+      case 'pm10': return row?.pm10 ?? null;
+      case 'o3': return row?.o3 ?? null;
+      case 'no2': return row?.no2 ?? null;
       case 'temperature': return row?.temperature ?? null;
       case 'humidity': return row?.humidity ?? null;
       case 'noise':
@@ -172,6 +247,11 @@ export function useComparativeSeries({ locations = [], parameters = ['aqi'], tim
       try {
         setLoading(true);
         setError(null);
+        if (!isSupabaseConfigured || !supabase) {
+          setData([]);
+          setLoading(false);
+          return;
+        }
         if (!locations?.length || !parameters?.length) {
           setData([]);
           setLoading(false);

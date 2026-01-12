@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../../utils/supabaseClient';
+import { supabase, isSupabaseConfigured } from '../../utils/supabaseClient';
 import { getProfile } from '../../utils/profiles';
 
 const AuthCallback = () => {
@@ -9,6 +9,10 @@ const AuthCallback = () => {
   useEffect(() => {
     const finishAuth = async () => {
       try {
+        if (!isSupabaseConfigured) {
+          navigate('/login', { replace: true });
+          return;
+        }
         // Try exchanging auth code/hash into session (handles magic-link/PKCE flows)
         if (typeof supabase.auth.exchangeCodeForSession === 'function') {
           try {

@@ -1,13 +1,14 @@
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import Icon from '../../../components/AppIcon';
+import { displayLocation } from '../../../utils/location';
 
 const LocationComparison = ({ comparisonData, selectedLocations }) => {
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload?.length) {
       return (
         <div className="bg-card border border-border rounded-lg shadow-lg p-4">
-          <p className="font-medium text-foreground mb-2">{label}</p>
+          <p className="font-medium text-foreground mb-2">{displayLocation(label, label)}</p>
           {payload?.map((entry, index) => (
             <div key={index} className="flex items-center gap-2 text-sm">
               <div 
@@ -50,7 +51,7 @@ const LocationComparison = ({ comparisonData, selectedLocations }) => {
           <BarChart data={comparisonData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
             <XAxis 
-              dataKey="location" 
+              dataKey={(d) => displayLocation(d.location, d.location)} 
               stroke="var(--color-muted-foreground)"
               style={{ fontSize: '12px' }}
               angle={-45}
@@ -75,13 +76,15 @@ const LocationComparison = ({ comparisonData, selectedLocations }) => {
         </ResponsiveContainer>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-border">
+        {(() => { const n = Math.max(1, comparisonData?.length || 0); return (
+        <>
         <div className="text-center">
           <div className="flex items-center justify-center gap-2 mb-2">
             <div className="w-3 h-3 rounded-full" style={{ backgroundColor: pollutantColors?.pm25 }} />
             <p className="text-xs text-muted-foreground">PM2.5 Average</p>
           </div>
           <p className="text-xl font-bold data-text text-foreground">
-            {Math.round(comparisonData?.reduce((sum, d) => sum + d?.pm25, 0) / comparisonData?.length)} µg/m³
+            {Math.round((comparisonData?.reduce((sum, d) => sum + (d?.pm25 || 0), 0) / n))} µg/m³
           </p>
         </div>
         <div className="text-center">
@@ -90,7 +93,7 @@ const LocationComparison = ({ comparisonData, selectedLocations }) => {
             <p className="text-xs text-muted-foreground">PM10 Average</p>
           </div>
           <p className="text-xl font-bold data-text text-foreground">
-            {Math.round(comparisonData?.reduce((sum, d) => sum + d?.pm10, 0) / comparisonData?.length)} µg/m³
+            {Math.round((comparisonData?.reduce((sum, d) => sum + (d?.pm10 || 0), 0) / n))} µg/m³
           </p>
         </div>
         <div className="text-center">
@@ -99,7 +102,7 @@ const LocationComparison = ({ comparisonData, selectedLocations }) => {
             <p className="text-xs text-muted-foreground">Ozone Average</p>
           </div>
           <p className="text-xl font-bold data-text text-foreground">
-            {Math.round(comparisonData?.reduce((sum, d) => sum + d?.ozone, 0) / comparisonData?.length)} ppb
+            {Math.round((comparisonData?.reduce((sum, d) => sum + (d?.ozone || 0), 0) / n))} ppb
           </p>
         </div>
         <div className="text-center">
@@ -108,9 +111,11 @@ const LocationComparison = ({ comparisonData, selectedLocations }) => {
             <p className="text-xs text-muted-foreground">NO₂ Average</p>
           </div>
           <p className="text-xl font-bold data-text text-foreground">
-            {Math.round(comparisonData?.reduce((sum, d) => sum + d?.no2, 0) / comparisonData?.length)} ppb
+            {Math.round((comparisonData?.reduce((sum, d) => sum + (d?.no2 || 0), 0) / n))} ppb
           </p>
         </div>
+        </>
+        ); })()}
       </div>
     </div>
   );
