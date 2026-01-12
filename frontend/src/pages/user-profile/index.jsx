@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
+import AutoText from '../../components/ui/AutoText';
 import ProfileDetails from './components/ProfileDetails';
 import RoleManagement from './components/RoleManagement';
 import AccountSecurity from './components/AccountSecurity';
@@ -82,10 +83,10 @@ const UserProfile = () => {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground">
-            {t('profile.title')}
+            <AutoText i18nKey="profile.title" defaultText="User Profile" />
           </h1>
           <p className="text-sm md:text-base text-muted-foreground mt-2">
-            {t('profile.subtitle')}
+            <AutoText i18nKey="profile.subtitle" defaultText="Manage your personal information, role settings, and account preferences" />
           </p>
         </div>
         <div className="flex flex-wrap gap-2">

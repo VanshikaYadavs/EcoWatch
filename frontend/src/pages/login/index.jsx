@@ -2,6 +2,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Helmet } from 'react-helmet';
 import Icon from '../../components/AppIcon';
+import AutoText from '../../components/ui/AutoText';
 
 import LoginForm from './components/LoginForm';
 import EnvironmentalPreview from './components/EnvironmentalPreview';
@@ -48,10 +49,10 @@ const Login = () => {
               <div className="bg-card border border-border rounded-2xl shadow-xl p-6 md:p-8 lg:p-10">
                 <div className="mb-8">
                   <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
-                    {t('login.welcome')}
+                    <AutoText i18nKey="login.welcome" defaultText="Welcome Back" />
                   </h2>
                   <p className="text-sm md:text-base text-muted-foreground">
-                    {t('login.subtitle')}
+                    <AutoText i18nKey="login.subtitle" defaultText="Sign in to access the environmental monitoring dashboard" />
                   </p>
                 </div>
 

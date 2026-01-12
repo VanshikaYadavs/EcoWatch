@@ -3,10 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import Icon from '../AppIcon';
 import Button from './Button';
 import { useTranslation } from 'react-i18next';
+import { useAutoTranslate } from '../../utils/useAutoTranslate';
 
 const Header = () => {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
+  const appTitle = useAutoTranslate('app.title', 'EcoWatch', true);
+  const appSubtitle = useAutoTranslate('app.subtitle', 'Environmental Monitoring System', true);
+  const loginLabel = useAutoTranslate('login', 'Login', true);
   
   // Force English as default if language is not explicitly set
   React.useEffect(() => {
@@ -32,8 +36,8 @@ const Header = () => {
             <Icon name="Waves" size={22} color="#FFFFFF" />
           </div>
           <div>
-            <div className="text-base md:text-lg font-semibold text-foreground">{t('app.title')}</div>
-            <div className="caption text-muted-foreground">{t('app.subtitle')}</div>
+            <div className="text-base md:text-lg font-semibold text-foreground">{appTitle}</div>
+            <div className="caption text-muted-foreground">{appSubtitle}</div>
           </div>
         </div>
 
@@ -56,7 +60,7 @@ const Header = () => {
             iconPosition="left"
             onClick={() => navigate('/login')}
           >
-            {t('login')}
+            {loginLabel}
           </Button>
         </div>
       </div>

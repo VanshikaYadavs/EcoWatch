@@ -8,6 +8,7 @@ import HotspotAlert from './components/HotspotAlert';
 import QuickStats from './components/QuickStats';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
+import AutoText from '../../components/ui/AutoText';
 import { useEnvironmentReadings, useAlertEvents } from '../../utils/dataHooks';
 import { getLatestReading } from '../../services/environment.service';
 import { getCurrentLocation } from '../../utils/location';
@@ -261,10 +262,10 @@ const EnvironmentalDashboard = () => {
       <div>
         <div className="flex items-center gap-3 mb-1">
           <Icon name="LayoutDashboard" size={22} color="var(--color-primary)" />
-          <h1 className="text-xl md:text-2xl font-semibold text-foreground">{t('env.title')}</h1>
+          <h1 className="text-xl md:text-2xl font-semibold text-foreground"><AutoText i18nKey="env.title" defaultText="Environmental Dashboard" /></h1>
         </div>
         <p className="text-sm md:text-base text-muted-foreground">
-          {t('env.subtitle')}
+          <AutoText i18nKey="env.subtitle" defaultText="Real-time environmental monitoring and analysis for smart city management" />
         </p>
       </div>
 
@@ -297,7 +298,7 @@ const EnvironmentalDashboard = () => {
 
         <div className="bg-card rounded-lg border border-border p-4 md:p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-base md:text-lg font-semibold">{t('env.quickActions')}</h3>
+            <h3 className="text-base md:text-lg font-semibold"><AutoText i18nKey="env.quickActions" defaultText="Quick Actions" /></h3>
             <Icon name="Zap" size={20} color="var(--color-primary)" />
           </div>
 
@@ -309,7 +310,7 @@ const EnvironmentalDashboard = () => {
               fullWidth
               onClick={handleEmergencyBroadcast}
             >
-              {t('env.actions.emergency')}
+              <AutoText i18nKey="env.actions.emergency" defaultText="Emergency Broadcast" />
             </Button>
 
             <Button
@@ -319,7 +320,7 @@ const EnvironmentalDashboard = () => {
               fullWidth
               onClick={() => navigate('/historical-reports')}
             >
-              {t('env.actions.viewReports')}
+              <AutoText i18nKey="env.actions.viewReports" defaultText="View Reports" />
             </Button>
 
             <Button
@@ -328,7 +329,7 @@ const EnvironmentalDashboard = () => {
               iconPosition="left"
               fullWidth
             >
-              {t('env.actions.configureAlerts')}
+              <AutoText i18nKey="env.actions.configureAlerts" defaultText="Configure Alerts" />
             </Button>
 
             <Button
@@ -337,7 +338,7 @@ const EnvironmentalDashboard = () => {
               iconPosition="left"
               fullWidth
             >
-              {t('env.actions.manageTeam')}
+              <AutoText i18nKey="env.actions.manageTeam" defaultText="Manage Team" />
             </Button>
           </div>
 
@@ -365,7 +366,7 @@ const EnvironmentalDashboard = () => {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <Icon name="AlertTriangle" size={20} color="var(--color-error)" />
-            <h3 className="text-base md:text-lg font-semibold">{t('env.hotspots.title')}</h3>
+            <h3 className="text-base md:text-lg font-semibold"><AutoText i18nKey="env.hotspots.title" defaultText="Active Hotspots" /></h3>
           </div>
           <span className="text-xs md:text-sm text-muted-foreground">
             {hotspots?.length} {t('env.hotspots.activeAlerts')}

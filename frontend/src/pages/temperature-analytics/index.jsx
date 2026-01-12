@@ -12,6 +12,7 @@ import ComparativeAnalysis from './components/ComparativeAnalysis';
 import Select from '../../components/ui/Select';
 import Button from '../../components/ui/Button';
 import Icon from '../../components/AppIcon';
+import AutoText from '../../components/ui/AutoText';
 import { useEnvironmentReadings } from '../../utils/dataHooks';
 
 const TemperatureAnalytics = () => {
@@ -146,11 +147,11 @@ const TemperatureAnalytics = () => {
 
       <div className="space-y-6">
         <div>
-        <div className="flex items-center gap-3 mb-1">
-          <Icon name="Thermometer" size={22} color="var(--color-primary)" />
-          <h1 className="text-xl md:text-2xl font-semibold text-foreground">{t('temp.title')}</h1>
-        </div>
-        <p className="text-sm text-muted-foreground">{t('temp.subtitle')}</p>
+          <div className="flex items-center gap-3 mb-1">
+            <Icon name="Thermometer" size={22} color="var(--color-primary)" />
+            <h1 className="text-xl md:text-2xl font-semibold text-foreground"><AutoText i18nKey="temp.title" defaultText="Temperature Analytics" /></h1>
+          </div>
+          <p className="text-sm text-muted-foreground"><AutoText i18nKey="temp.subtitle" defaultText="Thermal monitoring and climate trend analysis" /></p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
@@ -172,7 +173,7 @@ const TemperatureAnalytics = () => {
           })()}
         </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
               <div className="lg:col-span-2">
                 <div className="bg-card border border-border rounded-lg p-4 md:p-6">
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
@@ -301,6 +302,8 @@ const TemperatureAnalytics = () => {
 
               <ExportReportPanel onExport={handleExportReport} />
             </div>
+          </div>
+        </div>
       </div>
     </>
   );

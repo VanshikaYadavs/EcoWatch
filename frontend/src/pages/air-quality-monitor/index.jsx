@@ -7,6 +7,8 @@ import FilterControls from './components/FilterControls';
 import AlertConfiguration from './components/AlertConfiguration';
 import LocationComparison from './components/LocationComparison';
 import { useEnvironmentReadings } from '../../utils/dataHooks';
+import { translateText, getCachedTranslation } from '../../utils/translationService';
+import AutoText from '../../components/ui/AutoText';
 
 const AirQualityMonitor = () => {
   const { t, i18n } = useTranslation();
@@ -21,6 +23,7 @@ const AirQualityMonitor = () => {
   const [chartData, setChartData] = useState([]);
   const [sensorData, setSensorData] = useState([]);
   const [comparisonData, setComparisonData] = useState([]);
+  const [forceUpdate, setForceUpdate] = useState(0);
   const { data: readings, loading } = useEnvironmentReadings({ location: filters.location === 'all' ? null : filters.location, limit: 100, realtime: true });
 
   // Map Hindi location names from backend to location translation keys
@@ -52,8 +55,25 @@ const AirQualityMonitor = () => {
       return t(translationKey);
     }
     
-    // If no mapping found, return original (fallback)
-    console.log('Unmapped location:', rawLocation);
+    // If no mapping found, check if there's a cached API translation
+    if (i18n.language !== 'en') {
+      const cached = getCachedTranslation(rawLocation, i18n.language);
+      if (cached) {
+        console.log('Using cached translation:', rawLocation, '->', cached);
+        return cached;
+      }
+      
+      // Trigger API translation in background
+      console.log('Unmapped location, will use API translation:', rawLocation);
+      translateText(rawLocation, i18n.language)
+        .then(translated => {
+          console.log('Got API translation:', rawLocation, '->', translated);
+          // Force re-render to display the translated name
+          setForceUpdate(prev => prev + 1);
+        })
+        .catch(err => console.error('Failed to translate location:', err));
+    }
+    
     return rawLocation;
   };
 
@@ -137,9 +157,9 @@ const AirQualityMonitor = () => {
       </Helmet>
       <div className="space-y-6">
         <div className="flex flex-col gap-2">
-          <h1 className="text-3xl md:text-4xl font-bold text-foreground">{t('aq.title')}</h1>
+          <h1 className="text-3xl md:text-4xl font-bold text-foreground"><AutoText i18nKey="aq.title" defaultText="Air Quality Monitor" /></h1>
           <p className="text-base md:text-lg text-muted-foreground">
-            {t('aq.subtitle')}
+            <AutoText i18nKey="aq.subtitle" defaultText="Real-time AQI tracking and pollutant analysis across monitoring stations" />
           </p>
         </div>
 

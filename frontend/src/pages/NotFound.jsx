@@ -3,9 +3,14 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import Button from '../components/ui/Button';
 import Icon from '../components/AppIcon';
+import { useAutoTranslate } from '../utils/useAutoTranslate';
 
 const NotFound = () => {
   const { t } = useTranslation();
+  const title = useAutoTranslate('notFound.title', 'Page Not Found', true);
+  const desc = useAutoTranslate("notFound.description", "The page you're looking for doesn't exist. Let's get you back!", true);
+  const goBack = useAutoTranslate('notFound.goBack', 'Go Back', true);
+  const home = useAutoTranslate('notFound.home', 'Back to Home', true);
   const navigate = useNavigate();
 
   const handleGoHome = () => {
@@ -21,9 +26,9 @@ const NotFound = () => {
           </div>
         </div>
 
-        <h2 className="text-2xl font-medium text-onBackground mb-2">{t('notFound.title')}</h2>
+        <h2 className="text-2xl font-medium text-onBackground mb-2">{title}</h2>
         <p className="text-onBackground/70 mb-8">
-          {t('notFound.description')}
+          {desc}
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -33,7 +38,7 @@ const NotFound = () => {
             iconPosition="left"
             onClick={() => window.history?.back()}
           >
-            {t('notFound.goBack')}
+            {goBack}
           </Button>
 
           <Button
@@ -42,7 +47,7 @@ const NotFound = () => {
             iconPosition="left"
             onClick={handleGoHome}
           >
-            {t('notFound.home')}
+            {home}
           </Button>
         </div>
       </div>

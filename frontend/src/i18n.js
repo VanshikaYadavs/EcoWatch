@@ -92,6 +92,7 @@ const resources = {
       "env.filters.parameter.temperature": "Temperature",
       "env.filters.parameter.humidity": "Humidity",
 
+      "select.placeholder": "Select an option",
       "select.itemsSelected": "{{count}} items selected",
       "select.searchPlaceholder": "Search options...",
       "select.noOptionsFound": "No options found",
@@ -534,6 +535,17 @@ const resources = {
       "locationComparison.avg.ozone": "Ozone Average",
       "locationComparison.avg.no2": "NO₂ Average",
 
+      "alerts.highAqi": "High AQI Detected",
+      "alerts.elevatedNoise": "Elevated Noise Levels",
+      "alerts.pm25Exceeded": "PM2.5 Threshold Exceeded",
+      "alerts.temperatureAlert": "Temperature Alert",
+
+      "zones.commercial": "Commercial",
+      "zones.educational": "Educational",
+      "zones.healthcare": "Healthcare",
+      "zones.residential": "Residential",
+      "zones.industrial": "Industrial",
+
       "locations.miRoad": "MI Road, Jaipur",
       "locations.industrialTonk": "Industrial Area, Tonk",
       "locations.lakePichola": "Lake Pichola, Udaipur",
@@ -794,6 +806,7 @@ const resources = {
       "env.filters.parameter.temperature": "तापमान",
       "env.filters.parameter.humidity": "नमी",
 
+      "select.placeholder": "एक विकल्प चुनें",
       "select.itemsSelected": "{{count}} आइटम चयनित",
       "select.searchPlaceholder": "विकल्प खोजें...",
       "select.noOptionsFound": "कोई विकल्प नहीं मिला",
@@ -1210,6 +1223,21 @@ const resources = {
       "locationComparison.avg.pm10": "PM10 औसत",
       "locationComparison.avg.ozone": "ओज़ोन औसत",
       "locationComparison.avg.no2": "NO₂ औसत",
+
+      "alerts.highAqi": "उच्च AQI का पता चला",
+      "alerts.elevatedNoise": "बढ़े हुए शोर स्तर",
+      "alerts.pm25Exceeded": "PM2.5 थ्रेशोल्ड पार हो गया",
+      "alerts.temperatureAlert": "तापमान अलर्ट",
+
+      "zones.commercial": "वाणिज्यिक",
+      "zones.educational": "शैक्षणिक",
+      "zones.healthcare": "स्वास्थ्य सेवा",
+      "zones.residential": "आवासीय",
+      "zones.industrial": "औद्योगिक",
+      "zones.educational": "शैक्षिक",
+      "zones.healthcare": "स्वास्थ्य सेवा",
+      "zones.residential": "आवासीय",
+      "zones.industrial": "औद्योगिक",
 
       "comp.title": "तुलनात्मक विश्लेषण",
       "comp.subtitle": "शहरों और समयसीमाओं में पर्यावरणीय पैरामीटर की तुलना करें",
@@ -1835,6 +1863,17 @@ const resources = {
       "locationComparison.avg.ozone": "ओज़ोन औसत",
       "locationComparison.avg.no2": "NO₂ औसत",
 
+      "alerts.highAqi": "उच्च AQI आढळून आले",
+      "alerts.elevatedNoise": "वाढलेली आवाज पातळी",
+      "alerts.pm25Exceeded": "PM2.5 थ्रेशोल्ड ओलांडले",
+      "alerts.temperatureAlert": "तापमान सूचना",
+
+      "zones.commercial": "व्यापारी",
+      "zones.educational": "शैक्षणिक",
+      "zones.healthcare": "आरोग्य सेवा",
+      "zones.residential": "निवासी",
+      "zones.industrial": "औद्योगिक",
+
       "comp.title": "तुलनात्मक विश्लेषण",
       "comp.subtitle": "शहर आणि वेळ श्रेणींमध्ये पर्यावरणीय पॅरामीटर्सची तुलना करा",
       "comp.selector.title": "तुलनेसाठी शहरे निवडा",
@@ -2452,6 +2491,17 @@ const resources = {
       "locationComparison.avg.ozone": "ઓઝોન સરેરાશ",
       "locationComparison.avg.no2": "NO₂ સરેરાશ",
 
+      "alerts.highAqi": "ઉચ્ચ AQI શોધાયું",
+      "alerts.elevatedNoise": "વધેલા અવાજ સ્તરો",
+      "alerts.pm25Exceeded": "PM2.5 થ્રેશોલ્ડ ઓળંગાઈ",
+      "alerts.temperatureAlert": "તાપમાન ચેતવણી",
+
+      "zones.commercial": "વાણિજ્યિક",
+      "zones.educational": "શૈક્ષણિક",
+      "zones.healthcare": "આરોગ્ય સેવા",
+      "zones.residential": "રહેણાંક",
+      "zones.industrial": "ઔદ્યોગિક",
+
       "comp.title": "તુલનાત્મક વિશ્લેષણ",
       "comp.subtitle": "શહેરો અને સમય શ્રેણીઓમાં પર્યાવરણીય પરિમાણોની તુલના કરો",
       "comp.selector.title": "તુલના માટે શહેરો પસંદ કરો",
@@ -3068,6 +3118,17 @@ const resources = {
       "locationComparison.avg.pm10": "PM10 ਔਸਤ",
       "locationComparison.avg.ozone": "ਓਜ਼ੋਨ ਔਸਤ",
       "locationComparison.avg.no2": "NO₂ ਔਸਤ",
+
+      "alerts.highAqi": "ਉੱਚ AQI ਖੋਜਿਆ ਗਿਆ",
+      "alerts.elevatedNoise": "ਵਧੀਆਂ ਸ਼ੋਰ ਪੱਧਰਾਂ",
+      "alerts.pm25Exceeded": "PM2.5 ਥ੍ਰੈਸਹੋਲਡ ਪਾਰ ਹੋਇਆ",
+      "alerts.temperatureAlert": "ਤਾਪਮਾਨ ਸੂਚਨਾ",
+
+      "zones.commercial": "ਵਪਾਰਕ",
+      "zones.educational": "ਸਿੱਖਿਆਕ",
+      "zones.healthcare": "ਸਿਹਤ ਸੇਵਾ",
+      "zones.residential": "ਰਿਹਾਇਸ਼ੀ",
+      "zones.industrial": "ਉਦਯੋਗਿਕ",
 
       "comp.title": "ਤੁਲਨਾਤਮਕ ਵਿਸ਼ਲੇਸ਼ਣ",
       "comp.subtitle": "ਸ਼ਹਿਰਾਂ ਅਤੇ ਸਮਾਂ ਸ਼੍ਰੇਣੀਆਂ ਵਿੱਚ ਪਰੀਬੇਸ਼ੀ ਪੈਰਾਮੀਟਰਾਂ ਦੀ ਤੁਲਨਾ ਕਰੋ",

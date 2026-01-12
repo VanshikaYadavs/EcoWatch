@@ -8,6 +8,7 @@ import UserRoleBadge from '../components/navigation/UserRoleBadge';
 import { useAuth } from '../auth/AuthProvider';
 import { useMyProfile } from '../utils/profileHooks';
 import Button from '../components/ui/Button';
+import AutoText from '../components/ui/AutoText';
 
 const MainLayout = () => {
   const { t } = useTranslation();
@@ -63,7 +64,7 @@ const MainLayout = () => {
           <div className="flex items-center justify-between h-16 px-6">
             <div className="flex items-center gap-4">
               <h1 className="text-xl font-semibold text-foreground hidden md:block">
-                {t('header.environmentalMonitoring')}
+                <AutoText i18nKey="header.environmentalMonitoring" defaultText="Environmental Monitoring" />
               </h1>
             </div>
 
@@ -84,7 +85,7 @@ const MainLayout = () => {
                 iconPosition="left"
                 onClick={handleLogout}
               >
-                {t('header.logout')}
+                <AutoText i18nKey="header.logout" defaultText="Logout" />
               </Button>
             </div>
           </div>

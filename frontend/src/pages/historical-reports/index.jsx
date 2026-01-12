@@ -9,6 +9,7 @@ import ComparisonTool from './components/ComparisonTool';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
 import Select from '../../components/ui/Select';
+import AutoText from '../../components/ui/AutoText';
 import { useEnvironmentReadings } from '../../utils/dataHooks';
 
 const HistoricalReports = () => {
@@ -137,9 +138,9 @@ const HistoricalReports = () => {
       <div>
         <div className="flex items-center gap-3 mb-1">
           <Icon name="FileText" size={22} color="var(--color-primary)" />
-          <h1 className="text-xl md:text-2xl font-semibold text-foreground">{t('reports.title')}</h1>
+          <h1 className="text-xl md:text-2xl font-semibold text-foreground"><AutoText i18nKey="reports.title" defaultText="Historical Reports" /></h1>
         </div>
-        <p className="text-sm md:text-base text-muted-foreground">{t('reports.subtitle')}</p>
+        <p className="text-sm md:text-base text-muted-foreground"><AutoText i18nKey="reports.subtitle" defaultText="Generate comprehensive reports for compliance and planning" /></p>
       </div>
 
       <div className="flex items-center gap-2 overflow-x-auto scrollbar-thin pb-2">

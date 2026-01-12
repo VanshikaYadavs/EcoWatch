@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import Header from '../../components/ui/Header';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
+import AutoText from '../../components/ui/AutoText';
 import CitySelector from './components/CitySelector';
 import ParameterFilter from './components/ParameterFilter';
 import TimeRangeSelector from './components/TimeRangeSelector';
@@ -79,11 +80,11 @@ const ComparativeAnalysis = () => {
                     <Icon name="ArrowLeft" size={20} />
                   </button>
                   <h1 className="text-2xl md:text-3xl lg:text-4xl font-heading font-semibold text-foreground">
-                    {t('comp.title')}
+                    <AutoText i18nKey="comp.title" defaultText="Comparative Analysis" />
                   </h1>
                 </div>
                 <p className="text-sm md:text-base text-muted-foreground ml-12">
-                  {t('comp.subtitle')}
+                  <AutoText i18nKey="comp.subtitle" defaultText="Compare environmental metrics across cities and timeframes" />
                 </p>
               </div>
 

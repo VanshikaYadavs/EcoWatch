@@ -200,7 +200,7 @@ const EnvironmentalDashboard = () => {
   const recentAlerts = [
   {
     id: 1,
-    title: "High AQI Detected",
+    title: t('alerts.highAqi'),
     location: t('locations.miRoad'),
     severity: "critical",
     timestamp: new Date(Date.now() - 15 * 60000),
@@ -210,7 +210,7 @@ const EnvironmentalDashboard = () => {
   },
   {
     id: 2,
-    title: "Elevated Noise Levels",
+    title: t('alerts.elevatedNoise'),
     location: t('locations.clockTower'),
     severity: "high",
     timestamp: new Date(Date.now() - 45 * 60000),
@@ -220,7 +220,7 @@ const EnvironmentalDashboard = () => {
   },
   {
     id: 3,
-    title: "PM2.5 Threshold Exceeded",
+    title: t('alerts.pm25Exceeded'),
     location: t('locations.pushkarRoad'),
     severity: "critical",
     timestamp: new Date(Date.now() - 90 * 60000),
@@ -230,7 +230,7 @@ const EnvironmentalDashboard = () => {
   },
   {
     id: 4,
-    title: "Temperature Alert",
+    title: t('alerts.temperatureAlert'),
     location: t('locations.bikanerIndustrial'),
     severity: "medium",
     timestamp: new Date(Date.now() - 120 * 60000),

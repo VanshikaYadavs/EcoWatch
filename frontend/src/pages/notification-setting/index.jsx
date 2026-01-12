@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
+import AutoText from '../../components/ui/AutoText';
 import ThresholdConfiguration from './components/ThresholdConfiguration';
 import ChannelConfiguration from './components/ChannelConfiguration';
 import FrequencyConfiguration from './components/FrequencyConfiguration';

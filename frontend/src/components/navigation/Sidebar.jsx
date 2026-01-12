@@ -4,56 +4,75 @@ import { useTranslation } from 'react-i18next';
 import Icon from '../AppIcon';
 import { useAuth } from '../../auth/AuthProvider';
 import { useMyProfile } from '../../utils/profileHooks';
+import { useAutoTranslate } from '../../utils/useAutoTranslate';
 
 const Sidebar = ({ isCollapsed = false, onToggleCollapse }) => {
   const { t } = useTranslation();
   const location = useLocation();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
+  // Auto-translate brand and subtitles if keys are missing
+  const brandName = useAutoTranslate('brand.name', 'EchoWatch', true);
+  const navDashboard = useAutoTranslate('nav.dashboard', 'Dashboard', true);
+  const navDashboardDesc = useAutoTranslate('nav.dashboard.desc', 'Real-time environmental overview', true);
+  const navAirQuality = useAutoTranslate('nav.airQuality', 'Air Quality', true);
+  const navAirQualityDesc = useAutoTranslate('nav.airQuality.desc', 'AQI monitoring and analysis', true);
+  const navNoise = useAutoTranslate('nav.noiseMonitoring', 'Noise Monitoring', true);
+  const navNoiseDesc = useAutoTranslate('nav.noiseMonitoring.desc', 'Acoustic pollution tracking', true);
+  const navTemp = useAutoTranslate('nav.temperature', 'Temperature', true);
+  const navTempDesc = useAutoTranslate('nav.temperature.desc', 'Thermal analytics and trends', true);
+  const navReports = useAutoTranslate('nav.reports', 'Reports', true);
+  const navReportsDesc = useAutoTranslate('nav.reports.desc', 'Historical analysis and compliance', true);
+  const navNotifications = useAutoTranslate('nav.notifications', 'Notifications', true);
+  const navNotificationsDesc = useAutoTranslate('nav.notifications.desc', 'Alert preferences and settings', true);
+  const navProfile = useAutoTranslate('nav.profile', 'Profile', true);
+  const navProfileDesc = useAutoTranslate('nav.profile.desc', 'Account settings and preferences', true);
+  const appSubtitle = useAutoTranslate('app.subtitle', 'Environmental Monitoring System', true);
+
   const navigationItems = [
     {
-      label: t('nav.dashboard'),
+      label: navDashboard,
       path: '/environmental-dashboard',
       icon: 'LayoutDashboard',
-      description: t('nav.dashboard.desc')
+      description: navDashboardDesc
     },
     {
-      label: t('nav.airQuality'),
+      label: navAirQuality,
       path: '/air-quality-monitor',
       icon: 'Wind',
-      description: t('nav.airQuality.desc')
+      description: navAirQualityDesc
     },
     {
-      label: t('nav.noiseMonitoring'),
+      label: navNoise,
       path: '/noise-level-tracking',
       icon: 'Volume2',
-      description: t('nav.noiseMonitoring.desc')
+      description: navNoiseDesc
     },
     {
-      label: t('nav.temperature'),
+      label: navTemp,
       path: '/temperature-analytics',
       icon: 'Thermometer',
-      description: t('nav.temperature.desc')
+      description: navTempDesc
     },
     {
-      label: t('nav.reports'),
+      label: navReports,
       path: '/historical-reports',
       icon: 'FileText',
-      description: t('nav.reports.desc'),
+      description: navReportsDesc,
       roles: ['admin', 'official', 'analyst', 'researcher']
     },
     {
-      label: t('nav.notifications'),
+      label: navNotifications,
       path: '/notification-settings',
       icon: 'Bell',
-      description: t('nav.notifications.desc'),
+      description: navNotificationsDesc,
       roles: ['admin', 'official']
     },
     {
-      label: t('nav.profile'),
+      label: navProfile,
       path: '/user-profile',
       icon: 'User',
-      description: t('nav.profile.desc')
+      description: navProfileDesc
     }
   ];
 
@@ -95,7 +114,7 @@ const Sidebar = ({ isCollapsed = false, onToggleCollapse }) => {
             <div className="sidebar-logo">
               <Icon name="Waves" size={24} color="#FFFFFF" />
             </div>
-            <span className="sidebar-logo-text">EchoWatch</span>
+            <span className="sidebar-logo-text">{brandName}</span>
           </div>
         </div>
 
@@ -123,7 +142,7 @@ const Sidebar = ({ isCollapsed = false, onToggleCollapse }) => {
         {!isCollapsed && (
           <div className="absolute bottom-8 left-4 right-4 p-4 bg-muted rounded-lg">
             <p className="caption text-muted-foreground text-center">
-              {t('app.subtitle')}
+              {appSubtitle}
             </p>
             <p className="caption text-muted-foreground text-center mt-1">
               v2.1.0 • 2026
