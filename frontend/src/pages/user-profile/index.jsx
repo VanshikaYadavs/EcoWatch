@@ -49,14 +49,16 @@ const UserProfile = () => {
     const email = user?.email || '';
     const organization = profile?.organization || user?.user_metadata?.organization || '';
     const role = profile?.role || user?.user_metadata?.role || 'viewer';
+    const phone = user?.user_metadata?.phone || '';
     setProfileData((prev) => ({
       ...prev,
       name: fullName,
       email,
       organization,
+      phone,
       role,
     }));
-  }, [profile?.full_name, profile?.organization, profile?.role, user?.email, user?.user_metadata?.full_name, user?.user_metadata?.organization, user?.user_metadata?.role]);
+  }, [profile?.full_name, profile?.organization, profile?.role, user?.email, user?.user_metadata?.full_name, user?.user_metadata?.organization, user?.user_metadata?.role, user?.user_metadata?.phone]);
 
   const tabs = [
     { id: 'details', label: 'Profile Details', icon: 'User' },

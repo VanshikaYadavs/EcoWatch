@@ -23,6 +23,7 @@ const Signup = () => {
   const [fullName, setFullName] = useState('');
   const [role, setRole] = useState('viewer');
   const [organization, setOrganization] = useState('');
+  const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -37,6 +38,8 @@ const Signup = () => {
     if (!email || !/^([^\s@]+)@([^\s@]+)\.[^\s@]+$/.test(email)) return setError('Please enter a valid email');
     if (!password || password.length < 6) return setError('Password must be at least 6 characters');
     if (password !== confirm) return setError('Passwords do not match');
+    if (!phone.trim()) return setError('Please enter your phone number');
+    if (!/^\+?[0-9\-\s()]{7,15}$/.test(phone.trim())) return setError('Please enter a valid phone number');
     setLoading(true);
     const { error: authError } = await signUpWithPassword({
       email,
@@ -44,6 +47,7 @@ const Signup = () => {
       full_name: fullName.trim(),
       role,
       organization: organization?.trim() || null,
+      phone: phone.trim(),
     });
     setLoading(false);
     if (authError) return setError(authError.message);
@@ -91,6 +95,7 @@ const Signup = () => {
                 <Input label="Full Name" value={fullName} onChange={(e) => setFullName(e?.target?.value)} required />
                 <Select label="Role" options={roleOptions} value={role} onChange={setRole} />
                 <Input label="Organization (optional)" value={organization} onChange={(e) => setOrganization(e?.target?.value)} />
+                <Input label="Phone Number" type="tel" value={phone} onChange={(e) => setPhone(e?.target?.value)} required />
                 <Input label="Email" type="email" value={email} onChange={(e) => setEmail(e?.target?.value)} required />
                 <Input label="Password" type="password" value={password} onChange={(e) => setPassword(e?.target?.value)} required />
                 <Input label="Confirm Password" type="password" value={confirm} onChange={(e) => setConfirm(e?.target?.value)} required />
