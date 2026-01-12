@@ -34,13 +34,19 @@ const EnvironmentalDashboard = () => {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      if (!allowlist?.length) return; // need a current city
       setEnvLoading(true);
-      const currentCity = allowlist[0];
-      const data = await getLatestReading(currentCity);
-      if (!cancelled) {
-        setEnvData(data);
-        setEnvLoading(false);
+      const currentCity = allowlist?.length ? allowlist[0] : null;
+      try {
+        const data = await getLatestReading(currentCity);
+        if (!cancelled) {
+          setEnvData(data || null);
+        }
+      } catch (e) {
+        if (!cancelled) {
+          console.warn('Latest reading fetch failed:', e?.message || e);
+        }
+      } finally {
+        if (!cancelled) setEnvLoading(false);
       }
     })();
     return () => { cancelled = true; };
