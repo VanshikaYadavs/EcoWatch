@@ -44,7 +44,7 @@ app.get('/', (_req, res) => {
         <ul>
           <li><a href="/health">/health</a> – service status</li>
           <li><a href="/api/readings/latest">/api/readings/latest</a> – query latest readings</li>
-          <li><a href="/api/ingest/now?name=Jaipur&lat=26.91&lon=75.78">/api/ingest/now</a> – trigger one-off ingest</li>
+          <li><a href="/api/ingest/now?name=Your%20Location&lat=28.56&lon=77.89&demo=1">/api/ingest/now</a> – trigger one-off ingest (dev demo link)</li>
         </ul>
         <p>If you expected the frontend UI, run it separately at <code>npm start</code> in the <strong>frontend</strong> folder.</p>
       </body>
@@ -111,23 +111,66 @@ app.post('/api/readings', async (req, res) => {
   }
 });
 
+// Auth middleware: derive user_id from Supabase JWT (Authorization: Bearer <token>)
+async function requireAuth(req, res, next) {
+  try {
+    let userId = null;
+    const allowDemo = (process.env.ALLOW_DEMO_INGEST === '1') || (process.env.NODE_ENV !== 'production');
+    // Dev/demo bypass: allow anonymous ingest when demo=1 is present
+    if (allowDemo && req.query?.demo === '1') {
+      userId = process.env.DEFAULT_USER_ID || '00000000-0000-0000-0000-000000000000';
+    }
+    const authHeader = req.headers['authorization'] || req.headers['Authorization'];
+    const token = typeof authHeader === 'string' && authHeader.startsWith('Bearer ')
+      ? authHeader.slice(7)
+      : null;
+    if (token && supabaseAdmin) {
+      const { data, error } = await supabaseAdmin.auth.getUser(token);
+      if (!error && data?.user?.id) userId = data.user.id;
+    }
+    // Dev fallback: allow explicit user_id via query for testing
+    if (!userId && req.query?.user_id) userId = req.query.user_id;
+    if (!userId) return res.status(401).json({ error: 'unauthorized: missing auth token' });
+    req.user_id = userId;
+    next();
+  } catch (e) {
+    res.status(401).json({ error: 'unauthorized' });
+  }
+}
+
 // Trigger ingestion for a single location
-// GET /api/ingest/now?name=Jaipur&lat=26.91&lon=75.78
-app.get('/api/ingest/now', async (req, res) => {
+// GET /api/ingest/now?name=City&lat=..&lon=.. (auth required; user_id derived from JWT)
+app.get('/api/ingest/now', requireAuth, async (req, res) => {
   try {
     let { name, lat, lon } = req.query;
+    const user_id = req.user_id;
     if (!lat || !lon) return res.status(400).json({ error: 'lat and lon are required' });
     lat = Number(lat);
     lon = Number(lon);
 
-    // Optional reverse geocoding to get city name when not provided
-    if (!name) {
-      name = await resolveLocationName(lat, lon);
-    }
+    // Always resolve a canonical city label from coordinates.
+    // If a client-provided name differs, prefer the resolved label to avoid mislabeling.
+    let canonical = null;
+    try { canonical = await resolveLocationName(lat, lon); } catch {}
+    const finalName = canonical || name || 'User Location';
 
-    console.log(`[ingest] coords=(${lat},${lon}) resolvedName="${name}"`);
-    const data = await ingestOne({ name, lat, lon });
-    res.json({ data });
+    console.log(`[ingest] coords=(${lat},${lon}) finalName="${finalName}" clientName="${name || ''}"`);
+    const data = await ingestOne({ name: finalName, lat, lon, user_id });
+    // Redact user_id from API response to avoid exposing identity
+    const redacted = data ? {
+      id: data.id,
+      location: data.location,
+      latitude: data.latitude,
+      longitude: data.longitude,
+      aqi: data.aqi,
+      temperature: data.temperature,
+      humidity: data.humidity,
+      noise_level: data.noise_level,
+      source: data.source,
+      recorded_at: data.recorded_at,
+      created_at: data.created_at,
+    } : null;
+    res.json({ data: redacted });
   } catch (err) {
     res.status(500).json({ error: String(err) });
   }
@@ -172,7 +215,14 @@ async function storeReading(payload) {
     console.warn('Supabase not configured; skip storeReading');
     return;
   }
-  const { error } = await supabase.from('environment_readings').insert([payload]);
+  const defaultUserId = process.env.DEFAULT_USER_ID || null;
+  const allowAnon = process.env.ALLOW_ANON_INGEST === '0';
+  const withUser = { ...payload, user_id: payload.user_id ?? defaultUserId ?? null };
+  if (!withUser.user_id && !allowAnon) {
+    console.warn('Skipping storeReading: missing user_id and ALLOW_ANON_INGEST!=1');
+    return;
+  }
+  const { error } = await supabase.from('environment_readings').insert([withUser]);
   if (error) {
     console.error('DB insert failed:', error.message);
   } else {

@@ -53,12 +53,24 @@ create policy if not exists profiles_update_own on profiles for update
   with check (id = auth.uid() or auth.role() = 'service_role');
 
 -- Environment readings: public/anonymized reads; service role writes
-create policy if not exists env_readings_read_anon on environment_readings for select
-  to anon using (true);
-create policy if not exists env_readings_read_auth on environment_readings for select
-  to authenticated using (true);
-create policy if not exists env_readings_write_service_role on environment_readings for all
+-- Environment readings: only owners can read; service role can write/update/delete
+do $$ begin
+  begin
+    drop policy if exists env_readings_read_anon on environment_readings;
+  exception when others then null; end;
+  begin
+    drop policy if exists env_readings_read_auth on environment_readings;
+  exception when others then null; end;
+end $$;
+
+create policy if not exists env_readings_read_own on environment_readings for select
+  to authenticated using (user_id = auth.uid() or auth.role() = 'service_role');
+create policy if not exists env_readings_insert_service_role on environment_readings for insert
+  to authenticated with check (auth.role() = 'service_role');
+create policy if not exists env_readings_update_delete_service_role on environment_readings for update
   to authenticated using (auth.role() = 'service_role') with check (auth.role() = 'service_role');
+create policy if not exists env_readings_delete_service_role on environment_readings for delete
+  to authenticated using (auth.role() = 'service_role');
 
 -- User alert preferences: owner can read/write; service role can do all
 create policy if not exists prefs_read_own on user_alert_preferences for select

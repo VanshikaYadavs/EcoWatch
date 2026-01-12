@@ -83,6 +83,8 @@ create table if not exists environment_readings (
   humidity double precision,
   noise_level double precision,
   source text,
+  -- Optional per-user isolation; populated by backend using service role
+  user_id uuid,
   recorded_at timestamptz not null default now(),
   created_at timestamptz not null default now()
 );
@@ -101,6 +103,13 @@ create table if not exists user_alert_preferences (
 -- Helpful indexes for environment_readings
 create index if not exists idx_env_readings_recorded_at on environment_readings (recorded_at desc);
 create index if not exists idx_env_readings_location_ts on environment_readings (location, recorded_at desc);
+-- Helpful index for multi-user isolation queries
+create index if not exists idx_env_readings_user_ts on environment_readings (user_id, recorded_at desc);
+
+-- Backfill/migration safety: ensure column exists in existing databases
+alter table environment_readings add column if not exists user_id uuid;
+-- Optional FK constraint to auth.users (may require privileges); safe to skip if not desired
+-- Note: Postgres lacks IF NOT EXISTS for constraints; apply manually if needed.
 
 -- Alert events (triggered alerts log)
 create table if not exists alert_events (

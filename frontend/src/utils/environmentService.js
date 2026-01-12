@@ -1,13 +1,18 @@
 import { supabase } from '../utils/supabaseClient';
 
 // Fetch the latest environmental reading (single row)
-export async function getLatestEnvironmentData() {
-  const { data, error } = await supabase
+export async function getLatestEnvironmentData(location = null) {
+  let q = supabase
     .from('environment_readings')
     .select('*')
     .order('recorded_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    .limit(1);
+
+  if (location && typeof location === 'string' && location !== 'all') {
+    q = q.eq('location', location);
+  }
+
+  const { data, error } = await q.maybeSingle();
 
   if (error) {
     console.error('Error fetching latest data:', error.message);

@@ -40,9 +40,14 @@ function maybeSimulateNoise() {
   return Math.round((min + Math.random() * (max - min)) * 10) / 10;
 }
 
-export async function ingestOne({ name, lat, lon, simulateNoise = true }) {
+export async function ingestOne({ name, lat, lon, user_id, simulateNoise = true }) {
   if (!hasGlobalFetch) throw new Error('Global fetch is not available. Use Node 18+ or polyfill fetch.');
   if (!supabaseAdmin) throw new Error('Supabase admin client is not configured');
+  // Enforce user identity unless explicitly allowed for dev via env flag
+  const allowAnon = process.env.ALLOW_ANON_INGEST === '1';
+  if (!user_id && !allowAnon) {
+    throw new Error('Missing user_id (set ALLOW_ANON_INGEST=1 to allow anonymous ingest)');
+  }
 
   const [aqiRes, wxRes] = await Promise.all([
     fetchAQI(lat, lon).catch(() => ({ aqi: null, source: null })),
@@ -60,6 +65,7 @@ export async function ingestOne({ name, lat, lon, simulateNoise = true }) {
     noise_level: simulateNoise ? maybeSimulateNoise() : null,
     source: sources || null,
     recorded_at: new Date().toISOString(),
+    user_id: user_id ?? null,
   };
 
   const { data, error } = await supabaseAdmin.from('environment_readings').insert([payload]).select('*').single();
@@ -95,7 +101,13 @@ if (import.meta.url === (new URL(process.argv[1], 'file://')).href) {
         console.log('No DEFAULT_LOCATIONS configured. Set a JSON array in .env');
         process.exit(0);
       }
-      const results = await ingestMany(def);
+      const defaultUserId = process.env.DEFAULT_USER_ID || null;
+      if (!defaultUserId && process.env.ALLOW_ANON_INGEST !== '1') {
+        console.error('Refusing CLI ingest: DEFAULT_USER_ID not set and ALLOW_ANON_INGEST!=1');
+        process.exit(1);
+      }
+      const withUser = def.map((loc) => ({ ...loc, user_id: defaultUserId }));
+      const results = await ingestMany(withUser);
       console.log(JSON.stringify(results, null, 2));
       process.exit(0);
     } catch (e) {
