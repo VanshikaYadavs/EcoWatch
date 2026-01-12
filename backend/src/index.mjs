@@ -183,6 +183,89 @@ app.post('/api/test-email', async (req, res) => {
   }
 });
 
+// Test alert with suggestions endpoint (dev/debug only)
+app.post('/api/test-alert-with-suggestions', async (req, res) => {
+  try {
+    const { to, aqi, noise_level, temperature, location } = req.body;
+    if (!to) return res.status(400).json({ error: 'to email is required' });
+
+    const { generateSuggestions } = await import('./alerts.mjs');
+    const { sendEmail } = await import('./email.mjs');
+
+    // Create a test reading object
+    const testReading = {
+      aqi: aqi || null,
+      noise_level: noise_level || null,
+      temperature: temperature || null,
+      location: location || 'Test Location',
+      recorded_at: new Date().toISOString(),
+    };
+
+    // Generate suggestions
+    const suggestions = generateSuggestions(testReading);
+    const alertType = aqi ? 'AQI' : noise_level ? 'NOISE' : temperature ? 'HEAT' : 'ALERT';
+    
+    const alertColor = alertType === 'NOISE' ? '#FF6B6B' : alertType === 'AQI' ? '#FFA500' : '#FF9800';
+    
+    const html = `
+      <html>
+        <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
+          <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; text-align: center; color: white; border-radius: 8px 8px 0 0;">
+            <h2 style="margin: 0; font-size: 24px;">⚠️ EcoWatch Environmental Alert</h2>
+          </div>
+          
+          <div style="background: #f9f9f9; padding: 30px; border: 1px solid #e0e0e0; border-radius: 0 0 8px 8px;">
+            <div style="background: ${alertColor}; color: white; padding: 15px; border-radius: 6px; margin-bottom: 20px; text-align: center;">
+              <h3 style="margin: 0; font-size: 20px;">${alertType} Alert (Test)</h3>
+            </div>
+            
+            <p style="font-size: 16px; margin: 15px 0;"><strong>📍 Location:</strong> ${testReading.location}</p>
+            <p style="font-size: 16px; margin: 15px 0;"><strong>⏰ Time:</strong> ${new Date(testReading.recorded_at).toLocaleString()}</p>
+            ${aqi ? `<p style="font-size: 16px; margin: 15px 0;"><strong>💨 AQI:</strong> ${aqi}</p>` : ''}
+            ${noise_level ? `<p style="font-size: 16px; margin: 15px 0;"><strong>🔊 Noise:</strong> ${noise_level} dB</p>` : ''}
+            ${temperature ? `<p style="font-size: 16px; margin: 15px 0;"><strong>🌡️ Temperature:</strong> ${temperature}°C</p>` : ''}
+            
+            ${suggestions.length > 0 ? `
+            <div style="background: #f0f8e8; border-left: 4px solid #4caf50; padding: 15px; margin: 20px 0; border-radius: 4px;">
+              <h4 style="margin: 0 0 10px 0; color: #2e7d32; font-size: 14px;">💡 Suggestions:</h4>
+              ${suggestions.map(s => `<p style="margin: 8px 0; font-size: 14px; color: #333;">${s}</p>`).join('')}
+            </div>
+            ` : '<p style="font-size: 14px; color: #999;">No specific suggestions at this time.</p>'}
+            
+            <div style="background: #e8f4f8; border-left: 4px solid #667eea; padding: 15px; margin: 20px 0; border-radius: 4px;">
+              <p style="margin: 0; font-size: 14px; color: #555;">Check your EcoWatch dashboard for more details and adjust your alert thresholds if needed.</p>
+            </div>
+            
+            <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd;">
+              <p style="font-size: 12px; color: #999;">© 2026 EcoWatch. All rights reserved.</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    const result = await sendEmail({
+      to,
+      subject: `🚨 EcoWatch: Test ${alertType} Alert in ${testReading.location}`,
+      text: `Test alert for ${testReading.location}. ${suggestions.join(' ')}`,
+      html,
+    });
+
+    if (!result.ok) {
+      return res.status(500).json({ error: result.reason || 'Send failed' });
+    }
+    
+    res.json({ 
+      ok: true, 
+      message: 'Alert with suggestions sent successfully',
+      suggestions: suggestions,
+      alertType: alertType
+    });
+  } catch (err) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
 const server = app.listen(PORT, 'localhost', () => {
   console.log(`[${new Date().toISOString()}] ✅ EcoWatch backend listening on http://localhost:${PORT}`);
   
