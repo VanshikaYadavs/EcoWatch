@@ -51,8 +51,8 @@ const Sidebar = ({ isCollapsed = false, onToggleCollapse }) => {
       label: 'Notifications',
       path: '/notification-settings',
       icon: 'Bell',
-      description: 'Alert preferences and settings',
-      roles: ['admin', 'official']
+      description: 'Alert preferences and settings'
+      // Removed role restriction - all authenticated users can access
     },
     {
       label: 'Profile',
