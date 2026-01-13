@@ -5,6 +5,7 @@ import ThresholdConfiguration from './components/ThresholdConfiguration';
 import ChannelConfiguration from './components/ChannelConfiguration';
 import FrequencyConfiguration from './components/FrequencyConfiguration';
 import NotificationHistory from './components/NotificationHistory';
+import LocationConfiguration from './components/LocationConfiguration';
 import { useAuth } from '../../auth/AuthProvider';
 import { loadUserPreferences, saveUserPreferences } from '../../utils/preferences';
 
@@ -121,6 +122,7 @@ const NotificationSettings = () => {
 
   const tabs = [
     { id: 'thresholds', label: 'Alert Thresholds', icon: 'Gauge' },
+    { id: 'locations', label: 'Monitored Locations', icon: 'MapPin' },
     { id: 'channels', label: 'Notification Channels', icon: 'Send' },
     { id: 'frequency', label: 'Frequency & Timing', icon: 'Clock' },
     { id: 'history', label: 'Notification History', icon: 'History' }
@@ -196,7 +198,7 @@ const NotificationSettings = () => {
 
       {/* Tabs Navigation */}
       <div className="bg-card border border-border rounded-lg p-2">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
           {tabs?.map((tab) => (
             <button
               key={tab?.id}
@@ -224,6 +226,9 @@ const NotificationSettings = () => {
             settings={settings}
             onSettingsChange={setSettings}
           />
+        )}
+        {activeTab === 'locations' && (
+          <LocationConfiguration />
         )}
         {activeTab === 'channels' && (
           <ChannelConfiguration

@@ -5,6 +5,7 @@ import SensorDataTable from './components/SensorDataTable';
 import FilterControls from './components/FilterControls';
 import AlertConfiguration from './components/AlertConfiguration';
 import LocationComparison from './components/LocationComparison';
+import NearbyStations from './components/NearbyStations';
 import { useEnvironmentReadings, useLatestCityReadings } from '../../utils/dataHooks';
 import { getCurrentLocation } from '../../utils/location';
 import { getNearbyCities } from '../../utils/nearbyCities';
@@ -12,6 +13,7 @@ import axios from 'axios';
 import { getSessionAllowlist, recomputeSessionCities } from '../../utils/sessionCities';
 import Button from '../../components/ui/Button';
 import { supabase } from '../../utils/supabaseClient';
+import { getNearbySensorsByLocation, getNearbySensors } from '../../utils/environmentService';
 
 const AirQualityMonitor = () => {
   const [filters, setFilters] = useState({
@@ -28,12 +30,44 @@ const AirQualityMonitor = () => {
   const [allowlist, setAllowlist] = useState([]);
   const { data: latestCityReadings } = useLatestCityReadings({ fallbackWindow: 150, allowLocations: allowlist });
   const [recomputing, setRecomputing] = useState(false);
+  const [nearbySensors, setNearbySensors] = useState([]);
+  const [userLocation, setUserLocation] = useState(null);
+  const [loadingSensors, setLoadingSensors] = useState(false);
 
   useEffect(() => {
     (async () => {
       try { setAllowlist(await getSessionAllowlist()); } catch {}
     })();
   }, []);
+
+  // Fetch nearby sensors from backend
+  useEffect(() => {
+    fetchNearbySensors();
+  }, []);
+
+  const fetchNearbySensors = async () => {
+    setLoadingSensors(true);
+    try {
+      // Try to get user's GPS location
+      try {
+        const { lat, lon } = await getCurrentLocation();
+        setUserLocation({ lat, lon });
+        console.log('🗺️ Fetching sensors near:', lat, lon);
+        const sensors = await getNearbySensorsByLocation(lat, lon, 100); // 100km radius
+        setNearbySensors(sensors);
+        console.log('✅ Found', sensors.length, 'nearby sensors');
+      } catch (geoError) {
+        // Fallback: get all sensors without distance sorting
+        console.log('📍 GPS unavailable, showing all sensors');
+        const sensors = await getNearbySensors();
+        setNearbySensors(sensors);
+      }
+    } catch (error) {
+      console.error('Error fetching nearby sensors:', error);
+    } finally {
+      setLoadingSensors(false);
+    }
+  };
 
   // Ingest user's location + nearby cities on first load (in case user lands here directly)
   useEffect(() => {
@@ -88,21 +122,40 @@ const AirQualityMonitor = () => {
       .reverse()
       .map(r => ({ time: new Date(r.recorded_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), aqi: r.aqi ?? 0 }));
     setChartData(series);
-    const sensors = srcReadings.slice(0, 50).map((r, i) => ({
-      id: i + 1,
-      location: r.location,
-      zone: r.location,
-      aqi: r.aqi ?? 0,
-      pm25: null,
-      pm10: null,
-      ozone: null,
-      no2: null,
-      lastUpdate: new Date(r.recorded_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    }));
-    setSensorData(sensors);
+    
+    // Use nearby sensors if available (more accurate GPS-based data), otherwise use database readings
+    let sensorsToDisplay = [];
+    if (nearbySensors && nearbySensors.length > 0) {
+      sensorsToDisplay = nearbySensors.slice(0, 50).map((s, i) => ({
+        id: s.id || i + 1,
+        location: s.location,
+        zone: s.location,
+        aqi: s.aqi ?? 0,
+        pm25: null,
+        pm10: null,
+        ozone: null,
+        no2: null,
+        lastUpdate: s.recorded_at ? new Date(s.recorded_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—',
+        distance: s.distance ? `${s.distance.toFixed(1)}km` : null
+      }));
+    } else {
+      sensorsToDisplay = srcReadings.slice(0, 50).map((r, i) => ({
+        id: i + 1,
+        location: r.location,
+        zone: r.location,
+        aqi: r.aqi ?? 0,
+        pm25: null,
+        pm10: null,
+        ozone: null,
+        no2: null,
+        lastUpdate: new Date(r.recorded_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      }));
+    }
+    
+    setSensorData(sensorsToDisplay);
     const comp = srcReadings.slice(0, 10).map(r => ({ location: r.location, pm25: 0, pm10: 0, ozone: 0, no2: 0 }));
     setComparisonData(comp);
-  }, [readings, latestCityReadings]);
+  }, [readings, latestCityReadings, nearbySensors]);
 
   const locationOptions = useMemo(() => {
     const dynamic = (latestCityReadings || []).map(r => ({ value: r.location, label: r.location }));
@@ -194,6 +247,13 @@ const AirQualityMonitor = () => {
           data={chartData}
           timeRange={filters?.timeRange}
           selectedPollutants={filters?.pollutants}
+        />
+
+        <NearbyStations
+          sensors={nearbySensors}
+          userLocation={userLocation}
+          loading={loadingSensors}
+          onRefresh={fetchNearbySensors}
         />
 
         <SensorDataTable

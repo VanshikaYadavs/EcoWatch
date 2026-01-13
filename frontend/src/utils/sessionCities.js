@@ -42,39 +42,17 @@ export async function getSessionCities() {
     }
   } catch {}
 
-  // Initialize
-  try {
-    const { lat, lon } = await getCurrentLocation();
-    const nearby = await getNearbyCities(lat, lon);
-    const mainName = await resolveCityName(lat, lon);
-    const data = { main: { name: mainName, lat, lon }, nearby };
-    localStorage.setItem(KEY, JSON.stringify(data));
-    return data;
-  } catch (e) {
-    // If geolocation fails/denied, avoid incorrect hardcoded defaults.
-    const data = { main: null, nearby: [] };
-    try { localStorage.setItem(KEY, JSON.stringify(data)); } catch {}
-    return data;
-  }
+  // Return empty session instead of auto-detecting GPS location
+  // Users should configure monitored locations in Notification Settings
+  const data = { main: null, nearby: [] };
+  try { localStorage.setItem(KEY, JSON.stringify(data)); } catch {}
+  return data;
 }
 
 export async function ingestSessionCities() {
-  const sess = await getSessionCities();
-  const all = [sess.main, ...sess.nearby].filter(c => c && typeof c.lat === 'number' && typeof c.lon === 'number');
-  const { data: sessData } = await supabase.auth.getSession();
-  const userId = sessData?.session?.user?.id;
-  const token = sessData?.session?.access_token;
-  for (const c of all) {
-    try {
-      if (userId && token) {
-        await axios.get(
-          `http://localhost:8080/api/ingest/now?lat=${c.lat}&lon=${c.lon}&name=${encodeURIComponent(c.name || '')}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-      }
-    } catch {}
-  }
-  return all;
+  // Disabled automatic ingestion - users should use monitored locations from settings
+  // This prevents unwanted location data ingestion on every page load
+  return [];
 }
 
 export async function getSessionAllowlist() {
@@ -84,8 +62,10 @@ export async function getSessionAllowlist() {
 }
 
 export async function recomputeSessionCities() {
+  // Clear cached location data
   try { localStorage.removeItem(KEY); } catch {}
-  const sess = await getSessionCities();
-  await ingestSessionCities();
-  return sess;
+  // Return empty - users should configure monitored locations in settings
+  const data = { main: null, nearby: [] };
+  try { localStorage.setItem(KEY, JSON.stringify(data)); } catch {}
+  return data;
 }

@@ -165,14 +165,21 @@ async function requireAuth(req, res, next) {
 }
 
 // Trigger ingestion for a single location
-// GET /api/ingest/now?name=City&lat=..&lon=.. (auth required; user_id derived from JWT)
+// GET /api/ingest/now?name=City&lat=..&lon=..&accuracy=.. (auth required; user_id derived from JWT)
 app.get('/api/ingest/now', requireAuth, async (req, res) => {
   try {
-    let { name, lat, lon } = req.query;
+    let { name, lat, lon, accuracy, timestamp } = req.query;
     const user_id = req.user_id;
     if (!lat || !lon) return res.status(400).json({ error: 'lat and lon are required' });
     lat = Number(lat);
     lon = Number(lon);
+    accuracy = accuracy ? Number(accuracy) : null;
+
+    // Log request details for monitoring
+    console.log(`📥 [ingest/now] Request from user ${user_id}:`);
+    console.log(`   Coords: (${lat.toFixed(6)}, ${lon.toFixed(6)})`);
+    if (accuracy) console.log(`   GPS Accuracy: ±${accuracy.toFixed(0)}m`);
+    if (timestamp) console.log(`   Client timestamp: ${new Date(parseInt(timestamp)).toISOString()}`);
 
     // Always resolve a canonical city label from coordinates.
     // If a client-provided name differs, prefer the resolved label to avoid mislabeling.
@@ -183,7 +190,7 @@ app.get('/api/ingest/now', requireAuth, async (req, res) => {
     console.log(`[ingest] coords=(${lat},${lon}) finalName="${finalName}" clientName="${name || ''}"`);
     // import ingest dynamically to avoid circular import during module init
     const { ingestOne } = await import('./ingest.mjs');
-    const data = await ingestOne({ name: finalName, lat, lon, user_id });
+    const data = await ingestOne({ name: finalName, lat, lon, user_id, accuracy });
     // Redact user_id from API response to avoid exposing identity
     const redacted = data ? {
       id: data.id,
@@ -200,6 +207,7 @@ app.get('/api/ingest/now', requireAuth, async (req, res) => {
     } : null;
     res.json({ data: redacted });
   } catch (err) {
+    console.error('❌ [ingest/now] Error:', err);
     res.status(500).json({ error: String(err) });
   }
 });
@@ -222,6 +230,136 @@ app.post('/api/test-email', async (req, res) => {
     }
     res.json({ ok: true, message: 'Email sent successfully' });
   } catch (err) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// Get dashboard statistics (public - no auth required)
+app.get('/api/dashboard/stats', async (req, res) => {
+  try {
+    if (!supabaseAdmin) return res.status(500).json({ error: 'Supabase not configured' });
+
+    // Get latest readings count
+    const { count: readingsCount } = await supabaseAdmin
+      .from('environment_readings')
+      .select('*', { count: 'exact', head: true });
+
+    // Get active sensors (unique locations in last 5 minutes for real-time accuracy)
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+    const { data: recentReadings } = await supabaseAdmin
+      .from('environment_readings')
+      .select('location')
+      .gte('recorded_at', fiveMinutesAgo);
+    
+    const activeSensors = new Set(recentReadings?.map(r => r.location) || []).size;
+
+    // Get alerts today
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const { count: alertsToday } = await supabaseAdmin
+      .from('alert_events')
+      .select('*', { count: 'exact', head: true })
+      .gte('created_at', todayStart.toISOString());
+
+    // Get average values from recent readings (last 10 minutes for real-time accuracy)
+    const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+    const { data: avgData } = await supabaseAdmin
+      .from('environment_readings')
+      .select('aqi, temperature, humidity, noise_level')
+      .gte('recorded_at', tenMinutesAgo);
+
+    let avgAqi = 0, avgTemp = 0, avgHumidity = 0, avgNoise = 0;
+    if (avgData && avgData.length > 0) {
+      avgAqi = avgData.reduce((sum, r) => sum + (r.aqi || 0), 0) / avgData.length;
+      avgTemp = avgData.reduce((sum, r) => sum + (r.temperature || 0), 0) / avgData.length;
+      avgHumidity = avgData.reduce((sum, r) => sum + (r.humidity || 0), 0) / avgData.length;
+      avgNoise = avgData.reduce((sum, r) => sum + (r.noise_level || 0), 0) / avgData.length;
+    }
+
+    console.log(`📊 [dashboard/stats] Returning stats: ${readingsCount} readings, ${activeSensors} active sensors, ${alertsToday} alerts today`);
+
+    res.json({
+      readingsCount: readingsCount || 0,
+      activeSensors,
+      alertsToday: alertsToday || 0,
+      averages: {
+        aqi: Math.round(avgAqi),
+        temperature: Math.round(avgTemp * 10) / 10,
+        humidity: Math.round(avgHumidity),
+        noise: Math.round(avgNoise),
+      },
+      dataWindow: '10 minutes',
+      timestamp: new Date().toISOString(),
+    });
+  } catch (err) {
+    console.error('[dashboard/stats] Error:', err);
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// Get map sensors data (public - no auth required)
+app.get('/api/dashboard/sensors', async (req, res) => {
+  try {
+    if (!supabaseAdmin) return res.status(500).json({ error: 'Supabase not configured' });
+
+    // Get latest reading per location
+    const { data: latestReadings, error } = await supabaseAdmin
+      .rpc('get_latest_city_readings_v2')
+      .limit(100);
+
+    if (error) {
+      // Fallback: get latest 100 readings and group by location
+      const { data: allReadings } = await supabaseAdmin
+        .from('environment_readings')
+        .select('*')
+        .order('recorded_at', { ascending: false })
+        .limit(200);
+
+      // Group by location, keep most recent for each
+      const locationMap = new Map();
+      allReadings?.forEach(reading => {
+        if (!locationMap.has(reading.location)) {
+          locationMap.set(reading.location, reading);
+        }
+      });
+
+      const grouped = Array.from(locationMap.values());
+      
+      const sensors = grouped.map((r, i) => ({
+        id: i + 1,
+        location: r.location || 'Unknown',
+        address: r.location,
+        aqi: r.aqi ?? 0,
+        noise: r.noise_level ?? 0,
+        temperature: r.temperature ?? 0,
+        humidity: r.humidity ?? 0,
+        status: (r.aqi ?? 0) >= 150 ? 'poor' : (r.aqi ?? 0) >= 100 ? 'moderate' : 'good',
+        lat: r.latitude ?? 0,
+        lng: r.longitude ?? 0,
+        recorded_at: r.recorded_at,
+      }));
+
+      return res.json({ sensors, count: sensors.length });
+    }
+
+    // Success with RPC
+    const sensors = (latestReadings || []).map((r, i) => ({
+      id: i + 1,
+      location: r.location || 'Unknown',
+      address: r.location,
+      aqi: r.aqi ?? 0,
+      noise: r.noise_level ?? 0,
+      temperature: r.temperature ?? 0,
+      humidity: r.humidity ?? 0,
+      status: (r.aqi ?? 0) >= 150 ? 'poor' : (r.aqi ?? 0) >= 100 ? 'moderate' : 'good',
+      lat: r.latitude ?? 0,
+      lng: r.longitude ?? 0,
+      recorded_at: r.recorded_at,
+    }));
+
+    res.json({ sensors, count: sensors.length });
+  } catch (err) {
+    console.error('[dashboard/sensors] Error:', err);
     res.status(500).json({ error: String(err) });
   }
 });

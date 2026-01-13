@@ -25,12 +25,41 @@ export async function fetchAQI(lat, lon) {
 }
 
 export async function fetchWeather(lat, lon) {
-  if (!OPENWEATHER_API_KEY) return { temperature: null, humidity: null, source: null };
+  if (!OPENWEATHER_API_KEY) {
+    console.warn('⚠️ [weather] OpenWeather API key not configured');
+    return { temperature: null, humidity: null, source: null };
+  }
+  
   const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${OPENWEATHER_API_KEY}&units=metric`;
   const data = await fetchJSON(url);
-  const temperature = Number(data?.main?.temp ?? null);
-  const humidity = Number(data?.main?.humidity ?? null);
-  return { temperature, humidity, source: 'openweather' };
+  
+  // Extract and validate temperature
+  const temperature = data?.main?.temp;
+  const humidity = data?.main?.humidity;
+  const feels_like = data?.main?.feels_like;
+  const temp_min = data?.main?.temp_min;
+  const temp_max = data?.main?.temp_max;
+  
+  // Log raw API response for debugging
+  console.log(`🌡️ [weather] OpenWeather API response for (${lat}, ${lon}):`);
+  console.log(`   Temperature: ${temperature}°C (feels like ${feels_like}°C)`);
+  console.log(`   Range: ${temp_min}°C - ${temp_max}°C`);
+  console.log(`   Humidity: ${humidity}%`);
+  console.log(`   Location: ${data?.name || 'Unknown'}`);
+  
+  // Validate temperature is reasonable
+  if (temperature !== null && temperature !== undefined) {
+    if (temperature < -50 || temperature > 60) {
+      console.warn(`⚠️ [weather] Unusual temperature detected: ${temperature}°C - using anyway`);
+    }
+  }
+  
+  return { 
+    temperature: temperature !== null && temperature !== undefined ? Number(temperature) : null,
+    humidity: humidity !== null && humidity !== undefined ? Number(humidity) : null,
+    source: 'openweather',
+    feels_like: feels_like !== null && feels_like !== undefined ? Number(feels_like) : null
+  };
 }
 
 function maybeSimulateNoise() {
@@ -67,8 +96,33 @@ async function normalizeLocationName(locationName, supabaseAdmin) {
   }
 }
 
-export async function ingestOne({ name, lat, lon, user_id, simulateNoise = true }) {
+export async function ingestOne({ name, lat, lon, user_id, simulateNoise = true, accuracy = null }) {
   if (!hasGlobalFetch) throw new Error('Global fetch is not available. Use Node 18+ or polyfill fetch.');
+  
+  // Validate coordinates precision and accuracy
+  const latNum = Number(lat);
+  const lonNum = Number(lon);
+  
+  if (isNaN(latNum) || isNaN(lonNum)) {
+    throw new Error(`Invalid coordinates: lat=${lat}, lon=${lon}`);
+  }
+  
+  if (latNum < -90 || latNum > 90 || lonNum < -180 || lonNum > 180) {
+    throw new Error(`Coordinates out of range: lat=${lat}, lon=${lon}`);
+  }
+  
+  // Log GPS accuracy for monitoring
+  if (accuracy !== null) {
+    const accuracyNum = Number(accuracy);
+    if (accuracyNum > 100) {
+      console.warn(`⚠️ [ingest] Low GPS accuracy: ±${accuracyNum.toFixed(0)}m for location "${name}"`);
+    } else if (accuracyNum < 20) {
+      console.log(`✅ [ingest] High GPS accuracy: ±${accuracyNum.toFixed(0)}m for location "${name}"`);
+    } else {
+      console.log(`📍 [ingest] GPS accuracy: ±${accuracyNum.toFixed(0)}m for location "${name}"`);
+    }
+  }
+  
   // Resolve supabaseAdmin at runtime to avoid circular import issues
   const { supabaseAdmin } = await import('./index.mjs');
   if (!supabaseAdmin) throw new Error('Supabase admin client is not configured');
@@ -79,34 +133,52 @@ export async function ingestOne({ name, lat, lon, user_id, simulateNoise = true 
   }
 
   const [aqiRes, wxRes] = await Promise.all([
-    fetchAQI(lat, lon).catch(() => ({ aqi: null, source: null })),
-    fetchWeather(lat, lon).catch(() => ({ temperature: null, humidity: null, source: null })),
+    fetchAQI(lat, lon).catch(err => {
+      console.error(`❌ [ingest] AQI fetch failed for (${lat}, ${lon}):`, err.message);
+      return { aqi: null, source: null };
+    }),
+    fetchWeather(lat, lon).catch(err => {
+      console.error(`❌ [ingest] Weather fetch failed for (${lat}, ${lon}):`, err.message);
+      return { temperature: null, humidity: null, source: null };
+    }),
   ]);
+
+  // Validate API responses
+  if (aqiRes.aqi === null && wxRes.temperature === null) {
+    console.warn(`⚠️ [ingest] No valid data from external APIs for (${lat}, ${lon})`);
+  }
 
   // Normalize location name for consistent matching
   const normalizedLocation = await normalizeLocationName(name, supabaseAdmin);
 
   const sources = [aqiRes.source, wxRes.source].filter(Boolean).join(',');
+  const currentTimestamp = new Date().toISOString();
+  
   const payload = {
     location: normalizedLocation,
-    latitude: lat,
-    longitude: lon,
+    latitude: Number(lat).toFixed(6), // Store with 6 decimal precision
+    longitude: Number(lon).toFixed(6),
     aqi: aqiRes.aqi,
     temperature: wxRes.temperature,
     humidity: wxRes.humidity,
     noise_level: simulateNoise ? maybeSimulateNoise() : null,
-    source: sources || null,
-    recorded_at: new Date().toISOString(),
+    source: sources || 'simulated',
+    recorded_at: currentTimestamp,
     user_id: user_id ?? null,
   };
 
+  console.log(`📊 [ingest] Saving data for "${normalizedLocation}": AQI=${aqiRes.aqi}, Temp=${wxRes.temperature}°C, Humidity=${wxRes.humidity}%`);
+
   const { data, error } = await supabaseAdmin.from('environment_readings').insert([payload]).select('*').single();
   if (error) throw new Error(error.message);
+  
+  console.log(`✅ [ingest] Data saved successfully (ID: ${data.id})`);
+  
   try {
     await evaluateAndRecordAlerts(payload);
   } catch (e) {
     // Log but don't fail the ingestion on alert errors
-    console.warn('Alert evaluation error:', e?.message || e);
+    console.warn('⚠️ [ingest] Alert evaluation error:', e?.message || e);
   }
   return data;
 }

@@ -1,8 +1,35 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Icon from '../../../components/AppIcon';
 
-const SensorMap = ({ sensors, onSensorClick }) => {
+const SensorMap = ({ sensors, onSensorClick, userLocation = null }) => {
   const [selectedSensor, setSelectedSensor] = useState(null);
+  const [mapCenter, setMapCenter] = useState({ lat: 26.9124, lng: 75.7873 }); // Default: Jaipur
+  const [mapZoom, setMapZoom] = useState(12);
+
+  // Update map center when user location changes
+  useEffect(() => {
+    if (userLocation && userLocation.lat && userLocation.lon) {
+      const lat = parseFloat(userLocation.lat);
+      const lng = parseFloat(userLocation.lon);
+      if (!isNaN(lat) && !isNaN(lng)) {
+        setMapCenter({ lat, lng });
+        setMapZoom(14); // Zoom in closer for user location
+        console.log(`🗺️ Map centered on GPS location: (${lat.toFixed(6)}, ${lng.toFixed(6)})`);
+      }
+    } else if (sensors && sensors.length > 0) {
+      // Center on first sensor if no user location
+      const firstSensor = sensors[0];
+      if (firstSensor.lat && firstSensor.lng) {
+        setMapCenter({ lat: firstSensor.lat, lng: firstSensor.lng });
+        setMapZoom(10);
+      }
+    }
+  }, [userLocation, sensors]);
+
+  // Generate map URL with current center
+  const mapUrl = useMemo(() => {
+    return `https://www.google.com/maps?q=${mapCenter.lat},${mapCenter.lng}&z=${mapZoom}&output=embed`;
+  }, [mapCenter, mapZoom]);
 
   const handleSensorClick = (sensor) => {
     setSelectedSensor(sensor);
@@ -39,15 +66,27 @@ const SensorMap = ({ sensors, onSensorClick }) => {
           loading="lazy"
           title="Environmental Sensor Map"
           referrerPolicy="no-referrer-when-downgrade"
-          src="https://www.google.com/maps?q=40.7128,-74.0060&z=12&output=embed"
+          src={mapUrl}
           className="absolute inset-0"
+          key={mapUrl} // Force reload when URL changes
         />
+
+        {userLocation && (
+          <div className="absolute top-4 left-4 bg-green-500/90 text-white rounded-lg shadow-lg px-3 py-2 text-xs font-medium">
+            📍 Your Location: {userLocation.name || 'Current Position'}
+          </div>
+        )}
 
         <div className="absolute top-4 right-4 bg-card rounded-lg shadow-lg p-3 max-w-xs">
           <div className="flex items-center gap-2 mb-2">
             <Icon name="MapPin" size={16} color="var(--color-primary)" />
-            <span className="text-xs md:text-sm font-medium">Active Sensors: {sensors?.length}</span>
+            <span className="text-xs md:text-sm font-medium">Active Sensors: {sensors?.length || 0}</span>
           </div>
+          {userLocation && (
+            <div className="text-xs text-muted-foreground mb-2">
+              Center: {mapCenter.lat.toFixed(4)}°, {mapCenter.lng.toFixed(4)}°
+            </div>
+          )}
           <div className="space-y-1">
             {['good', 'moderate', 'poor', 'critical']?.map(status => (
               <div key={status} className="flex items-center gap-2">
