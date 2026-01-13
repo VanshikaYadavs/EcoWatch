@@ -62,7 +62,7 @@ const NoiseLevelTracking = () => {
 
   const locations = useMemo(() => {
     const unique = new Set((readings || []).map(r => r.location).filter(Boolean));
-    const base = [...unique].map(loc => ({ id: loc, name: getLocationLabel(loc), type: 'Unknown', sensors: 0, density: 'Unknown' }));
+    const base = [...unique].map(loc => ({ id: loc, name: getLocationLabel(loc), type: t('common.unknown'), sensors: 0, density: t('common.unknown') }));
     if (base.length) return base;
     // Fallback demo locations
     return [

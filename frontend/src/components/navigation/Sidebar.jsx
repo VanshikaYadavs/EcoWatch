@@ -1,33 +1,39 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import Icon from '../AppIcon';
 import { useAuth } from '../../auth/AuthProvider';
 import { useMyProfile } from '../../utils/profileHooks';
-import { useAutoTranslate } from '../../utils/useAutoTranslate';
 
 const Sidebar = ({ isCollapsed = false, onToggleCollapse }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const location = useLocation();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [, forceUpdate] = useState({});
 
-  // Auto-translate brand and subtitles if keys are missing
-  const brandName = useAutoTranslate('brand.name', 'EchoWatch', true);
-  const navDashboard = useAutoTranslate('nav.dashboard', 'Dashboard', true);
-  const navDashboardDesc = useAutoTranslate('nav.dashboard.desc', 'Real-time environmental overview', true);
-  const navAirQuality = useAutoTranslate('nav.airQuality', 'Air Quality', true);
-  const navAirQualityDesc = useAutoTranslate('nav.airQuality.desc', 'AQI monitoring and analysis', true);
-  const navNoise = useAutoTranslate('nav.noiseMonitoring', 'Noise Monitoring', true);
-  const navNoiseDesc = useAutoTranslate('nav.noiseMonitoring.desc', 'Acoustic pollution tracking', true);
-  const navTemp = useAutoTranslate('nav.temperature', 'Temperature', true);
-  const navTempDesc = useAutoTranslate('nav.temperature.desc', 'Thermal analytics and trends', true);
-  const navReports = useAutoTranslate('nav.reports', 'Reports', true);
-  const navReportsDesc = useAutoTranslate('nav.reports.desc', 'Historical analysis and compliance', true);
-  const navNotifications = useAutoTranslate('nav.notifications', 'Notifications', true);
-  const navNotificationsDesc = useAutoTranslate('nav.notifications.desc', 'Alert preferences and settings', true);
-  const navProfile = useAutoTranslate('nav.profile', 'Profile', true);
-  const navProfileDesc = useAutoTranslate('nav.profile.desc', 'Account settings and preferences', true);
-  const appSubtitle = useAutoTranslate('app.subtitle', 'Environmental Monitoring System', true);
+  // Force re-render when language changes
+  useEffect(() => {
+    console.log('Sidebar - Language changed to:', i18n.language);
+    forceUpdate({});
+  }, [i18n.language, i18n]);
+
+  // Use direct translations from i18n.js
+  const brandName = t('brand.name');
+  const navDashboard = t('nav.dashboard');
+  const navDashboardDesc = t('nav.dashboard.desc');
+  const navAirQuality = t('nav.airQuality');
+  const navAirQualityDesc = t('nav.airQuality.desc');
+  const navNoise = t('nav.noiseMonitoring');
+  const navNoiseDesc = t('nav.noiseMonitoring.desc');
+  const navTemp = t('nav.temperature');
+  const navTempDesc = t('nav.temperature.desc');
+  const navReports = t('nav.reports');
+  const navReportsDesc = t('nav.reports.desc');
+  const navNotifications = t('nav.notifications');
+  const navNotificationsDesc = t('nav.notifications.desc');
+  const navProfile = t('nav.profile');
+  const navProfileDesc = t('nav.profile.desc');
+  const appSubtitle = t('app.subtitle');
 
   const navigationItems = [
     {

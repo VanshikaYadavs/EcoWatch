@@ -46,6 +46,8 @@ const resources = {
       "filters.humidity": "Humidity",
       "filters.pm25": "PM2.5",
 
+      "common.unknown": "Unknown",
+
       "stats.citiesMonitored": "Cities Monitored",
       "stats.activeAlerts": "Active Alerts",
       "stats.alertsChange": "{{percent}} from yesterday",
@@ -759,6 +761,8 @@ const resources = {
       "filters.temperature": "तापमान",
       "filters.humidity": "नमी",
       "filters.pm25": "PM2.5",
+
+      "common.unknown": "अज्ञात",
 
       "stats.citiesMonitored": "निगरानी किए गए शहर",
       "stats.activeAlerts": "सक्रिय अलर्ट",
@@ -3292,7 +3296,17 @@ i18n
     }
   })
   .then(() => {
-    // Force English immediately after init
+    // Try to load saved language preference from localStorage
+    try {
+      const savedLang = localStorage.getItem('i18nextLng');
+      if (savedLang && ['en', 'hi', 'mr', 'gu', 'pa'].includes(savedLang)) {
+        i18n.changeLanguage(savedLang);
+        return;
+      }
+    } catch (e) {
+      console.error('Error loading saved language:', e);
+    }
+    // Default to English if no saved preference
     i18n.changeLanguage('en');
   });
 

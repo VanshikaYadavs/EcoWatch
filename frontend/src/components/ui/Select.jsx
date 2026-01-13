@@ -1,11 +1,10 @@
 // components/ui/Select.jsx - Shadcn style Select
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useTranslation } from 'react-i18next';
 import { ChevronDown, Check, Search, X } from "lucide-react";
 import { cn } from "../../utils/cn";
 import Button from "./Button";
 import Input from "./Input";
-import { useAutoTranslate } from "../../utils/useAutoTranslate";
 
 const Select = React.forwardRef(({
     className,
@@ -31,11 +30,18 @@ const Select = React.forwardRef(({
     const { t, i18n } = useTranslation();
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
-    // API fallback for common strings if i18n key is missing for current language
-    const autoPlaceholder = useAutoTranslate('select.placeholder', 'Select an option', true);
-    const autoSearchPlaceholder = useAutoTranslate('select.searchPlaceholder', 'Search options...', true);
-    const autoNoOptionsFound = useAutoTranslate('select.noOptionsFound', 'No options found', true);
-    const autoNoOptionsAvailable = useAutoTranslate('select.noOptionsAvailable', 'No options available', true);
+    const [, forceUpdate] = useState({});
+    
+    // Force re-render when language changes
+    useEffect(() => {
+      forceUpdate({});
+    }, [i18n.language, i18n]);
+    
+    // Use direct translations from i18n.js
+    const autoPlaceholder = t('select.placeholder');
+    const autoSearchPlaceholder = t('select.searchPlaceholder');
+    const autoNoOptionsFound = t('select.noOptionsFound');
+    const autoNoOptionsAvailable = t('select.noOptionsAvailable');
     const resolvedPlaceholder = placeholder ?? autoPlaceholder;
 
     // Generate unique ID if not provided

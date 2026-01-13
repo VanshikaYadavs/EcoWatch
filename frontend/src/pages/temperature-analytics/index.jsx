@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Helmet } from 'react-helmet';
 import TemperatureChart from './components/TemperatureChart';
@@ -16,13 +16,20 @@ import AutoText from '../../components/ui/AutoText';
 import { useEnvironmentReadings } from '../../utils/dataHooks';
 
 const TemperatureAnalytics = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [selectedLocation, setSelectedLocation] = useState('all');
   const [chartType, setChartType] = useState('line');
   const [showHeatIndex, setShowHeatIndex] = useState(true);
   const [timePeriod, setTimePeriod] = useState('24h');
+  const [, forceUpdate] = useState({});
   const { data: readings, loading } = useEnvironmentReadings({ location: selectedLocation, limit: 100, realtime: true });
   
+  // Debug: Log current language and trigger re-render on language change
+  useEffect(() => {
+    console.log('TemperatureAnalytics - Current language:', i18n.language);
+    console.log('TemperatureAnalytics - Sample translation (temp.title):', t('temp.title'));
+    forceUpdate({});
+  }, [i18n.language, t, i18n]);
 
   const locations = [
     {
@@ -303,8 +310,6 @@ const TemperatureAnalytics = () => {
               <ExportReportPanel onExport={handleExportReport} />
             </div>
           </div>
-        </div>
-      </div>
     </>
   );
 };

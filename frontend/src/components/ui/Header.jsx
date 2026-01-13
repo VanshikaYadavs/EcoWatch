@@ -1,25 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Icon from '../AppIcon';
 import Button from './Button';
 import { useTranslation } from 'react-i18next';
-import { useAutoTranslate } from '../../utils/useAutoTranslate';
 
 const Header = () => {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
-  const appTitle = useAutoTranslate('app.title', 'EcoWatch', true);
-  const appSubtitle = useAutoTranslate('app.subtitle', 'Environmental Monitoring System', true);
-  const loginLabel = useAutoTranslate('login', 'Login', true);
+  const [, forceUpdate] = useState({});
+  const [lang, setLang] = useState(i18n.language || 'en');
   
-  // Force English as default if language is not explicitly set
-  React.useEffect(() => {
+  // Use direct translations from i18n.js
+  const appTitle = t('app.title');
+  const appSubtitle = t('app.subtitle');
+  const loginLabel = t('login');
+  
+  // Force re-render when language changes
+  useEffect(() => {
     if (i18n.language !== 'en' && i18n.language !== 'hi' && i18n.language !== 'mr' && i18n.language !== 'gu' && i18n.language !== 'pa') {
       i18n.changeLanguage('en');
     }
-  }, [i18n]);
-  
-  const [lang, setLang] = useState(i18n.language || 'en');
+    setLang(i18n.language || 'en');
+    console.log('Header - Language changed to:', i18n.language);
+    forceUpdate({});
+  }, [i18n.language, i18n]);
 
   const changeLang = (e) => {
     const l = e.target.value;
