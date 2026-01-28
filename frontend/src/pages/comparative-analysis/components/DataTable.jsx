@@ -192,3 +192,4 @@ const DataTable = ({ selectedCities, selectedParameters, timeRange, refreshToken
 };
 
 export default DataTable;
+

@@ -1,7 +1,6 @@
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import Icon from '../../../components/AppIcon';
- param($m) $text = $m.Value; if ($text -match '=======(.*?)>>>>>>>') { $matches[1].Trim() + "`n" } else { '' } translation
 
 const LocationComparison = ({ comparisonData, selectedLocations }) => {
   const { t } = useTranslation();
@@ -84,7 +83,6 @@ const LocationComparison = ({ comparisonData, selectedLocations }) => {
             <p className="text-xs text-muted-foreground">{t('locationComparison.avg.pm25')}</p>
           </div>
           <p className="text-xl font-bold data-text text-foreground">
- param($m) $text = $m.Value; if ($text -match '=======(.*?)>>>>>>>') { $matches[1].Trim() + "`n" } else { '' } translation
           </p>
         </div>
         <div className="text-center">
@@ -93,7 +91,6 @@ const LocationComparison = ({ comparisonData, selectedLocations }) => {
             <p className="text-xs text-muted-foreground">{t('locationComparison.avg.pm10')}</p>
           </div>
           <p className="text-xl font-bold data-text text-foreground">
- param($m) $text = $m.Value; if ($text -match '=======(.*?)>>>>>>>') { $matches[1].Trim() + "`n" } else { '' } translation
           </p>
         </div>
         <div className="text-center">
@@ -102,7 +99,6 @@ const LocationComparison = ({ comparisonData, selectedLocations }) => {
             <p className="text-xs text-muted-foreground">{t('locationComparison.avg.ozone')}</p>
           </div>
           <p className="text-xl font-bold data-text text-foreground">
- param($m) $text = $m.Value; if ($text -match '=======(.*?)>>>>>>>') { $matches[1].Trim() + "`n" } else { '' } translation
           </p>
         </div>
         <div className="text-center">
@@ -111,7 +107,6 @@ const LocationComparison = ({ comparisonData, selectedLocations }) => {
             <p className="text-xs text-muted-foreground">{t('locationComparison.avg.no2')}</p>
           </div>
           <p className="text-xl font-bold data-text text-foreground">
- param($m) $text = $m.Value; if ($text -match '=======(.*?)>>>>>>>') { $matches[1].Trim() + "`n" } else { '' } translation
           </p>
         </div>
         </>
@@ -122,3 +117,6 @@ const LocationComparison = ({ comparisonData, selectedLocations }) => {
 };
 
 export default LocationComparison;
+
+
+

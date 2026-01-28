@@ -202,3 +202,5 @@ const AlertDetailsModal = ({
 };
 
 export default AlertDetailsModal;
+
+

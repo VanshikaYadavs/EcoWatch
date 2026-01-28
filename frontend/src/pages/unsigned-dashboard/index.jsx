@@ -533,7 +533,6 @@ const EnvironmentalDashboard = () => {
                   </button>
                 </li>
                 <li>
- param($m) $text = $m.Value; if ($text -match '=======(.*?)>>>>>>>') { $matches[1].Trim() + "`n" } else { '' } translation
                   </button>
                 </li>
               </ul>
@@ -575,3 +574,6 @@ const EnvironmentalDashboard = () => {
 };
 
 export default EnvironmentalDashboard;
+
+
+

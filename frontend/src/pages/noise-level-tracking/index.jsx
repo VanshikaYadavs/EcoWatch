@@ -103,7 +103,6 @@ const NoiseLevelTracking = () => {
     standardPriority: false
   });
 
- param($m) $text = $m.Value; if ($text -match '=======(.*?)>>>>>>>') { $matches[1].Trim() + "`n" } else { '' } translation
 
   const [exportSettings, setExportSettings] = useState({
     reportType: 'compliance',
@@ -206,3 +205,6 @@ const NoiseLevelTracking = () => {
 };
 
 export default NoiseLevelTracking;
+
+
+

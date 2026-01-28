@@ -124,3 +124,5 @@ const AlertTimeline = ({ alerts = [], loading, onSelectAlert }) => {
 };
 
 export default AlertTimeline;
+
+

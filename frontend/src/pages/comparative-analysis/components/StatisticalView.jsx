@@ -139,3 +139,4 @@ const StatisticalView = ({ selectedCities, selectedParameters, refreshToken = 0 
 };
 
 export default StatisticalView;
+

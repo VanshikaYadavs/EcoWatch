@@ -97,7 +97,6 @@ const Signup = () => {
               </div>
             ) : (
               <form onSubmit={onSubmit} className="space-y-5">
- param($m) $text = $m.Value; if ($text -match '=======(.*?)>>>>>>>') { $matches[1].Trim() + "`n" } else { '' } translation
                 {error ? <div className="p-3 bg-error/10 border border-error/20 rounded-lg text-sm text-error">{error}</div> : null}
                 <Button type="submit" variant="default" loading={loading} iconName="UserPlus">
                   {t('buttons.createAccount') || 'Create Account'}
@@ -114,4 +113,7 @@ const Signup = () => {
 };
 
 export default Signup;
+
+
+
 

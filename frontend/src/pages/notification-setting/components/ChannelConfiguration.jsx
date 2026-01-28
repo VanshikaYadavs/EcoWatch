@@ -108,7 +108,6 @@ const ChannelConfiguration = ({ settings, onSettingsChange }) => {
               type="tel"
               placeholder="+911234567890"
               value={contactInfo?.phone}
- param($m) $text = $m.Value; if ($text -match '=======(.*?)>>>>>>>') { $matches[1].Trim() + "`n" } else { '' } translation
             />
             {!contactInfo?.verified?.phone && (
               <Button
@@ -119,7 +118,6 @@ const ChannelConfiguration = ({ settings, onSettingsChange }) => {
                 onClick={() => handleVerifyContact('phone')}
                 disabled={savingPhone || !contactInfo?.phone}
               >
- param($m) $text = $m.Value; if ($text -match '=======(.*?)>>>>>>>') { $matches[1].Trim() + "`n" } else { '' } translation
               </Button>
             )}
           </div>
@@ -200,3 +198,6 @@ const ChannelConfiguration = ({ settings, onSettingsChange }) => {
 };
 
 export default ChannelConfiguration;
+
+
+

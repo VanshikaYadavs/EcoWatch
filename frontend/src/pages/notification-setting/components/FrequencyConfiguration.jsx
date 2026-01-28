@@ -226,3 +226,4 @@ const FrequencyConfiguration = ({ settings, onSettingsChange }) => {
 };
 
 export default FrequencyConfiguration;
+

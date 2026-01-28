@@ -207,3 +207,4 @@ const ComparativeChart = ({ selectedCities, selectedParameters, timeRange, chart
 };
 
 export default ComparativeChart;
+

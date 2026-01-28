@@ -6,7 +6,6 @@ import SensorDataTable from './components/SensorDataTable';
 import FilterControls from './components/FilterControls';
 import AlertConfiguration from './components/AlertConfiguration';
 import LocationComparison from './components/LocationComparison';
- param($m) $text = $m.Value; if ($text -match '=======(.*?)>>>>>>>') { $matches[1].Trim() + "`n" } else { '' } translation
 
 const AirQualityMonitor = () => {
   const { t, i18n } = useTranslation();
@@ -172,7 +171,6 @@ const AirQualityMonitor = () => {
     // Sensor rows per location with latest pollutant values
     const sensors = srcReadings.slice(0, 50).map((r, i) => ({
       id: i + 1,
- param($m) $text = $m.Value; if ($text -match '=======(.*?)>>>>>>>') { $matches[1].Trim() + "`n" } else { '' } translation
       aqi: r.aqi ?? 0,
       pm25: r.pm25 ?? null,
       pm10: r.pm10 ?? null,
@@ -181,7 +179,6 @@ const AirQualityMonitor = () => {
       lastUpdate: new Date(r.recorded_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     }));
     setSensorData(sensors);
- param($m) $text = $m.Value; if ($text -match '=======(.*?)>>>>>>>') { $matches[1].Trim() + "`n" } else { '' } translation
 
   const pollutantOptions = [
     { value: 'pm25', label: t('aq.pollutants.pm25') },
@@ -277,7 +274,6 @@ const AirQualityMonitor = () => {
 
         <LocationComparison
           comparisonData={comparisonData}
- param($m) $text = $m.Value; if ($text -match '=======(.*?)>>>>>>>') { $matches[1].Trim() + "`n" } else { '' } translation
         />
 
         <AlertConfiguration
@@ -290,3 +286,6 @@ const AirQualityMonitor = () => {
 };
 
 export default AirQualityMonitor;
+
+
+

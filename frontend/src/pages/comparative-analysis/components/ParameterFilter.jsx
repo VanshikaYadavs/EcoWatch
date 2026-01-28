@@ -79,3 +79,4 @@ const ParameterFilter = ({ selectedParameters, onParameterToggle }) => {
 };
 
 export default ParameterFilter;
+

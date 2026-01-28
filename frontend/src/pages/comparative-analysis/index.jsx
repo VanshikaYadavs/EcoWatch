@@ -290,3 +290,4 @@ const ComparativeAnalysis = () => {
 };
 
 export default ComparativeAnalysis;
+

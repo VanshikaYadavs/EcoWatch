@@ -137,7 +137,6 @@ const AQIChart = ({ data, timeRange, selectedPollutants }) => {
           </AreaChart>
         </ResponsiveContainer>
       </div>
- param($m) $text = $m.Value; if ($text -match '=======(.*?)>>>>>>>') { $matches[1].Trim() + "`n" } else { '' } translation
         <div className="text-center">
           <p className="text-xs text-muted-foreground mb-1">{t('aq.stats.current')}</p>
           <p className="text-2xl font-bold" style={{ color: getAQIColor(data?.[data?.length - 1]?.aqi || 0) }}>
@@ -147,19 +146,16 @@ const AQIChart = ({ data, timeRange, selectedPollutants }) => {
         <div className="text-center">
           <p className="text-xs text-muted-foreground mb-1">{t('aq.stats.avg24h')}</p>
           <p className="text-2xl font-bold text-foreground">
- param($m) $text = $m.Value; if ($text -match '=======(.*?)>>>>>>>') { $matches[1].Trim() + "`n" } else { '' } translation
           </p>
         </div>
         <div className="text-center">
           <p className="text-xs text-muted-foreground mb-1">{t('aq.stats.peak')}</p>
           <p className="text-2xl font-bold text-error">
- param($m) $text = $m.Value; if ($text -match '=======(.*?)>>>>>>>') { $matches[1].Trim() + "`n" } else { '' } translation
           </p>
         </div>
         <div className="text-center">
           <p className="text-xs text-muted-foreground mb-1">{t('aq.stats.lowest')}</p>
           <p className="text-2xl font-bold text-success">
- param($m) $text = $m.Value; if ($text -match '=======(.*?)>>>>>>>') { $matches[1].Trim() + "`n" } else { '' } translation
           </p>
         </div>
         </>
@@ -170,3 +166,6 @@ const AQIChart = ({ data, timeRange, selectedPollutants }) => {
 };
 
 export default AQIChart;
+
+
+

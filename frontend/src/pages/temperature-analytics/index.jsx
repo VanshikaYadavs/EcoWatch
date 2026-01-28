@@ -97,7 +97,6 @@ const TemperatureAnalytics = () => {
     }
   };
 
- param($m) $text = $m.Value; if ($text -match '=======(.*?)>>>>>>>') { $matches[1].Trim() + "`n" } else { '' } translation
 
   const timePeriodOptions = [
     { value: '24h', label: t('temp.time.24h') },
@@ -310,3 +309,6 @@ const TemperatureAnalytics = () => {
 };
 
 export default TemperatureAnalytics;
+
+
+
