@@ -533,13 +533,7 @@ const EnvironmentalDashboard = () => {
                   </button>
                 </li>
                 <li>
-<<<<<<< HEAD
-                  <button onClick={() => navigate('/alert-center')} className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                    Alert Center
-=======
-                  <button onClick={() => navigate('/alert-management')} className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                    {t('footer.links.alerts')}
->>>>>>> translation
+ param($m) $text = $m.Value; if ($text -match '=======(.*?)>>>>>>>') { $matches[1].Trim() + "`n" } else { '' } translation
                   </button>
                 </li>
               </ul>

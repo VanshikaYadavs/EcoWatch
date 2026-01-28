@@ -97,28 +97,7 @@ const TemperatureAnalytics = () => {
     }
   };
 
-<<<<<<< HEAD
-  const comparativeLocations = useMemo(() => {
-    const items = (latestCityReadings || []).slice(0, 5).map((r, i) => {
-      const locRows = (allRecent || []).filter(x => x.location === r.location && typeof x.temperature === 'number');
-      const temps = locRows.map(x => x.temperature);
-      const current = r.temperature ?? (temps[0] ?? null);
-      const avg24h = temps.length ? Math.round((temps.reduce((a, b) => a + b, 0) / temps.length) * 10) / 10 : current;
-      const prev = temps[1] ?? current;
-      const diff = current != null && prev != null ? Math.round((current - prev) * 10) / 10 : 0;
-      return { id: i + 1, name: r.location, current, difference: diff, average24h: avg24h };
-    });
-    return items;
-  }, [latestCityReadings, allRecent]);
-=======
-  const comparativeLocations = [
-    { id: 1, name: t('temp.locations.jaipur'), current: 34, difference: 0, average24h: 28.5 },
-    { id: 2, name: t('temp.locations.tonk'), current: 36, difference: 2, average24h: 30.2 },
-    { id: 3, name: t('cities.udaipur'), current: 28, difference: -6, average24h: 25.8 },
-    { id: 4, name: t('cities.ajmer'), current: 25, difference: -9, average24h: 23.1 },
-    { id: 5, name: t('cities.jodhpur'), current: 26, difference: -8, average24h: 24.5 }
-  ];
->>>>>>> translation
+ param($m) $text = $m.Value; if ($text -match '=======(.*?)>>>>>>>') { $matches[1].Trim() + "`n" } else { '' } translation
 
   const timePeriodOptions = [
     { value: '24h', label: t('temp.time.24h') },

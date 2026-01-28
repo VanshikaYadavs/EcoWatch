@@ -137,13 +137,7 @@ const AQIChart = ({ data, timeRange, selectedPollutants }) => {
           </AreaChart>
         </ResponsiveContainer>
       </div>
-<<<<<<< HEAD
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-border">
-        {(() => { const n = Math.max(1, data?.length || 0); const last = data?.[data?.length - 1] || {}; const vals = (data||[]).map(d=>d?.aqi||0); return (
-        <>
-=======
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-border">
->>>>>>> translation
+ param($m) $text = $m.Value; if ($text -match '=======(.*?)>>>>>>>') { $matches[1].Trim() + "`n" } else { '' } translation
         <div className="text-center">
           <p className="text-xs text-muted-foreground mb-1">{t('aq.stats.current')}</p>
           <p className="text-2xl font-bold" style={{ color: getAQIColor(data?.[data?.length - 1]?.aqi || 0) }}>
@@ -153,31 +147,19 @@ const AQIChart = ({ data, timeRange, selectedPollutants }) => {
         <div className="text-center">
           <p className="text-xs text-muted-foreground mb-1">{t('aq.stats.avg24h')}</p>
           <p className="text-2xl font-bold text-foreground">
-<<<<<<< HEAD
-            {Math.round(((data||[]).reduce((sum, d) => sum + (d?.aqi || 0), 0) / n))}
-=======
-            {Math.round(data?.reduce((sum, d) => sum + d?.aqi, 0) / (data?.length || 1))}
->>>>>>> translation
+ param($m) $text = $m.Value; if ($text -match '=======(.*?)>>>>>>>') { $matches[1].Trim() + "`n" } else { '' } translation
           </p>
         </div>
         <div className="text-center">
           <p className="text-xs text-muted-foreground mb-1">{t('aq.stats.peak')}</p>
           <p className="text-2xl font-bold text-error">
-<<<<<<< HEAD
-            {vals.length ? Math.max(...vals) : 0}
-=======
-            {Math.max(...(data?.map(d => d?.aqi) || [0]))}
->>>>>>> translation
+ param($m) $text = $m.Value; if ($text -match '=======(.*?)>>>>>>>') { $matches[1].Trim() + "`n" } else { '' } translation
           </p>
         </div>
         <div className="text-center">
           <p className="text-xs text-muted-foreground mb-1">{t('aq.stats.lowest')}</p>
           <p className="text-2xl font-bold text-success">
-<<<<<<< HEAD
-            {vals.length ? Math.min(...vals) : 0}
-=======
-            {Math.min(...(data?.map(d => d?.aqi) || [0]))}
->>>>>>> translation
+ param($m) $text = $m.Value; if ($text -match '=======(.*?)>>>>>>>') { $matches[1].Trim() + "`n" } else { '' } translation
           </p>
         </div>
         </>

@@ -1,11 +1,7 @@
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import Icon from '../../../components/AppIcon';
-<<<<<<< HEAD
-import { displayLocation } from '../../../utils/location';
-=======
-import { useTranslation } from 'react-i18next';
->>>>>>> translation
+ param($m) $text = $m.Value; if ($text -match '=======(.*?)>>>>>>>') { $matches[1].Trim() + "`n" } else { '' } translation
 
 const LocationComparison = ({ comparisonData, selectedLocations }) => {
   const { t } = useTranslation();
@@ -88,11 +84,7 @@ const LocationComparison = ({ comparisonData, selectedLocations }) => {
             <p className="text-xs text-muted-foreground">{t('locationComparison.avg.pm25')}</p>
           </div>
           <p className="text-xl font-bold data-text text-foreground">
-<<<<<<< HEAD
-            {Math.round((comparisonData?.reduce((sum, d) => sum + (d?.pm25 || 0), 0) / n))} µg/m³
-=======
-            {Math.round(comparisonData?.reduce((sum, d) => sum + d?.pm25, 0) / comparisonData?.length)} {t('sensors.units.pm')}
->>>>>>> translation
+ param($m) $text = $m.Value; if ($text -match '=======(.*?)>>>>>>>') { $matches[1].Trim() + "`n" } else { '' } translation
           </p>
         </div>
         <div className="text-center">
@@ -101,11 +93,7 @@ const LocationComparison = ({ comparisonData, selectedLocations }) => {
             <p className="text-xs text-muted-foreground">{t('locationComparison.avg.pm10')}</p>
           </div>
           <p className="text-xl font-bold data-text text-foreground">
-<<<<<<< HEAD
-            {Math.round((comparisonData?.reduce((sum, d) => sum + (d?.pm10 || 0), 0) / n))} µg/m³
-=======
-            {Math.round(comparisonData?.reduce((sum, d) => sum + d?.pm10, 0) / comparisonData?.length)} {t('sensors.units.pm')}
->>>>>>> translation
+ param($m) $text = $m.Value; if ($text -match '=======(.*?)>>>>>>>') { $matches[1].Trim() + "`n" } else { '' } translation
           </p>
         </div>
         <div className="text-center">
@@ -114,11 +102,7 @@ const LocationComparison = ({ comparisonData, selectedLocations }) => {
             <p className="text-xs text-muted-foreground">{t('locationComparison.avg.ozone')}</p>
           </div>
           <p className="text-xl font-bold data-text text-foreground">
-<<<<<<< HEAD
-            {Math.round((comparisonData?.reduce((sum, d) => sum + (d?.ozone || 0), 0) / n))} ppb
-=======
-            {Math.round(comparisonData?.reduce((sum, d) => sum + d?.ozone, 0) / comparisonData?.length)} {t('sensors.units.ppb')}
->>>>>>> translation
+ param($m) $text = $m.Value; if ($text -match '=======(.*?)>>>>>>>') { $matches[1].Trim() + "`n" } else { '' } translation
           </p>
         </div>
         <div className="text-center">
@@ -127,11 +111,7 @@ const LocationComparison = ({ comparisonData, selectedLocations }) => {
             <p className="text-xs text-muted-foreground">{t('locationComparison.avg.no2')}</p>
           </div>
           <p className="text-xl font-bold data-text text-foreground">
-<<<<<<< HEAD
-            {Math.round((comparisonData?.reduce((sum, d) => sum + (d?.no2 || 0), 0) / n))} ppb
-=======
-            {Math.round(comparisonData?.reduce((sum, d) => sum + d?.no2, 0) / comparisonData?.length)} {t('sensors.units.ppb')}
->>>>>>> translation
+ param($m) $text = $m.Value; if ($text -match '=======(.*?)>>>>>>>') { $matches[1].Trim() + "`n" } else { '' } translation
           </p>
         </div>
         </>

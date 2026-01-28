@@ -97,22 +97,7 @@ const Signup = () => {
               </div>
             ) : (
               <form onSubmit={onSubmit} className="space-y-5">
-<<<<<<< HEAD
-                <Input label="Full Name" value={fullName} onChange={(e) => setFullName(e?.target?.value)} required />
-                <Select label="Role" options={roleOptions} value={role} onChange={setRole} />
-                <Input label="Organization (optional)" value={organization} onChange={(e) => setOrganization(e?.target?.value)} />
-                <Input label="Phone Number" type="tel" value={phone} onChange={(e) => setPhone(e?.target?.value)} required />
-                <Input label="Email" type="email" value={email} onChange={(e) => setEmail(e?.target?.value)} required />
-                <Input label="Password" type="password" value={password} onChange={(e) => setPassword(e?.target?.value)} required />
-                <Input label="Confirm Password" type="password" value={confirm} onChange={(e) => setConfirm(e?.target?.value)} required />
-=======
-                <Input label={t('profile.form.fields.name') || 'Full Name'} value={fullName} onChange={(e) => setFullName(e?.target?.value)} required />
-                <Select label={t('profile.tabs.role') || 'Role'} options={roleOptions} value={role} onChange={setRole} />
-                <Input label={t('profile.form.sections.organization') || 'Organization (optional)'} value={organization} onChange={(e) => setOrganization(e?.target?.value)} />
-                <Input label={t('profile.form.fields.email') || 'Email'} type="email" value={email} onChange={(e) => setEmail(e?.target?.value)} required />
-                <Input label={t('profile.form.tabs.security') || 'Password'} type="password" value={password} onChange={(e) => setPassword(e?.target?.value)} required />
-                <Input label={t('signup.confirmPassword') || 'Confirm Password'} type="password" value={confirm} onChange={(e) => setConfirm(e?.target?.value)} required />
->>>>>>> translation
+ param($m) $text = $m.Value; if ($text -match '=======(.*?)>>>>>>>') { $matches[1].Trim() + "`n" } else { '' } translation
                 {error ? <div className="p-3 bg-error/10 border border-error/20 rounded-lg text-sm text-error">{error}</div> : null}
                 <Button type="submit" variant="default" loading={loading} iconName="UserPlus">
                   {t('buttons.createAccount') || 'Create Account'}
@@ -129,3 +114,4 @@ const Signup = () => {
 };
 
 export default Signup;
+

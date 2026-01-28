@@ -108,23 +108,7 @@ const ChannelConfiguration = ({ settings, onSettingsChange }) => {
               type="tel"
               placeholder="+911234567890"
               value={contactInfo?.phone}
-<<<<<<< HEAD
-              onChange={(e) => {
-                setContactInfo({ ...contactInfo, phone: e?.target?.value });
-                setPhoneError('');
-              }}
-              description={
-                phoneError 
-                  ? phoneError 
-                  : contactInfo?.verified?.phone 
-                    ? '✓ Verified - SMS alerts enabled' 
-                    : 'Format: +[country code][number] (e.g., +911234567890)'
-              }
-              error={!!phoneError}
-=======
-              onChange={(e) => setContactInfo({ ...contactInfo, phone: e?.target?.value })}
-              description={contactInfo?.verified?.phone ? t('notif.contact.verified') : t('notif.contact.notVerified')}
->>>>>>> translation
+ param($m) $text = $m.Value; if ($text -match '=======(.*?)>>>>>>>') { $matches[1].Trim() + "`n" } else { '' } translation
             />
             {!contactInfo?.verified?.phone && (
               <Button
@@ -135,11 +119,7 @@ const ChannelConfiguration = ({ settings, onSettingsChange }) => {
                 onClick={() => handleVerifyContact('phone')}
                 disabled={savingPhone || !contactInfo?.phone}
               >
-<<<<<<< HEAD
-                {savingPhone ? 'Saving...' : 'Save Phone Number'}
-=======
-                {t('notif.contact.verifyPhone')}
->>>>>>> translation
+ param($m) $text = $m.Value; if ($text -match '=======(.*?)>>>>>>>') { $matches[1].Trim() + "`n" } else { '' } translation
               </Button>
             )}
           </div>

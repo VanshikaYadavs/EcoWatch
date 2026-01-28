@@ -6,19 +6,7 @@ import SensorDataTable from './components/SensorDataTable';
 import FilterControls from './components/FilterControls';
 import AlertConfiguration from './components/AlertConfiguration';
 import LocationComparison from './components/LocationComparison';
-<<<<<<< HEAD
-import { useEnvironmentReadings, useLatestCityReadings } from '../../utils/dataHooks';
-import { getCurrentLocation, displayLocation } from '../../utils/location';
-import { getNearbyCities } from '../../utils/nearbyCities';
-import axios from 'axios';
-import { getSessionAllowlist, recomputeSessionCities } from '../../utils/sessionCities';
-import Button from '../../components/ui/Button';
-import { supabase, isSupabaseConfigured } from '../../utils/supabaseClient';
-=======
-import { useEnvironmentReadings } from '../../utils/dataHooks';
-import { translateText, getCachedTranslation } from '../../utils/translationService';
-import AutoText from '../../components/ui/AutoText';
->>>>>>> translation
+ param($m) $text = $m.Value; if ($text -match '=======(.*?)>>>>>>>') { $matches[1].Trim() + "`n" } else { '' } translation
 
 const AirQualityMonitor = () => {
   const { t, i18n } = useTranslation();
@@ -184,13 +172,7 @@ const AirQualityMonitor = () => {
     // Sensor rows per location with latest pollutant values
     const sensors = srcReadings.slice(0, 50).map((r, i) => ({
       id: i + 1,
-<<<<<<< HEAD
-      location: displayLocation(r.location, r.location),
-      zone: displayLocation(r.location, r.location),
-=======
-      location: getLocationLabel(r.location),
-      zone: getLocationLabel(r.location),
->>>>>>> translation
+ param($m) $text = $m.Value; if ($text -match '=======(.*?)>>>>>>>') { $matches[1].Trim() + "`n" } else { '' } translation
       aqi: r.aqi ?? 0,
       pm25: r.pm25 ?? null,
       pm10: r.pm10 ?? null,
@@ -199,41 +181,7 @@ const AirQualityMonitor = () => {
       lastUpdate: new Date(r.recorded_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     }));
     setSensorData(sensors);
-<<<<<<< HEAD
-
-    // Comparison dataset per city (latest values)
-    const comp = srcReadings.slice(0, 10).map(r => ({
-      location: displayLocation(r.location, r.location),
-      pm25: r.pm25 ?? 0,
-      pm10: r.pm10 ?? 0,
-      ozone: r.o3 ?? 0,
-      no2: r.no2 ?? 0,
-    }));
-    setComparisonData(comp);
-  }, [readings, latestCityReadings, backendLatest]);
-
-  const locationOptions = useMemo(() => {
-    const base = backendLatest?.length ? backendLatest : (latestCityReadings || []);
-    const dynamic = base.map(r => ({ value: r.location, label: r.location }));
-    return [{ value: 'all', label: 'All Locations' }, ...dynamic];
-  }, [latestCityReadings, backendLatest]);
-=======
-    const comp = readings.slice(0, 10).map(r => ({ location: getLocationLabel(r.location), pm25: 0, pm10: 0, ozone: 0, no2: 0 }));
-    setComparisonData(comp);
-  }, [readings, t]);
-
-  const locationOptions = [
-    { value: 'all', label: t('aq.locations.all') },
-    { value: 'downtown', label: t('locations.miRoad') },
-    { value: 'industrial', label: t('locations.industrialTonk') },
-    { value: 'riverside', label: t('locations.lakePichola') },
-    { value: 'highway', label: t('locations.clockTower') },
-    { value: 'residential', label: t('locations.pushkarRoad') },
-    { value: 'university', label: t('temp.locations.jaipur') },
-    { value: 'airport', label: t('locations.bikanerIndustrial') },
-    { value: 'harbor', label: t('temp.locations.tonk') }
-  ];
->>>>>>> translation
+ param($m) $text = $m.Value; if ($text -match '=======(.*?)>>>>>>>') { $matches[1].Trim() + "`n" } else { '' } translation
 
   const pollutantOptions = [
     { value: 'pm25', label: t('aq.pollutants.pm25') },
@@ -329,11 +277,7 @@ const AirQualityMonitor = () => {
 
         <LocationComparison
           comparisonData={comparisonData}
-<<<<<<< HEAD
-          selectedLocations={(latestCityReadings || []).slice(0, 5).map(r => r.location)}
-=======
-          selectedLocations={[t('locations.miRoad'), t('locations.industrialTonk'), t('locations.lakePichola'), t('locations.clockTower'), t('locations.pushkarRoad')]}
->>>>>>> translation
+ param($m) $text = $m.Value; if ($text -match '=======(.*?)>>>>>>>') { $matches[1].Trim() + "`n" } else { '' } translation
         />
 
         <AlertConfiguration
