@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import Icon from '../../components/AppIcon';
@@ -11,33 +11,30 @@ import NotificationPreferences from './components/NotificationPreferences';
 import ActivityHistory from './components/ActivityHistory';
 import AccountStatistics from './components/AccountStatistics';
 import { useAuth } from '../../auth/AuthProvider';
-import { useMyProfile } from '../../utils/profileHooks';
-import { upsertProfile } from '../../utils/profiles';
 
 const UserProfile = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { user, signOut } = useAuth();
-  const { profile, loading: profileLoading } = useMyProfile(user);
+  const { signOut } = useAuth();
 
   const [activeTab, setActiveTab] = useState('details');
   const [profileData, setProfileData] = useState({
     // User Details
-    name: '',
-    email: '',
-    organization: '',
-    phone: '',
-    department: '',
-    location: '',
+    name: 'John Smith',
+    email: 'official@echowatch.gov',
+    organization: 'Environmental Protection Agency',
+    phone: '+1 (555) 123-4567',
+    department: 'Air Quality Division',
+    location: 'Jaipur, Rajasthan',
     profilePhoto: null,
     // Role Information
-    role: 'viewer',
-    accessLevel: 'Viewer',
-    permissions: [],
+    role: 'official',
+    accessLevel: 'Government Official',
+    permissions: ['view_all_data', 'generate_reports', 'configure_alerts', 'export_data'],
     // Security Settings
     twoFactorEnabled: false,
-    lastPasswordChange: '',
-    activeSessions: 0,
+    lastPasswordChange: '2025-12-15',
+    activeSessions: 2,
     // Notification Preferences
     emailNotifications: true,
     smsNotifications: false,
@@ -45,23 +42,6 @@ const UserProfile = () => {
     weeklyDigest: true,
     criticalAlertsOnly: false
   });
-
-  // Hydrate from Supabase profile + auth user once loaded
-  useEffect(() => {
-    const fullName = profile?.full_name || user?.user_metadata?.full_name || '';
-    const email = user?.email || '';
-    const organization = profile?.organization || user?.user_metadata?.organization || '';
-    const role = profile?.role || user?.user_metadata?.role || 'viewer';
-    const phone = profile?.phone || user?.user_metadata?.phone || '';
-    setProfileData((prev) => ({
-      ...prev,
-      name: fullName,
-      email,
-      organization,
-      phone,
-      role,
-    }));
-  }, [profile?.full_name, profile?.organization, profile?.role, user?.email, user?.user_metadata?.full_name, user?.user_metadata?.organization, user?.user_metadata?.role, user?.user_metadata?.phone]);
 
   const tabs = [
     { id: 'details', label: t('profile.tabs.details'), icon: 'User' },
@@ -72,18 +52,9 @@ const UserProfile = () => {
     { id: 'statistics', label: t('profile.tabs.statistics'), icon: 'BarChart3' }
   ];
 
-  const handleSaveProfile = async () => {
-    try {
-      if (!user?.id) return;
-      await upsertProfile(user.id, {
-        full_name: profileData?.name,
-        role: profileData?.role || 'viewer',
-        organization: profileData?.organization || null,
-        phone: profileData?.phone || null,
-      });
-    } catch (e) {
-      console.error('Failed to save profile:', e?.message || e);
-    }
+  const handleSaveProfile = () => {
+    console.log('Saving profile:', profileData);
+    // In real implementation, this would save to backend
   };
 
   const handleExportData = () => {

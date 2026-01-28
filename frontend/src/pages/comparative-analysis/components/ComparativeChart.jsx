@@ -60,10 +60,9 @@ const ComparativeChart = ({ selectedCities, selectedParameters, timeRange, chart
       
       data?.push(point);
     }
+    
     return data;
   }, [selectedCities, selectedParameters, timeRange]);
-
-  const chosenLocations = selectedCities || [];
 
   const getTimeLabel = (index) => {
     if (timeRange === '24h') return `${index}:00`;
@@ -104,7 +103,7 @@ const ComparativeChart = ({ selectedCities, selectedParameters, timeRange, chart
     return null;
   };
 
-  if (chosenLocations?.length === 0 || selectedParameters?.length === 0) {
+  if (selectedCities?.length === 0 || selectedParameters?.length === 0) {
     return (
       <div className="bg-card border border-border rounded-lg p-8 md:p-12">
         <div className="flex flex-col items-center justify-center gap-4 text-center">
@@ -143,13 +142,13 @@ const ComparativeChart = ({ selectedCities, selectedParameters, timeRange, chart
           </span>
         </div>
       </div>
-      <div className="w-full h-64 md:h-80 lg:h-96 relative" aria-label="Comparative Environmental Data Chart">
+      <div className="w-full h-64 md:h-80 lg:h-96" aria-label="Comparative Environmental Data Chart">
         <ResponsiveContainer width="100%" height="100%">
-          <ChartComponent data={chartData}>
+          <ChartComponent data={generateMockData}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
             <XAxis 
               dataKey="time" 
-              tickFormatter={(t) => t}
+              tickFormatter={getTimeLabel}
               stroke="var(--color-muted-foreground)"
               style={{ fontSize: '12px' }}
             />
@@ -165,9 +164,8 @@ const ComparativeChart = ({ selectedCities, selectedParameters, timeRange, chart
                 return `${cityName(cityId)} - ${param?.toUpperCase()}`;
               }}
             />
-            {chosenLocations?.map(name => {
-              const cityId = String(name).toLowerCase().replace(/\s+/g, '-');
-              return selectedParameters?.map(param => (
+            {selectedCities?.map(cityId => 
+              selectedParameters?.map(param => (
                 <DataComponent
                   key={`${cityId}_${param}`}
                   type="monotone"
@@ -176,20 +174,13 @@ const ComparativeChart = ({ selectedCities, selectedParameters, timeRange, chart
                   fill={cityColors?.[cityId]}
                   strokeWidth={2}
                 />
-              ));
-            })}
+              ))
+            )}
           </ChartComponent>
         </ResponsiveContainer>
-        {loading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-background/50">
-            <span className="text-xs md:text-sm text-muted-foreground">Refreshing data…</span>
-          </div>
-        )}
       </div>
       <div className="mt-4 flex flex-wrap gap-2">
-        {chosenLocations?.map(name => {
-          const cityId = String(name).toLowerCase().replace(/\s+/g, '-');
-          return (
+        {selectedCities?.map(cityId => (
           <div key={cityId} className="flex items-center gap-2 px-3 py-1 rounded-full bg-muted">
             <div 
               className="w-3 h-3 rounded-full" 
@@ -199,12 +190,10 @@ const ComparativeChart = ({ selectedCities, selectedParameters, timeRange, chart
               {cityName(cityId)}
             </span>
           </div>
-        );
-        })}
+        ))}
       </div>
     </div>
   );
 };
 
 export default ComparativeChart;
-

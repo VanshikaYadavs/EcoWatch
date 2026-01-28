@@ -137,4 +137,3 @@ const ComparisonTool = () => {
 };
 
 export default ComparisonTool;
-

@@ -31,8 +31,6 @@ function mapSettingsToPrefs(settings) {
     aqi_threshold: settings?.airQuality?.aqiThreshold ?? null,
     noise_threshold: settings?.noise?.thresholdExceeded ?? null,
     temp_threshold: settings?.temperature?.heatWarning ?? null,
-    humidity_threshold: settings?.humidity?.thresholdExceeded ?? null,
     email_alerts: settings?.channels?.email ?? true,
-    sms_alerts: settings?.channels?.sms ?? false,
   };
 }

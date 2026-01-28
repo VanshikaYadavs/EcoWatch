@@ -75,9 +75,7 @@ const CitySelector = ({ selectedCities, onCityToggle, maxSelections = 5 }) => {
                     {cityName(city?.id)}
                   </span>
                   <span className="text-xs font-caption text-muted-foreground">
-                    {city?.region}
                     {t('comp.selector.region', { region: city?.region })}
->>>>>>> translation
                   </span>
                 </div>
               </div>

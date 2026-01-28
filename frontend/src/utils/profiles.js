@@ -11,14 +11,13 @@ export async function getProfile(userId) {
   return data || null;
 }
 
-export async function upsertProfile(userId, { full_name, role, organization, phone }) {
+export async function upsertProfile(userId, { full_name, role, organization }) {
   if (!userId) throw new Error('Missing userId');
   const payload = {
     id: userId,
     full_name: full_name || null,
     role: role || 'viewer',
     organization: organization || null,
-    phone: phone || null,
   };
   const { data, error } = await supabase
     .from('profiles')

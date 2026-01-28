@@ -11,11 +11,8 @@ import Button from '../../components/ui/Button';
 import AutoText from '../../components/ui/AutoText';
 import { useEnvironmentReadings, useAlertEvents } from '../../utils/dataHooks';
 import { getLatestReading } from '../../services/environment.service';
-import { getCurrentLocation, displayLocation } from '../../utils/location';
-import { getNearbyCities } from '../../utils/nearbyCities';
-import { getSessionAllowlist, recomputeSessionCities, getCurrentIngestCity } from '../../utils/sessionCities';
+import { getCurrentLocation } from '../../utils/location';
 import axios from 'axios';
-import { supabase } from '../../utils/supabaseClient';
 
 const EnvironmentalDashboard = () => {
   const { t } = useTranslation();
@@ -31,78 +28,46 @@ const EnvironmentalDashboard = () => {
 
   const latest = useMemo(() => readings?.[0] || {}, [readings]);
 
-  // Track current ingest city via localStorage and custom event
-  const [ingestCity, setIngestCity] = useState(null);
-  useEffect(() => {
-    setIngestCity(getCurrentIngestCity());
-    const onIngest = (e) => {
-      const name = (e && e.detail) || null;
-      setIngestCity(name || null);
-    };
-    if (typeof window !== 'undefined') {
-      window.addEventListener('ecw:ingestCity', onIngest);
-    }
-    return () => {
-      if (typeof window !== 'undefined') {
-        window.removeEventListener('ecw:ingestCity', onIngest);
-      }
-    };
-  }, []);
-
-  // Derive a robust current city for banner and fetches
-  const currentCity = useMemo(() => {
-    if (ingestCity) return ingestCity;
-    if (allowlist?.length) return allowlist[0];
-    if (envData?.location) return envData.location;
-    if (Array.isArray(latestCityReadings) && latestCityReadings[0]?.location) return latestCityReadings[0].location;
-    if (Array.isArray(nearbyCityReadings) && nearbyCityReadings[0]?.location) return nearbyCityReadings[0].location;
-    if (location && location !== 'all') return location;
-    return null;
-  }, [ingestCity, allowlist, envData?.location, latestCityReadings, nearbyCityReadings, location]);
-
   useEffect(() => {
     let cancelled = false;
     (async () => {
       setEnvLoading(true);
-      try {
-        const data = await getLatestReading(currentCity || null);
-        if (!cancelled) {
-          setEnvData(data || null);
-        }
-      } catch (e) {
-        if (!cancelled) {
-          console.warn('Latest reading fetch failed:', e?.message || e);
-        }
-      } finally {
-        if (!cancelled) setEnvLoading(false);
+      const data = await getLatestReading();
+      if (!cancelled) {
+        setEnvData(data);
+        setEnvLoading(false);
       }
     })();
     return () => { cancelled = true; };
-  }, [currentCity]);
+  }, []);
 
-  // When the session allowlist loads, default the page's selected location
-  // to the current city to avoid global reads.
-  useEffect(() => {
-    if (location === 'all' && currentCity) {
-      setLocation(currentCity);
-    }
-  }, [currentCity, location]);
-
-  // On first load, compute session cities and ingest both current and nearby (with nearby flag)
+  // On first load, try to ingest based on user's location
   useEffect(() => {
     let mounted = true;
     (async () => {
+      // First: try to get geolocation
       try {
-        const names = await getSessionAllowlist();
-        if (mounted) setAllowlist(names);
-      } catch {}
-      try {
-        const sess = await recomputeSessionCities();
-        // After recompute, refresh allowlist to include nearby
-        const refreshed = [sess?.main?.name, ...(sess?.nearby || []).map(c => c.name)].filter(Boolean);
-        if (mounted && refreshed.length) setAllowlist(refreshed);
-      } catch (e) {
-        console.warn('Session cities recompute/ingest failed:', e?.message || e);
+        const { lat, lon } = await getCurrentLocation();
+        // Then: request backend ingest for this location
+        try {
+          await axios.get(`http://localhost:8080/api/ingest/now?lat=${lat}&lon=${lon}`);
+        } catch (reqErr) {
+          console.warn('Location-based ingest failed:', reqErr?.message || reqErr);
+          // Do not fallback to Jaipur if the user granted permission; keep existing data
+        }
+      } catch (geoErr) {
+        // Only fallback when permission is denied or geolocation is unavailable
+        const denied = geoErr?.code === 1 || /denied/i.test(String(geoErr?.message || ''));
+        if (denied) {
+          try {
+            const jaipur = { lat: 26.9124, lon: 75.7873 };
+            await axios.get(`http://localhost:8080/api/ingest/now?lat=${jaipur.lat}&lon=${jaipur.lon}&name=Jaipur`);
+          } catch (e) {
+            console.warn('Fallback ingest failed:', e?.message || e);
+          }
+        } else {
+          console.warn('Geolocation unavailable:', geoErr?.message || geoErr);
+        }
       }
     })();
     return () => { mounted = false; };
@@ -233,19 +198,10 @@ const EnvironmentalDashboard = () => {
     }
   ];
 
-  // Use latest-per-city readings for map sensors to avoid duplicates
-  const sensorsCombined = [
-    ...(latestCityReadings || []),
-    ...(nearbyCityReadings || []),
-  ];
-  const allowSet = new Set((allowlist || []).map(n => String(n).toLowerCase()));
-  const filteredSensors = allowSet.size
-    ? sensorsCombined.filter(r => allowSet.has(String(r.location || '').toLowerCase()))
-    : sensorsCombined;
-  const sensors = filteredSensors.map((r, i) => ({
+  const sensors = (readings || []).slice(0, 20).map((r, i) => ({
     id: i + 1,
-    location: displayLocation(r.location || 'Unknown', r.location || 'Unknown'),
-    address: displayLocation(r.location || 'Unknown', r.location || 'Unknown'),
+    location: r.location || 'Unknown',
+    address: r.location,
     aqi: r.aqi ?? 0,
     noise: r.noise_level ?? 0,
     status: (r.aqi ?? 0) >= 150 ? 'poor' : 'good',
@@ -293,17 +249,6 @@ const EnvironmentalDashboard = () => {
     console.log('Emergency broadcast initiated');
   };
 
-  const handleRecomputeNearby = async () => {
-    setRecomputing(true);
-    try {
-      await recomputeSessionCities();
-      const names = await getSessionAllowlist();
-      setAllowlist(names);
-    } finally {
-      setRecomputing(false);
-    }
-  };
-
   if (envLoading) {
     return <p>{t('env.loading')}</p>;
   }
@@ -314,13 +259,6 @@ const EnvironmentalDashboard = () => {
 
   return (
     <div className="space-y-6">
-      {/* Current Location Banner */}
-      {currentCity ? (
-        <div className="bg-primary/10 border border-primary/20 rounded-lg p-3">
-          <span className="text-sm">Current location: </span>
-          <span className="text-sm font-medium">{currentCity}</span>
-        </div>
-      ) : null}
       <div>
         <div className="flex items-center gap-3 mb-1">
           <Icon name="LayoutDashboard" size={22} color="var(--color-primary)" />
@@ -365,17 +303,6 @@ const EnvironmentalDashboard = () => {
           </div>
 
           <div className="space-y-3">
-            <Button
-              variant="outline"
-              iconName={recomputing ? 'Loader2' : 'RefreshCw'}
-              iconPosition="left"
-              fullWidth
-              onClick={handleRecomputeNearby}
-              disabled={recomputing}
-            >
-              {recomputing ? 'Recomputing Nearby Cities…' : 'Recompute Nearby Cities'}
-            </Button>
-
             <Button
               variant="destructive"
               iconName="Siren"
@@ -457,4 +384,3 @@ const EnvironmentalDashboard = () => {
 };
 
 export default EnvironmentalDashboard;
-

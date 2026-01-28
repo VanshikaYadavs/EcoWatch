@@ -1,17 +1,21 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import Icon from '../../../components/AppIcon';
-import { useLatestCityReadings, useComparativeSeries } from '../../../utils/dataHooks';
 
-const StatisticalView = ({ selectedCities, selectedParameters, refreshToken = 0 }) => {
-  const { data: latestCityReadings } = useLatestCityReadings({ fallbackWindow: 200 });
-  const idToName = useMemo(() => {
-    const map = {};
-    for (const r of latestCityReadings || []) {
-      const id = String(r.location || '').toLowerCase().replace(/\s+/g, '-');
-      map[id] = r.location;
-    }
-    return map;
-  }, [latestCityReadings]);
+const StatisticalView = ({ selectedCities, selectedParameters }) => {
+  const cityNames = {
+    jaipur: 'Jaipur',
+    jodhpur: 'Jodhpur',
+    udaipur: 'Udaipur',
+    kota: 'Kota',
+    ajmer: 'Ajmer',
+    bikaner: 'Bikaner',
+    alwar: 'Alwar',
+    bharatpur: 'Bharatpur',
+    sikar: 'Sikar',
+    pali: 'Pali',
+    tonk: 'Tonk',
+    bhilwara: 'Bhilwara'
+  };
 
   const parameterLabels = {
     aqi: 'Air Quality Index',
@@ -19,30 +23,36 @@ const StatisticalView = ({ selectedCities, selectedParameters, refreshToken = 0 
     temperature: 'Temperature',
     humidity: 'Humidity',
     pm25: 'PM2.5',
-    pm10: 'PM10',
-    o3: 'Ozone (O₃)',
-    no2: 'NO₂'
+    pm10: 'PM10'
   };
 
-  const chosenLocations = useMemo(() => (selectedCities || []).map(id => idToName[id]).filter(Boolean), [selectedCities, idToName]);
-  const { data: series, loading } = useComparativeSeries({ locations: chosenLocations, parameters: selectedParameters, timeRange: '24h', refreshToken });
-
-  const statistics = useMemo(() => {
+  const generateStatistics = () => {
     return selectedParameters?.map(param => {
-      const values = (selectedCities || []).map(cityId => {
-        const key = `${cityId}_${param}`;
-        const vals = (series || []).map(r => r[key]).filter(v => v != null);
-        if (!vals.length) return 0;
-        const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
-        return Number(avg.toFixed(1));
+      const values = selectedCities?.map(() => {
+        switch(param) {
+          case 'aqi':
+            return Math.round(Math.random() * 100 + 50);
+          case 'noise':
+            return Math.round(Math.random() * 30 + 50);
+          case 'temperature':
+            return Math.round((Math.random() * 15 + 20) * 10) / 10;
+          case 'humidity':
+            return Math.round(Math.random() * 40 + 30);
+          case 'pm25':
+            return Math.round(Math.random() * 50 + 20);
+          case 'pm10':
+            return Math.round(Math.random() * 80 + 40);
+          default:
+            return Math.round(Math.random() * 100);
+        }
       });
-      const average = values.length ? (values.reduce((a, b) => a + b, 0) / values.length).toFixed(1) : '0.0';
+
+      const average = (values?.reduce((a, b) => a + b, 0) / values?.length)?.toFixed(1);
       const max = Math.max(...values);
       const min = Math.min(...values);
-      const maxIdx = values.indexOf(max);
-      const minIdx = values.indexOf(min);
-      const maxCity = idToName[selectedCities?.[maxIdx]] || selectedCities?.[maxIdx];
-      const minCity = idToName[selectedCities?.[minIdx]] || selectedCities?.[minIdx];
+      const maxCity = cityNames?.[selectedCities?.[values?.indexOf(max)]];
+      const minCity = cityNames?.[selectedCities?.[values?.indexOf(min)]];
+
       return {
         parameter: param,
         label: parameterLabels?.[param],
@@ -51,10 +61,12 @@ const StatisticalView = ({ selectedCities, selectedParameters, refreshToken = 0 
         min,
         maxCity,
         minCity,
-        range: Number((max - min).toFixed(1))
+        range: (max - min)?.toFixed(1)
       };
     });
-  }, [selectedParameters, selectedCities, series, idToName]);
+  };
+
+  const statistics = generateStatistics();
 
   if (selectedCities?.length === 0 || selectedParameters?.length === 0) {
     return null;
@@ -67,9 +79,6 @@ const StatisticalView = ({ selectedCities, selectedParameters, refreshToken = 0 
         <h3 className="text-base md:text-lg font-semibold text-foreground">
           Statistical Summary
         </h3>
-        {loading && (
-          <span className="ml-2 text-xs md:text-sm text-muted-foreground">Refreshing…</span>
-        )}
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {statistics?.map((stat) => (
@@ -139,4 +148,3 @@ const StatisticalView = ({ selectedCities, selectedParameters, refreshToken = 0 
 };
 
 export default StatisticalView;
-

@@ -125,4 +125,3 @@ const ReportTemplates = ({ onSelectTemplate }) => {
 };
 
 export default ReportTemplates;
-

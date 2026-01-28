@@ -211,4 +211,3 @@ const ReportBuilder = ({ onGenerateReport }) => {
 };
 
 export default ReportBuilder;
-

@@ -18,7 +18,6 @@ const NoiseLevelTracking = () => {
   const [selectedLocation, setSelectedLocation] = useState('all');
   const [forceUpdate, setForceUpdate] = useState(0);
   const { data: readings, loading } = useEnvironmentReadings({ location: selectedLocation, limit: 100, realtime: true });
-  const { data: allRecent } = useEnvironmentReadings({ location: null, limit: 200, realtime: false });
 
   // Helper function to get translated location name
   const getLocationLabel = (rawLocation) => {
@@ -65,6 +64,7 @@ const NoiseLevelTracking = () => {
     const unique = new Set((readings || []).map(r => r.location).filter(Boolean));
     const base = [...unique].map(loc => ({ id: loc, name: getLocationLabel(loc), type: t('common.unknown'), sensors: 0, density: t('common.unknown') }));
     if (base.length) return base;
+    // Fallback demo locations
     return [
       { id: RAJASTHAN_PLACES?.[0]?.value || 'Jaipur', name: RAJASTHAN_PLACES?.[0]?.label || t('locations.miRoad'), type: t('zones.commercial'), sensors: 12, density: 'High' },
       { id: RAJASTHAN_PLACES?.[1]?.value || 'Jodhpur', name: RAJASTHAN_PLACES?.[1]?.label || t('locations.clockTower'), type: t('zones.educational'), sensors: 8, density: 'Medium' },
@@ -103,6 +103,13 @@ const NoiseLevelTracking = () => {
     standardPriority: false
   });
 
+  const [comparativeZones, setComparativeZones] = useState([
+    { id: 1, name: getLocationLabel(RAJASTHAN_PLACES?.[0]?.label || t('locations.miRoad')), type: t('zones.commercial'), sensors: 12, currentLevel: 68, peakLevel: 82, averageLevel: 61, trend: 8, compliant: false },
+    { id: 2, name: getLocationLabel(RAJASTHAN_PLACES?.[1]?.label || t('locations.clockTower')), type: t('zones.educational'), sensors: 8, currentLevel: 52, peakLevel: 58, averageLevel: 48, trend: -3, compliant: true },
+    { id: 3, name: getLocationLabel(RAJASTHAN_PLACES?.[2]?.label || t('locations.lakePichola')), type: t('zones.healthcare'), sensors: 15, currentLevel: 48, peakLevel: 55, averageLevel: 45, trend: 2, compliant: true },
+    { id: 4, name: getLocationLabel(RAJASTHAN_PLACES?.[3]?.label || t('locations.pushkarRoad')), type: t('zones.residential'), sensors: 10, currentLevel: 58, peakLevel: 65, averageLevel: 54, trend: 5, compliant: false },
+    { id: 5, name: getLocationLabel(RAJASTHAN_PLACES?.[4]?.label || t('locations.industrialTonk')), type: t('zones.industrial'), sensors: 6, currentLevel: 75, peakLevel: 88, averageLevel: 72, trend: 12, compliant: false }
+  ]);
 
   const [exportSettings, setExportSettings] = useState({
     reportType: 'compliance',
@@ -205,6 +212,3 @@ const NoiseLevelTracking = () => {
 };
 
 export default NoiseLevelTracking;
-
-
-

@@ -120,4 +120,3 @@ const TrendChart = ({ title, data, parameter, chartType = 'line' }) => {
 };
 
 export default TrendChart;
-

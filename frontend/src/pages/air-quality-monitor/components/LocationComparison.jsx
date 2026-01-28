@@ -1,6 +1,7 @@
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import Icon from '../../../components/AppIcon';
+import { useTranslation } from 'react-i18next';
 
 const LocationComparison = ({ comparisonData, selectedLocations }) => {
   const { t } = useTranslation();
@@ -9,7 +10,7 @@ const LocationComparison = ({ comparisonData, selectedLocations }) => {
     if (active && payload && payload?.length) {
       return (
         <div className="bg-card border border-border rounded-lg shadow-lg p-4">
-          <p className="font-medium text-foreground mb-2">{displayLocation(label, label)}</p>
+          <p className="font-medium text-foreground mb-2">{label}</p>
           {payload?.map((entry, index) => (
             <div key={index} className="flex items-center gap-2 text-sm">
               <div 
@@ -50,7 +51,7 @@ const LocationComparison = ({ comparisonData, selectedLocations }) => {
           <BarChart data={comparisonData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
             <XAxis 
-              dataKey={(d) => displayLocation(d.location, d.location)} 
+              dataKey="location" 
               stroke="var(--color-muted-foreground)"
               style={{ fontSize: '12px' }}
               angle={-45}
@@ -75,14 +76,13 @@ const LocationComparison = ({ comparisonData, selectedLocations }) => {
         </ResponsiveContainer>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-border">
-        {(() => { const n = Math.max(1, comparisonData?.length || 0); return (
-        <>
         <div className="text-center">
           <div className="flex items-center justify-center gap-2 mb-2">
             <div className="w-3 h-3 rounded-full" style={{ backgroundColor: pollutantColors?.pm25 }} />
             <p className="text-xs text-muted-foreground">{t('locationComparison.avg.pm25')}</p>
           </div>
           <p className="text-xl font-bold data-text text-foreground">
+            {Math.round(comparisonData?.reduce((sum, d) => sum + d?.pm25, 0) / comparisonData?.length)} {t('sensors.units.pm')}
           </p>
         </div>
         <div className="text-center">
@@ -91,6 +91,7 @@ const LocationComparison = ({ comparisonData, selectedLocations }) => {
             <p className="text-xs text-muted-foreground">{t('locationComparison.avg.pm10')}</p>
           </div>
           <p className="text-xl font-bold data-text text-foreground">
+            {Math.round(comparisonData?.reduce((sum, d) => sum + d?.pm10, 0) / comparisonData?.length)} {t('sensors.units.pm')}
           </p>
         </div>
         <div className="text-center">
@@ -99,6 +100,7 @@ const LocationComparison = ({ comparisonData, selectedLocations }) => {
             <p className="text-xs text-muted-foreground">{t('locationComparison.avg.ozone')}</p>
           </div>
           <p className="text-xl font-bold data-text text-foreground">
+            {Math.round(comparisonData?.reduce((sum, d) => sum + d?.ozone, 0) / comparisonData?.length)} {t('sensors.units.ppb')}
           </p>
         </div>
         <div className="text-center">
@@ -107,16 +109,12 @@ const LocationComparison = ({ comparisonData, selectedLocations }) => {
             <p className="text-xs text-muted-foreground">{t('locationComparison.avg.no2')}</p>
           </div>
           <p className="text-xl font-bold data-text text-foreground">
+            {Math.round(comparisonData?.reduce((sum, d) => sum + d?.no2, 0) / comparisonData?.length)} {t('sensors.units.ppb')}
           </p>
         </div>
-        </>
-        ); })()}
       </div>
     </div>
   );
 };
 
 export default LocationComparison;
-
-
-

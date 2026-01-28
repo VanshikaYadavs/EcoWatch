@@ -23,7 +23,6 @@ const TemperatureAnalytics = () => {
   const [timePeriod, setTimePeriod] = useState('24h');
   const [, forceUpdate] = useState({});
   const { data: readings, loading } = useEnvironmentReadings({ location: selectedLocation, limit: 100, realtime: true });
-  const { data: allRecent } = useEnvironmentReadings({ location: null, limit: 200, realtime: false });
   
   // Debug: Log current language and trigger re-render on language change
   useEffect(() => {
@@ -97,6 +96,13 @@ const TemperatureAnalytics = () => {
     }
   };
 
+  const comparativeLocations = [
+    { id: 1, name: t('temp.locations.jaipur'), current: 34, difference: 0, average24h: 28.5 },
+    { id: 2, name: t('temp.locations.tonk'), current: 36, difference: 2, average24h: 30.2 },
+    { id: 3, name: t('cities.udaipur'), current: 28, difference: -6, average24h: 25.8 },
+    { id: 4, name: t('cities.ajmer'), current: 25, difference: -9, average24h: 23.1 },
+    { id: 5, name: t('cities.jodhpur'), current: 26, difference: -8, average24h: 24.5 }
+  ];
 
   const timePeriodOptions = [
     { value: '24h', label: t('temp.time.24h') },
@@ -309,6 +315,3 @@ const TemperatureAnalytics = () => {
 };
 
 export default TemperatureAnalytics;
-
-
-

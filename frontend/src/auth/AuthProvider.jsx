@@ -110,16 +110,16 @@ export const AuthProvider = ({ children }) => {
     return supabase.auth.signInWithPassword({ email, password });
   };
 
-  // params: { email, password, full_name, role, organization, phone }
+  // params: { email, password, full_name, role, organization }
   // Stores profile data in auth metadata; DB trigger will copy to public.profiles on user creation
-  const signUpWithPassword = async ({ email, password, full_name, role, organization, phone }) => {
+  const signUpWithPassword = async ({ email, password, full_name, role, organization }) => {
     const redirectTo = `${window.location.origin}/auth/callback`;
     return supabase.auth.signUp({
       email,
       password,
       options: {
         emailRedirectTo: redirectTo,
-        data: { full_name, role, organization, phone },
+        data: { full_name, role, organization },
       },
     });
   };

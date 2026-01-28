@@ -17,14 +17,13 @@ import CorrelationAnalysis from './components/CorrelationAnalysis';
 const ComparativeAnalysis = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [selectedCities, setSelectedCities] = useState([]);
+  const [selectedCities, setSelectedCities] = useState(['jaipur', 'udaipur']);
   const [selectedParameters, setSelectedParameters] = useState(['aqi', 'temperature']);
   const [timeRange, setTimeRange] = useState('7d');
   const [customStartDate, setCustomStartDate] = useState('');
   const [customEndDate, setCustomEndDate] = useState('');
   const [chartType, setChartType] = useState('line');
   const [activeView, setActiveView] = useState('chart');
-  const [refreshToken, setRefreshToken] = useState(0);
 
   const handleCityToggle = (cityId) => {
     setSelectedCities(prev => {
@@ -96,7 +95,7 @@ const ComparativeAnalysis = () => {
                   iconName="RefreshCw"
                   iconPosition="left"
                   onClick={() => {
-                    setSelectedCities([]);
+                    setSelectedCities(['jaipur', 'udaipur']);
                     setSelectedParameters(['aqi', 'temperature']);
                     setTimeRange('7d');
                     setChartType('line');
@@ -108,18 +107,9 @@ const ComparativeAnalysis = () => {
                 <Button
                   variant="default"
                   size="sm"
-                  iconName="RotateCcw"
-                  iconPosition="left"
-                  onClick={() => setRefreshToken(t => t + 1)}
-                >
-                  Refresh Data
-                </Button>
-                <Button
-                  variant="default"
-                  size="sm"
                   iconName="Bell"
                   iconPosition="left"
-                  onClick={() => navigate('/alert-center')}
+                  onClick={() => navigate('/alert-management')}
                 >
                   {t('buttons.alerts')}
                 </Button>
@@ -195,7 +185,6 @@ const ComparativeAnalysis = () => {
                 selectedParameters={selectedParameters}
                 timeRange={timeRange}
                 chartType={chartType}
-                refreshToken={refreshToken}
               />
             )}
 
@@ -204,7 +193,6 @@ const ComparativeAnalysis = () => {
                 selectedCities={selectedCities}
                 selectedParameters={selectedParameters}
                 timeRange={timeRange}
-                refreshToken={refreshToken}
               />
             )}
 
@@ -212,7 +200,6 @@ const ComparativeAnalysis = () => {
               <StatisticalView
                 selectedCities={selectedCities}
                 selectedParameters={selectedParameters}
-                refreshToken={refreshToken}
               />
             )}
 
@@ -220,7 +207,6 @@ const ComparativeAnalysis = () => {
               <CorrelationAnalysis
                 selectedCities={selectedCities}
                 selectedParameters={selectedParameters}
-                refreshToken={refreshToken}
               />
             )}
           </div>
@@ -290,4 +276,3 @@ const ComparativeAnalysis = () => {
 };
 
 export default ComparativeAnalysis;
-

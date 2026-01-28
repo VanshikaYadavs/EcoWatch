@@ -4,7 +4,6 @@ import Header from '../../components/ui/Header';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import Icon from '../../components/AppIcon';
-import Chatbot from '../../components/Chatbot';
 import EnvironmentalMetricCard from './components/EnvironmentalMetricCard';
 import CityEnvironmentCard from './components/CityEnvironmentCard';
 import InteractiveMap from './components/InteractiveMap';
@@ -533,6 +532,8 @@ const EnvironmentalDashboard = () => {
                   </button>
                 </li>
                 <li>
+                  <button onClick={() => navigate('/alert-management')} className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                    {t('footer.links.alerts')}
                   </button>
                 </li>
               </ul>
@@ -567,13 +568,8 @@ const EnvironmentalDashboard = () => {
           </div>
         </div>
       </footer>
-
-      <Chatbot />
     </div>);
 
 };
 
 export default EnvironmentalDashboard;
-
-
-

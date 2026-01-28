@@ -5,7 +5,6 @@ import Sidebar from '../components/navigation/Sidebar';
 import AlertBanner from '../components/navigation/AlertBanner';
 import DataRefreshIndicator from '../components/navigation/DataRefreshIndicator';
 import UserRoleBadge from '../components/navigation/UserRoleBadge';
-import Chatbot from '../components/Chatbot';
 import { useAuth } from '../auth/AuthProvider';
 import { useMyProfile } from '../utils/profileHooks';
 import Button from '../components/ui/Button';
@@ -53,8 +52,6 @@ const MainLayout = () => {
         isCollapsed={isSidebarCollapsed}
         onToggleCollapse={handleToggleSidebar}
       />
-
-      <Chatbot />
 
       <div 
         className={`

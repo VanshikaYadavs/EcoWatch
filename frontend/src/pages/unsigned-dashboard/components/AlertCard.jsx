@@ -89,4 +89,3 @@ const AlertCard = ({
 };
 
 export default AlertCard;
-

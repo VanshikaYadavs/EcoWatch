@@ -137,35 +137,34 @@ const AQIChart = ({ data, timeRange, selectedPollutants }) => {
           </AreaChart>
         </ResponsiveContainer>
       </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-border">
         <div className="text-center">
           <p className="text-xs text-muted-foreground mb-1">{t('aq.stats.current')}</p>
           <p className="text-2xl font-bold" style={{ color: getAQIColor(data?.[data?.length - 1]?.aqi || 0) }}>
-            {last?.aqi || 0}
+            {data?.[data?.length - 1]?.aqi || 0}
           </p>
         </div>
         <div className="text-center">
           <p className="text-xs text-muted-foreground mb-1">{t('aq.stats.avg24h')}</p>
           <p className="text-2xl font-bold text-foreground">
+            {Math.round(data?.reduce((sum, d) => sum + d?.aqi, 0) / (data?.length || 1))}
           </p>
         </div>
         <div className="text-center">
           <p className="text-xs text-muted-foreground mb-1">{t('aq.stats.peak')}</p>
           <p className="text-2xl font-bold text-error">
+            {Math.max(...(data?.map(d => d?.aqi) || [0]))}
           </p>
         </div>
         <div className="text-center">
           <p className="text-xs text-muted-foreground mb-1">{t('aq.stats.lowest')}</p>
           <p className="text-2xl font-bold text-success">
+            {Math.min(...(data?.map(d => d?.aqi) || [0]))}
           </p>
         </div>
-        </>
-        ); })()}
       </div>
     </div>
   );
 };
 
 export default AQIChart;
-
-
-

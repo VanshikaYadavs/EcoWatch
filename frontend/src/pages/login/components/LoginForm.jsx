@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { supabase, isSupabaseConfigured, supabaseEnv } from '../../../utils/supabaseClient';
+import { supabase } from '../../../utils/supabaseClient';
 import Input from '../../../components/ui/Input';
 import Button from '../../../components/ui/Button';
 import Icon from '../../../components/AppIcon';
@@ -20,12 +20,6 @@ const LoginForm = () => {
     console.log('Login attempt:', email);
 
     try {
-      if (!isSupabaseConfigured) {
-        setError(`Auth is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.`);
-        setLoading(false);
-        return;
-      }
-
       if (!email || !password) {
         setError('Email and password are required');
         setLoading(false);
@@ -59,11 +53,6 @@ const LoginForm = () => {
 
   return (
     <form onSubmit={handleLogin} className="space-y-6">
-      {!isSupabaseConfigured ? (
-        <div className="p-3 rounded bg-destructive/10 border border-destructive/20 text-sm">
-          Supabase environment variables are missing. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.
-        </div>
-      ) : null}
       <div>
         <Input
           label="Email Address"
@@ -97,7 +86,6 @@ const LoginForm = () => {
         loading={loading}
         iconName="LogIn"
         iconPosition="right"
-        disabled={!isSupabaseConfigured}
       >
         Sign In
       </Button>

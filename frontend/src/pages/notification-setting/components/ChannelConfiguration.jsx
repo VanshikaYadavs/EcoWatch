@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Icon from '../../../components/AppIcon';
 import Input from '../../../components/ui/Input';
 import Button from '../../../components/ui/Button';
@@ -8,16 +8,14 @@ import { useTranslation } from 'react-i18next';
 const ChannelConfiguration = ({ settings, onSettingsChange }) => {
   const { t } = useTranslation();
   const [contactInfo, setContactInfo] = useState({
-    email: '',
-    phone: '',
+    email: 'user@example.com',
+    phone: '+1234567890',
     verified: {
       email: true,
       phone: false
     }
   });
-  const [phoneError, setPhoneError] = useState('');
-  const [savingPhone, setSavingPhone] = useState(false);
-  
+
   const updateChannel = (channel, value) => {
     onSettingsChange({
       ...settings,
@@ -28,9 +26,9 @@ const ChannelConfiguration = ({ settings, onSettingsChange }) => {
     });
   };
 
-  const handleVerifyContact = async (type) => {
+  const handleVerifyContact = (type) => {
     console.log(`Verifying ${type}:`, contactInfo?.[type]);
-    // Verification would be handled by Supabase auth
+    // In real implementation, this would trigger verification flow
   };
 
   const handleTestChannel = (channel) => {
@@ -106,8 +104,9 @@ const ChannelConfiguration = ({ settings, onSettingsChange }) => {
             <Input
               label={t('notif.contact.phone.label')}
               type="tel"
-              placeholder="+911234567890"
               value={contactInfo?.phone}
+              onChange={(e) => setContactInfo({ ...contactInfo, phone: e?.target?.value })}
+              description={contactInfo?.verified?.phone ? t('notif.contact.verified') : t('notif.contact.notVerified')}
             />
             {!contactInfo?.verified?.phone && (
               <Button
@@ -116,8 +115,8 @@ const ChannelConfiguration = ({ settings, onSettingsChange }) => {
                 iconName="CheckCircle"
                 iconPosition="left"
                 onClick={() => handleVerifyContact('phone')}
-                disabled={savingPhone || !contactInfo?.phone}
               >
+                {t('notif.contact.verifyPhone')}
               </Button>
             )}
           </div>
@@ -198,6 +197,3 @@ const ChannelConfiguration = ({ settings, onSettingsChange }) => {
 };
 
 export default ChannelConfiguration;
-
-
-

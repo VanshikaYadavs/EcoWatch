@@ -6,6 +6,9 @@ import SensorDataTable from './components/SensorDataTable';
 import FilterControls from './components/FilterControls';
 import AlertConfiguration from './components/AlertConfiguration';
 import LocationComparison from './components/LocationComparison';
+import { useEnvironmentReadings } from '../../utils/dataHooks';
+import { translateText, getCachedTranslation } from '../../utils/translationService';
+import AutoText from '../../components/ui/AutoText';
 
 const AirQualityMonitor = () => {
   const { t, i18n } = useTranslation();
@@ -22,10 +25,6 @@ const AirQualityMonitor = () => {
   const [comparisonData, setComparisonData] = useState([]);
   const [forceUpdate, setForceUpdate] = useState(0);
   const { data: readings, loading } = useEnvironmentReadings({ location: filters.location === 'all' ? null : filters.location, limit: 100, realtime: true });
-  const [allowlist, setAllowlist] = useState([]);
-  const { data: latestCityReadings } = useLatestCityReadings({ fallbackWindow: 150, allowLocations: allowlist });
-  const [recomputing, setRecomputing] = useState(false);
-  const [backendLatest, setBackendLatest] = useState([]);
 
   // Map Hindi location names from backend to location translation keys
   const getLocationLabel = (rawLocation) => {
@@ -79,106 +78,39 @@ const AirQualityMonitor = () => {
   };
 
   useEffect(() => {
-    (async () => {
-      try { setAllowlist(await getSessionAllowlist()); } catch {}
-    })();
-  }, []);
-
-  // Ingest user's location + nearby cities on first load (in case user lands here directly)
-  useEffect(() => {
-    (async () => {
-      try {
-        const { lat, lon } = await getCurrentLocation();
-        let userId = null, token = null;
-        if (isSupabaseConfigured && supabase) {
-          const { data: sessData } = await supabase.auth.getSession();
-          userId = sessData?.session?.user?.id;
-          token = sessData?.session?.access_token;
-        }
-        if (!userId) {
-          console.warn('Skipping ingest: missing user_id (not signed in)');
-        }
-        try {
-          if (userId && token) {
-            await axios.get(
-              `http://localhost:8080/api/ingest/now?lat=${lat}&lon=${lon}&name=Your%20Location`,
-              { headers: { Authorization: `Bearer ${token}` } }
-            );
-          }
-        } catch (e) {
-          console.warn('AQM ingest (self) failed:', e?.message || e);
-        }
-        try {
-          const nearby = await getNearbyCities(lat, lon);
-          for (const city of nearby) {
-            try {
-              if (userId && token) {
-                await axios.get(
-                  `http://localhost:8080/api/ingest/now?lat=${city.lat}&lon=${city.lon}&name=${encodeURIComponent(city.name)}`,
-                  { headers: { Authorization: `Bearer ${token}` } }
-                );
-              }
-            } catch (e2) {
-              console.warn('AQM ingest (nearby) failed:', city.name, e2?.message || e2);
-            }
-          }
-        } catch (nearErr) {
-          console.warn('Nearby cities lookup failed:', nearErr?.message || nearErr);
-        }
-      } catch (geoErr) {
-        // Geolocation denied/unavailable — skip hardcoded fallback city to avoid confusion.
-        console.warn('AQM geolocation unavailable/denied:', geoErr?.message || geoErr);
-      }
-    })();
-  }, []);
-
-  // Fallback: if Supabase path returns too few rows, fetch server latest-by-city
-  useEffect(() => {
-    (async () => {
-      try {
-        const names = Array.isArray(allowlist) ? allowlist.filter(Boolean) : [];
-        if (names.length <= 1) { setBackendLatest([]); return; }
-        if ((latestCityReadings || []).length >= Math.min(2, names.length)) { setBackendLatest([]); return; }
-        const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080';
-        const url = `${API_BASE}/api/readings/latest-by-city?cities=${encodeURIComponent(names.join(','))}`;
-        const resp = await axios.get(url);
-        const map = resp?.data?.data || {};
-        const arr = Object.keys(map).map(k => map[k]).filter(Boolean);
-        setBackendLatest(arr);
-      } catch (e) {
-        setBackendLatest([]);
-      }
-    })();
-  }, [Array.isArray(allowlist) ? allowlist.join('|') : '', (latestCityReadings || []).length]);
-
-  useEffect(() => {
-    const srcReadings = backendLatest?.length ? backendLatest : (latestCityReadings?.length ? latestCityReadings : readings || []);
-    if (!srcReadings?.length) return;
-    // Build time series including pollutant breakdown
-    const series = (readings || [])
+    if (!readings?.length) return;
+    const series = readings
       .slice()
       .reverse()
-      .map(r => ({
-        time: new Date(r.recorded_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        aqi: r.aqi ?? 0,
-        pm25: r.pm25 ?? null,
-        pm10: r.pm10 ?? null,
-        ozone: r.o3 ?? null,
-        no2: r.no2 ?? null,
-      }));
+      .map(r => ({ time: new Date(r.recorded_at).toLocaleTimeString(), aqi: r.aqi ?? 0 }));
     setChartData(series);
-
-    // Sensor rows per location with latest pollutant values
-    const sensors = srcReadings.slice(0, 50).map((r, i) => ({
+    const sensors = readings.slice(0, 50).map((r, i) => ({
       id: i + 1,
+      location: getLocationLabel(r.location),
+      zone: getLocationLabel(r.location),
       aqi: r.aqi ?? 0,
-      pm25: r.pm25 ?? null,
-      pm10: r.pm10 ?? null,
-      ozone: r.o3 ?? null,
-      no2: r.no2 ?? null,
-      lastUpdate: new Date(r.recorded_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      pm25: null,
+      pm10: null,
+      ozone: null,
+      no2: null,
+      lastUpdate: new Date(r.recorded_at).toLocaleTimeString(),
     }));
     setSensorData(sensors);
+    const comp = readings.slice(0, 10).map(r => ({ location: getLocationLabel(r.location), pm25: 0, pm10: 0, ozone: 0, no2: 0 }));
+    setComparisonData(comp);
+  }, [readings, t]);
+
+  const locationOptions = [
+    { value: 'all', label: t('aq.locations.all') },
+    { value: 'downtown', label: t('locations.miRoad') },
+    { value: 'industrial', label: t('locations.industrialTonk') },
+    { value: 'riverside', label: t('locations.lakePichola') },
+    { value: 'highway', label: t('locations.clockTower') },
+    { value: 'residential', label: t('locations.pushkarRoad') },
+    { value: 'university', label: t('temp.locations.jaipur') },
+    { value: 'airport', label: t('locations.bikanerIndustrial') },
+    { value: 'harbor', label: t('temp.locations.tonk') }
+  ];
 
   const pollutantOptions = [
     { value: 'pm25', label: t('aq.pollutants.pm25') },
@@ -217,17 +149,6 @@ const AirQualityMonitor = () => {
     alert('Alert configuration saved successfully!');
   };
 
-  async function handleRecomputeNearby() {
-    setRecomputing(true);
-    try {
-      await recomputeSessionCities();
-      const names = await getSessionAllowlist();
-      setAllowlist(names);
-    } finally {
-      setRecomputing(false);
-    }
-  }
-
   return (
     <>
       <Helmet>
@@ -240,17 +161,6 @@ const AirQualityMonitor = () => {
           <p className="text-base md:text-lg text-muted-foreground">
             <AutoText i18nKey="aq.subtitle" defaultText="Real-time AQI tracking and pollutant analysis across monitoring stations" />
           </p>
-          <div className="flex gap-2 mt-2">
-            <Button
-              variant="outline"
-              iconName={recomputing ? 'Loader2' : 'RefreshCw'}
-              iconPosition="left"
-              onClick={handleRecomputeNearby}
-              disabled={recomputing}
-            >
-              {recomputing ? 'Recomputing Nearby Cities…' : 'Recompute Nearby Cities'}
-            </Button>
-          </div>
         </div>
 
         <FilterControls
@@ -274,6 +184,7 @@ const AirQualityMonitor = () => {
 
         <LocationComparison
           comparisonData={comparisonData}
+          selectedLocations={[t('locations.miRoad'), t('locations.industrialTonk'), t('locations.lakePichola'), t('locations.clockTower'), t('locations.pushkarRoad')]}
         />
 
         <AlertConfiguration
@@ -286,6 +197,3 @@ const AirQualityMonitor = () => {
 };
 
 export default AirQualityMonitor;
-
-
-
