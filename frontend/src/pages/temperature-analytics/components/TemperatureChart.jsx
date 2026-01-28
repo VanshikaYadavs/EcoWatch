@@ -1,7 +1,10 @@
 import React from 'react';
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { useTranslation } from 'react-i18next';
 
 const TemperatureChart = ({ data, chartType = 'line', showHeatIndex = false }) => {
+  const { t } = useTranslation();
+
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload?.length) {
       return (
@@ -40,7 +43,7 @@ const TemperatureChart = ({ data, chartType = 'line', showHeatIndex = false }) =
           <YAxis 
             stroke="var(--color-muted-foreground)"
             style={{ fontSize: '12px', fontFamily: 'var(--font-caption)' }}
-            label={{ value: 'Temperature (°C)', angle: -90, position: 'insideLeft' }}
+            label={{ value: t('temp.axis.temperature'), angle: -90, position: 'insideLeft' }}
           />
           <Tooltip content={<CustomTooltip />} />
           <Legend 
@@ -57,7 +60,7 @@ const TemperatureChart = ({ data, chartType = 'line', showHeatIndex = false }) =
             fill="var(--color-primary)"
             fillOpacity={chartType === 'area' ? 0.2 : 1}
             strokeWidth={2}
-            name="Current Temp"
+            name={t('temp.chart.series.current')}
             dot={{ fill: 'var(--color-primary)', r: 4 }}
             activeDot={{ r: 6 }}
           />
@@ -68,7 +71,7 @@ const TemperatureChart = ({ data, chartType = 'line', showHeatIndex = false }) =
             fill="var(--color-error)"
             fillOpacity={chartType === 'area' ? 0.1 : 1}
             strokeWidth={2}
-            name="Daily High"
+            name={t('temp.chart.series.high')}
             dot={{ fill: 'var(--color-error)', r: 3 }}
           />
           <DataComponent
@@ -78,7 +81,7 @@ const TemperatureChart = ({ data, chartType = 'line', showHeatIndex = false }) =
             fill="var(--color-accent)"
             fillOpacity={chartType === 'area' ? 0.1 : 1}
             strokeWidth={2}
-            name="Daily Low"
+            name={t('temp.chart.series.low')}
             dot={{ fill: 'var(--color-accent)', r: 3 }}
           />
           {showHeatIndex && (
@@ -90,7 +93,7 @@ const TemperatureChart = ({ data, chartType = 'line', showHeatIndex = false }) =
               fillOpacity={chartType === 'area' ? 0.1 : 1}
               strokeWidth={2}
               strokeDasharray="5 5"
-              name="Heat Index"
+              name={t('temp.chart.series.heatIndex')}
               dot={{ fill: 'var(--color-warning)', r: 3 }}
             />
           )}

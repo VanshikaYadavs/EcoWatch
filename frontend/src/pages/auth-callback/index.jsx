@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { supabase, isSupabaseConfigured } from '../../utils/supabaseClient';
 import { getProfile } from '../../utils/profiles';
@@ -51,11 +52,13 @@ const AuthCallback = () => {
     finishAuth();
   }, [navigate]);
 
+  const { t } = useTranslation();
+
   return (
     <div className="min-h-screen flex items-center justify-center">
       <div className="text-center">
-        <p className="text-lg">Signing you in…</p>
-        <p className="text-sm text-muted-foreground mt-2">Please wait a moment.</p>
+        <p className="text-lg">{t('auth.callback.title')}</p>
+        <p className="text-sm text-muted-foreground mt-2">{t('auth.callback.subtitle')}</p>
       </div>
     </div>
   );

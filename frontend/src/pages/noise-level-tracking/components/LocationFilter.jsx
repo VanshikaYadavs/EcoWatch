@@ -1,8 +1,11 @@
 import React from 'react';
 import Icon from '../../../components/AppIcon';
 import Select from '../../../components/ui/Select';
+import { useTranslation } from 'react-i18next';
 
 const LocationFilter = ({ selectedLocation, onLocationChange, locations, customThresholds, onThresholdChange }) => {
+  const { t } = useTranslation();
+
   const locationOptions = locations?.map(loc => ({
     value: loc?.id,
     label: loc?.name,
@@ -14,13 +17,13 @@ const LocationFilter = ({ selectedLocation, onLocationChange, locations, customT
       <div className="flex items-center gap-3 mb-4 md:mb-6">
         <Icon name="MapPin" size={24} color="var(--color-primary)" />
         <h2 className="text-xl md:text-2xl lg:text-3xl font-semibold text-foreground">
-          Location Monitoring
+          {t('noise.location.title')}
         </h2>
       </div>
       <div className="space-y-4 md:space-y-6">
         <Select
-          label="Select Monitoring Location"
-          description="Choose a specific area to monitor noise levels"
+          label={t('noise.location.select')}
+          description={t('noise.location.select.desc')}
           options={locationOptions}
           value={selectedLocation}
           onChange={onLocationChange}
@@ -31,25 +34,25 @@ const LocationFilter = ({ selectedLocation, onLocationChange, locations, customT
         {selectedLocation && (
           <div className="bg-muted rounded-lg p-4 md:p-6">
             <h3 className="text-base md:text-lg font-medium text-foreground mb-3 md:mb-4">
-              Location Details
+              {t('noise.location.details')}
             </h3>
             <div className="space-y-3">
               {locations?.find(loc => loc?.id === selectedLocation) && (
                 <>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Zone Type:</span>
+                    <span className="text-sm text-muted-foreground">{t('noise.location.zoneType')}:</span>
                     <span className="text-sm font-medium text-foreground">
                       {locations?.find(loc => loc?.id === selectedLocation)?.type}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Active Sensors:</span>
+                    <span className="text-sm text-muted-foreground">{t('noise.location.activeSensors')}:</span>
                     <span className="text-sm font-medium text-foreground">
                       {locations?.find(loc => loc?.id === selectedLocation)?.sensors}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Population Density:</span>
+                    <span className="text-sm text-muted-foreground">{t('noise.location.populationDensity')}:</span>
                     <span className="text-sm font-medium text-foreground">
                       {locations?.find(loc => loc?.id === selectedLocation)?.density}
                     </span>
@@ -62,12 +65,12 @@ const LocationFilter = ({ selectedLocation, onLocationChange, locations, customT
 
         <div className="bg-primary/5 rounded-lg p-4 md:p-6 border border-primary/20">
           <h3 className="text-base md:text-lg font-medium text-foreground mb-3 md:mb-4">
-            Custom Threshold Settings
+            {t('noise.location.customThresholds')}
           </h3>
           <div className="space-y-3 md:space-y-4">
             <div>
-              <label className="text-sm text-muted-foreground mb-2 block">
-                Acceptable Level (dB)
+                <label className="text-sm text-muted-foreground mb-2 block">
+                {t('noise.threshold.acceptable')}
               </label>
               <input
                 type="number"
@@ -79,8 +82,8 @@ const LocationFilter = ({ selectedLocation, onLocationChange, locations, customT
               />
             </div>
             <div>
-              <label className="text-sm text-muted-foreground mb-2 block">
-                Concerning Level (dB)
+                <label className="text-sm text-muted-foreground mb-2 block">
+                {t('noise.threshold.concerning')}
               </label>
               <input
                 type="number"
@@ -92,8 +95,8 @@ const LocationFilter = ({ selectedLocation, onLocationChange, locations, customT
               />
             </div>
             <div>
-              <label className="text-sm text-muted-foreground mb-2 block">
-                Harmful Level (dB)
+                <label className="text-sm text-muted-foreground mb-2 block">
+                {t('noise.threshold.harmful')}
               </label>
               <input
                 type="number"

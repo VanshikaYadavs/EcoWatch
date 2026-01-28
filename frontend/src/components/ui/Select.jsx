@@ -1,5 +1,6 @@
 // components/ui/Select.jsx - Shadcn style Select
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useTranslation } from 'react-i18next';
 import { ChevronDown, Check, Search, X } from "lucide-react";
 import { cn } from "../../utils/cn";
 import Button from "./Button";
@@ -10,7 +11,7 @@ const Select = React.forwardRef(({
     options = [],
     value,
     defaultValue,
-    placeholder = "Select an option",
+    placeholder,
     multiple = false,
     disabled = false,
     required = false,
@@ -26,8 +27,22 @@ const Select = React.forwardRef(({
     onOpenChange,
     ...props
 }, ref) => {
+    const { t, i18n } = useTranslation();
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
+    const [, forceUpdate] = useState({});
+    
+    // Force re-render when language changes
+    useEffect(() => {
+      forceUpdate({});
+    }, [i18n.language, i18n]);
+    
+    // Use direct translations from i18n.js
+    const autoPlaceholder = t('select.placeholder');
+    const autoSearchPlaceholder = t('select.searchPlaceholder');
+    const autoNoOptionsFound = t('select.noOptionsFound');
+    const autoNoOptionsAvailable = t('select.noOptionsAvailable');
+    const resolvedPlaceholder = placeholder ?? autoPlaceholder;
 
     // Generate unique ID if not provided
     const selectId = id || `select-${Math.random()?.toString(36)?.substr(2, 9)}`;
@@ -42,17 +57,17 @@ const Select = React.forwardRef(({
 
     // Get selected option(s) for display
     const getSelectedDisplay = () => {
-        if (!value) return placeholder;
+        if (!value) return resolvedPlaceholder;
 
         if (multiple) {
             const selectedOptions = options?.filter(opt => value?.includes(opt?.value));
-            if (selectedOptions?.length === 0) return placeholder;
+            if (selectedOptions?.length === 0) return resolvedPlaceholder;
             if (selectedOptions?.length === 1) return selectedOptions?.[0]?.label;
-            return `${selectedOptions?.length} items selected`;
+            return t('select.itemsSelected', { count: selectedOptions?.length });
         }
 
         const selectedOption = options?.find(opt => opt?.value === value);
-        return selectedOption ? selectedOption?.label : placeholder;
+        return selectedOption ? selectedOption?.label : resolvedPlaceholder;
     };
 
     const handleToggle = () => {
@@ -163,7 +178,7 @@ const Select = React.forwardRef(({
                     multiple={multiple}
                     required={required}
                 >
-                    <option value="">Select...</option>
+                    <option value="">{resolvedPlaceholder}</option>
                     {options?.map(option => (
                         <option key={option?.value} value={option?.value}>
                             {option?.label}
@@ -179,7 +194,7 @@ const Select = React.forwardRef(({
                                 <div className="relative">
                                     <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                                     <Input
-                                        placeholder="Search options..."
+                                        placeholder={autoSearchPlaceholder}
                                         value={searchTerm}
                                         onChange={handleSearchChange}
                                         className="pl-8"
@@ -191,7 +206,7 @@ const Select = React.forwardRef(({
                         <div className="py-1 max-h-60 overflow-auto">
                             {filteredOptions?.length === 0 ? (
                                 <div className="px-3 py-2 text-sm text-muted-foreground">
-                                    {searchTerm ? 'No options found' : 'No options available'}
+                                    {searchTerm ? autoNoOptionsFound : autoNoOptionsAvailable}
                                 </div>
                             ) : (
                                 filteredOptions?.map((option) => (

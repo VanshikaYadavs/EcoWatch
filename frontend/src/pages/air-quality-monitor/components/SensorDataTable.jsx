@@ -1,25 +1,28 @@
 import React, { useState } from 'react';
 import Icon from '../../../components/AppIcon';
+import { useTranslation } from 'react-i18next';
 
 const SensorDataTable = ({ sensors, onLocationClick }) => {
   const [sortConfig, setSortConfig] = useState({ key: 'aqi', direction: 'desc' });
 
+  const { t } = useTranslation();
+
   const getAQICategory = (aqi) => {
-    if (aqi <= 50) return { label: 'Good', color: 'text-success bg-success/10' };
-    if (aqi <= 100) return { label: 'Moderate', color: 'text-warning bg-warning/10' };
-    if (aqi <= 150) return { label: 'Unhealthy for Sensitive', color: 'text-orange-600 bg-orange-600/10' };
-    if (aqi <= 200) return { label: 'Unhealthy', color: 'text-error bg-error/10' };
-    if (aqi <= 300) return { label: 'Very Unhealthy', color: 'text-purple-600 bg-purple-600/10' };
-    return { label: 'Hazardous', color: 'text-red-900 bg-red-900/10' };
+    if (aqi <= 50) return { key: 'good', color: 'text-success bg-success/10' };
+    if (aqi <= 100) return { key: 'moderate', color: 'text-warning bg-warning/10' };
+    if (aqi <= 150) return { key: 'unhealthySensitive', color: 'text-orange-600 bg-orange-600/10' };
+    if (aqi <= 200) return { key: 'unhealthy', color: 'text-error bg-error/10' };
+    if (aqi <= 300) return { key: 'veryUnhealthy', color: 'text-purple-600 bg-purple-600/10' };
+    return { key: 'hazardous', color: 'text-red-900 bg-red-900/10' };
   };
 
   const getHealthImpact = (aqi) => {
-    if (aqi <= 50) return "Air quality is satisfactory, and air pollution poses little or no risk.";
-    if (aqi <= 100) return "Air quality is acceptable. However, there may be a risk for some people.";
-    if (aqi <= 150) return "Members of sensitive groups may experience health effects.";
-    if (aqi <= 200) return "Some members of the general public may experience health effects.";
-    if (aqi <= 300) return "Health alert: The risk of health effects is increased for everyone.";
-    return "Health warning of emergency conditions: everyone is more likely to be affected.";
+    if (aqi <= 50) return t('aq.health.good');
+    if (aqi <= 100) return t('aq.health.acceptable');
+    if (aqi <= 150) return t('aq.health.sensitive');
+    if (aqi <= 200) return t('aq.health.general');
+    if (aqi <= 300) return t('aq.health.alert');
+    return t('aq.health.emergency');
   };
 
   const handleSort = (key) => {
@@ -38,54 +41,52 @@ const SensorDataTable = ({ sensors, onLocationClick }) => {
 
   return (
     <div className="bg-card rounded-lg border border-border overflow-hidden">
-      <div className="p-4 md:p-6 border-b border-border">
-        <h2 className="text-xl md:text-2xl font-semibold text-foreground">Sensor Locations</h2>
-        <p className="text-sm text-muted-foreground mt-1">
-          Current readings from {sensors?.length} monitoring stations
-        </p>
+          <div className="p-4 md:p-6 border-b border-border">
+        <h2 className="text-xl md:text-2xl font-semibold text-foreground">{t('sensors.title')}</h2>
+        <p className="text-sm text-muted-foreground mt-1">{t('sensors.subtitle', { count: sensors?.length })}</p>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead className="bg-muted">
             <tr>
-              <th className="px-4 py-3 text-left">
+                  <th className="px-4 py-3 text-left">
                 <button 
                   onClick={() => handleSort('location')}
                   className="flex items-center gap-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-smooth"
                 >
-                  Location
+                      {t('sensors.table.location')}
                   <Icon name="ArrowUpDown" size={14} />
                 </button>
               </th>
-              <th className="px-4 py-3 text-left">
+                  <th className="px-4 py-3 text-left">
                 <button 
                   onClick={() => handleSort('aqi')}
                   className="flex items-center gap-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-smooth"
                 >
-                  AQI
+                      {t('sensors.table.aqi')}
                   <Icon name="ArrowUpDown" size={14} />
                 </button>
               </th>
               <th className="px-4 py-3 text-left hidden md:table-cell">
-                <span className="text-xs font-medium text-muted-foreground">Category</span>
+                <span className="text-xs font-medium text-muted-foreground">{t('sensors.table.category')}</span>
               </th>
               <th className="px-4 py-3 text-left hidden lg:table-cell">
-                <span className="text-xs font-medium text-muted-foreground">PM2.5</span>
+                <span className="text-xs font-medium text-muted-foreground">{t('sensors.table.pm25')}</span>
               </th>
               <th className="px-4 py-3 text-left hidden lg:table-cell">
-                <span className="text-xs font-medium text-muted-foreground">PM10</span>
+                <span className="text-xs font-medium text-muted-foreground">{t('sensors.table.pm10')}</span>
               </th>
               <th className="px-4 py-3 text-left hidden xl:table-cell">
-                <span className="text-xs font-medium text-muted-foreground">Ozone</span>
+                <span className="text-xs font-medium text-muted-foreground">{t('sensors.table.ozone')}</span>
               </th>
               <th className="px-4 py-3 text-left hidden xl:table-cell">
-                <span className="text-xs font-medium text-muted-foreground">NO₂</span>
+                <span className="text-xs font-medium text-muted-foreground">{t('sensors.table.no2')}</span>
               </th>
               <th className="px-4 py-3 text-left">
-                <span className="text-xs font-medium text-muted-foreground">Updated</span>
+                <span className="text-xs font-medium text-muted-foreground">{t('sensors.table.updated')}</span>
               </th>
               <th className="px-4 py-3 text-left">
-                <span className="text-xs font-medium text-muted-foreground">Actions</span>
+                <span className="text-xs font-medium text-muted-foreground">{t('sensors.table.actions')}</span>
               </th>
             </tr>
           </thead>
@@ -110,20 +111,20 @@ const SensorDataTable = ({ sensors, onLocationClick }) => {
                   </td>
                   <td className="px-4 py-4 hidden md:table-cell">
                     <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${category?.color}`}>
-                      {category?.label}
+                      {t(`aq.legend.${category?.key}`)}
                     </span>
                   </td>
                   <td className="px-4 py-4 hidden lg:table-cell">
-                    <span className="text-sm data-text text-foreground">{sensor?.pm25} µg/m³</span>
+                    <span className="text-sm data-text text-foreground">{sensor?.pm25} {t('sensors.units.pm')}</span>
                   </td>
                   <td className="px-4 py-4 hidden lg:table-cell">
-                    <span className="text-sm data-text text-foreground">{sensor?.pm10} µg/m³</span>
+                    <span className="text-sm data-text text-foreground">{sensor?.pm10} {t('sensors.units.pm')}</span>
                   </td>
                   <td className="px-4 py-4 hidden xl:table-cell">
-                    <span className="text-sm data-text text-foreground">{sensor?.ozone} ppb</span>
+                    <span className="text-sm data-text text-foreground">{sensor?.ozone} {t('sensors.units.ppb')}</span>
                   </td>
                   <td className="px-4 py-4 hidden xl:table-cell">
-                    <span className="text-sm data-text text-foreground">{sensor?.no2} ppb</span>
+                    <span className="text-sm data-text text-foreground">{sensor?.no2} {t('sensors.units.ppb')}</span>
                   </td>
                   <td className="px-4 py-4">
                     <span className="text-xs text-muted-foreground whitespace-nowrap">{sensor?.lastUpdate}</span>
@@ -132,8 +133,8 @@ const SensorDataTable = ({ sensors, onLocationClick }) => {
                     <button
                       onClick={() => onLocationClick(sensor)}
                       className="touch-target p-2 rounded-lg hover:bg-muted transition-smooth focus-ring"
-                      aria-label={`View details for ${sensor?.location}`}
-                      title="View location details"
+                      aria-label={t('sensors.action.viewDetails', { location: sensor?.location })}
+                      title={t('sensors.action.viewDetails')}
                     >
                       <Icon name="ExternalLink" size={16} color="var(--color-primary)" />
                     </button>
@@ -146,14 +147,10 @@ const SensorDataTable = ({ sensors, onLocationClick }) => {
       </div>
       <div className="p-4 border-t border-border bg-muted/30">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <p className="text-sm text-muted-foreground">
-            Showing {sensors?.length} monitoring stations
-          </p>
+          <p className="text-sm text-muted-foreground">{t('sensors.showing', { count: sensors?.length })}</p>
           <div className="flex items-center gap-2">
             <Icon name="Info" size={16} color="var(--color-muted-foreground)" />
-            <p className="text-xs text-muted-foreground">
-              Data updates every minute via WebSocket connection
-            </p>
+            <p className="text-xs text-muted-foreground">{t('sensors.info.websocket')}</p>
           </div>
         </div>
       </div>

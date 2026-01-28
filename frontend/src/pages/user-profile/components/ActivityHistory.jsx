@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 
 const ActivityHistory = () => {
+  const { t } = useTranslation();
   const [filter, setFilter] = useState('all');
 
   const activities = [
@@ -57,7 +59,7 @@ const ActivityHistory = () => {
       icon: 'Bell',
       color: 'var(--color-error)',
       title: 'Acknowledged Critical Alert',
-      description: 'AQI exceeded threshold at MI Road, Jaipur',
+      description: t('locations.miRoad') ? `AQI exceeded threshold at ${t('locations.miRoad')}` : 'AQI exceeded threshold at MI Road, Jaipur',
       timestamp: '2026-01-05 09:15:22'
     },
     {

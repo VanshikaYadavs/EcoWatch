@@ -240,6 +240,7 @@ app.get('/api/ingest/now', requireAuth, async (req, res) => {
   }
 });
 
+<<<<<<< HEAD
 // Utility: default city list with approximate coordinates (expandable via env)
 function getDefaultCities() {
   // Base NCR set aligned with resolver preferences
@@ -583,6 +584,62 @@ process.on('unhandledRejection', (reason, promise) => {
 process.on('uncaughtException', (err) => {
   console.error(`[ERROR] Uncaught exception: ${err.message}`);
   process.exit(1);
+=======
+// Translation endpoint
+app.post('/api/translate', async (req, res) => {
+  try {
+    const { text, targetLang, sourceLang } = req.body;
+    
+    if (!text || !targetLang) {
+      return res.status(400).json({ error: 'Missing required fields: text and targetLang' });
+    }
+
+    const apiKey = process.env.VITE_GOOGLE_TRANSLATE_API_KEY;
+    if (!apiKey) {
+      console.error('API Key not found in environment');
+      return res.status(500).json({ error: 'Translation API key not configured' });
+    }
+
+    console.log(`Translating "${text}" to ${targetLang} with API key: ${apiKey.substring(0, 10)}...`);
+
+    const languageCodes = {
+      en: 'en',
+      hi: 'hi',
+      mr: 'mr',
+      gu: 'gu',
+      pa: 'pa'
+    };
+
+    const targetCode = languageCodes[targetLang] || targetLang;
+    const url = `https://translation.googleapis.com/language/translate/v2`;
+    
+    const params = {
+      key: apiKey,
+      q: text,
+      target: targetCode
+    };
+
+    // Only add source if it's provided and not 'auto'
+    if (sourceLang && sourceLang !== 'auto') {
+      params.source = languageCodes[sourceLang] || sourceLang;
+    }
+
+    console.log('Sending request to Google API:', { url, params: { ...params, key: 'HIDDEN' } });
+
+    const response = await axios.get(url, { params });
+
+    const translatedText = response.data.data.translations[0].translatedText;
+    console.log(`Translation successful: "${text}" → "${translatedText}"`);
+    res.json({ translatedText, originalText: text, targetLang });
+  } catch (error) {
+    console.error('Translation API error:', error.response?.data || error.message);
+    res.status(500).json({ error: 'Translation failed', details: error.message });
+  }
+});
+
+app.listen(PORT, () => {
+  console.log(`EcoWatch backend listening on http://localhost:${PORT}`);
+>>>>>>> translation
 });
 
 // -----------------------------

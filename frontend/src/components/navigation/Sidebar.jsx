@@ -1,46 +1,74 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import Icon from '../AppIcon';
 import { useAuth } from '../../auth/AuthProvider';
 import { useMyProfile } from '../../utils/profileHooks';
 
 const Sidebar = ({ isCollapsed = false, onToggleCollapse }) => {
+  const { t, i18n } = useTranslation();
   const location = useLocation();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [, forceUpdate] = useState({});
+
+  // Force re-render when language changes
+  useEffect(() => {
+    console.log('Sidebar - Language changed to:', i18n.language);
+    forceUpdate({});
+  }, [i18n.language, i18n]);
+
+  // Use direct translations from i18n.js
+  const brandName = t('brand.name');
+  const navDashboard = t('nav.dashboard');
+  const navDashboardDesc = t('nav.dashboard.desc');
+  const navAirQuality = t('nav.airQuality');
+  const navAirQualityDesc = t('nav.airQuality.desc');
+  const navNoise = t('nav.noiseMonitoring');
+  const navNoiseDesc = t('nav.noiseMonitoring.desc');
+  const navTemp = t('nav.temperature');
+  const navTempDesc = t('nav.temperature.desc');
+  const navReports = t('nav.reports');
+  const navReportsDesc = t('nav.reports.desc');
+  const navNotifications = t('nav.notifications');
+  const navNotificationsDesc = t('nav.notifications.desc');
+  const navProfile = t('nav.profile');
+  const navProfileDesc = t('nav.profile.desc');
+  const appSubtitle = t('app.subtitle');
 
   const navigationItems = [
     {
-      label: 'Dashboard',
+      label: navDashboard,
       path: '/environmental-dashboard',
       icon: 'LayoutDashboard',
-      description: 'Real-time environmental overview'
+      description: navDashboardDesc
     },
     {
-      label: 'Air Quality',
+      label: navAirQuality,
       path: '/air-quality-monitor',
       icon: 'Wind',
-      description: 'AQI monitoring and analysis'
+      description: navAirQualityDesc
     },
     {
-      label: 'Noise Monitoring',
+      label: navNoise,
       path: '/noise-level-tracking',
       icon: 'Volume2',
-      description: 'Acoustic pollution tracking'
+      description: navNoiseDesc
     },
     {
-      label: 'Temperature',
+      label: navTemp,
       path: '/temperature-analytics',
       icon: 'Thermometer',
-      description: 'Thermal analytics and trends'
+      description: navTempDesc
     },
     {
-      label: 'Reports',
+      label: navReports,
       path: '/historical-reports',
       icon: 'FileText',
-      description: 'Historical analysis and compliance',
+      description: navReportsDesc,
       roles: ['admin', 'official', 'analyst', 'researcher']
     },
     {
+<<<<<<< HEAD
       label: 'Alerts',
       path: '/alert-center',
       icon: 'Bell',
@@ -53,12 +81,19 @@ const Sidebar = ({ isCollapsed = false, onToggleCollapse }) => {
       icon: 'Bell',
       description: 'Alert preferences and settings'
       // Removed role restriction - all authenticated users can access
+=======
+      label: navNotifications,
+      path: '/notification-settings',
+      icon: 'Bell',
+      description: navNotificationsDesc,
+      roles: ['admin', 'official']
+>>>>>>> translation
     },
     {
-      label: 'Profile',
+      label: navProfile,
       path: '/user-profile',
       icon: 'User',
-      description: 'Account settings and preferences'
+      description: navProfileDesc
     }
   ];
 
@@ -100,7 +135,7 @@ const Sidebar = ({ isCollapsed = false, onToggleCollapse }) => {
             <div className="sidebar-logo">
               <Icon name="Waves" size={24} color="#FFFFFF" />
             </div>
-            <span className="sidebar-logo-text">EchoWatch</span>
+            <span className="sidebar-logo-text">{brandName}</span>
           </div>
         </div>
 
@@ -128,7 +163,7 @@ const Sidebar = ({ isCollapsed = false, onToggleCollapse }) => {
         {!isCollapsed && (
           <div className="absolute bottom-8 left-4 right-4 p-4 bg-muted rounded-lg">
             <p className="caption text-muted-foreground text-center">
-              Environmental Monitoring System
+              {appSubtitle}
             </p>
             <p className="caption text-muted-foreground text-center mt-1">
               v2.1.0 • 2026

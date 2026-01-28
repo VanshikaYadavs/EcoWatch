@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import Sidebar from '../components/navigation/Sidebar';
 import AlertBanner from '../components/navigation/AlertBanner';
 import DataRefreshIndicator from '../components/navigation/DataRefreshIndicator';
@@ -8,8 +9,10 @@ import Chatbot from '../components/Chatbot';
 import { useAuth } from '../auth/AuthProvider';
 import { useMyProfile } from '../utils/profileHooks';
 import Button from '../components/ui/Button';
+import AutoText from '../components/ui/AutoText';
 
 const MainLayout = () => {
+  const { t } = useTranslation();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [alerts, setAlerts] = useState([]);
   const [lastUpdate, setLastUpdate] = useState(new Date()?.toISOString());
@@ -64,7 +67,7 @@ const MainLayout = () => {
           <div className="flex items-center justify-between h-16 px-6">
             <div className="flex items-center gap-4">
               <h1 className="text-xl font-semibold text-foreground hidden md:block">
-                Environmental Monitoring
+                <AutoText i18nKey="header.environmentalMonitoring" defaultText="Environmental Monitoring" />
               </h1>
             </div>
 
@@ -85,7 +88,7 @@ const MainLayout = () => {
                 iconPosition="left"
                 onClick={handleLogout}
               >
-                Logout
+                <AutoText i18nKey="header.logout" defaultText="Logout" />
               </Button>
             </div>
           </div>

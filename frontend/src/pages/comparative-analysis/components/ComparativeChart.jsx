@@ -1,55 +1,69 @@
 import React, { useMemo } from 'react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import Icon from '../../../components/AppIcon';
-import { useLatestCityReadings, useComparativeSeries } from '../../../utils/dataHooks';
+import { useTranslation } from 'react-i18next';
 
-const ComparativeChart = ({ selectedCities, selectedParameters, timeRange, chartType, refreshToken = 0 }) => {
-  const { data: latestCityReadings } = useLatestCityReadings({ fallbackWindow: 200 });
+const ComparativeChart = ({ selectedCities, selectedParameters, timeRange, chartType }) => {
+  const { t } = useTranslation();
+  const cityColors = {
+    jaipur: '#2D7D32',
+    jodhpur: '#FF6F00',
+    udaipur: '#1976D2',
+    kota: '#7B1FA2',
+    ajmer: '#C2185B',
+    bikaner: '#0097A7',
+    alwar: '#689F38',
+    bharatpur: '#F57C00',
+    sikar: '#5D4037',
+    pali: '#455A64',
+    tonk: '#00897B',
+    bhilwara: '#E64A19'
+  };
 
-  // Map normalized id -> actual location name from live data
-  const idToName = useMemo(() => {
-    const map = {};
-    for (const r of latestCityReadings || []) {
-      const id = String(r.location || '').toLowerCase().replace(/\s+/g, '-');
-      map[id] = r.location;
+  const cityName = (id) => t(`cities.${id}`, { defaultValue: id });
+
+  const generateMockData = useMemo(() => {
+    const dataPoints = timeRange === '24h' ? 24 : timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : 90;
+    const data = [];
+
+    for (let i = 0; i < dataPoints; i++) {
+      const point = { time: i };
+      
+      selectedCities?.forEach(cityId => {
+        selectedParameters?.forEach(param => {
+          let baseValue;
+          switch(param) {
+            case 'aqi':
+              baseValue = Math.random() * 100 + 50;
+              break;
+            case 'noise':
+              baseValue = Math.random() * 30 + 50;
+              break;
+            case 'temperature':
+              baseValue = Math.random() * 15 + 20;
+              break;
+            case 'humidity':
+              baseValue = Math.random() * 40 + 30;
+              break;
+            case 'pm25':
+              baseValue = Math.random() * 50 + 20;
+              break;
+            case 'pm10':
+              baseValue = Math.random() * 80 + 40;
+              break;
+            default:
+              baseValue = Math.random() * 100;
+          }
+          point[`${cityId}_${param}`] = Math.round(baseValue * 10) / 10;
+        });
+      });
+      
+      data?.push(point);
     }
-    return map;
-  }, [latestCityReadings]);
+    return data;
+  }, [selectedCities, selectedParameters, timeRange]);
 
-  const chosenLocations = useMemo(() => {
-    const names = (selectedCities || []).map(id => idToName[id]).filter(Boolean);
-    if (names.length) return names;
-    // Fallback to top 3 cities from latest readings
-    return (latestCityReadings || []).slice(0, 3).map(r => r.location);
-  }, [selectedCities, idToName, latestCityReadings]);
-
-  const { data: liveData, loading } = useComparativeSeries({ locations: chosenLocations, parameters: selectedParameters, timeRange, refreshToken });
-
-  // Generate color palette for dynamic cities
-  const palette = ['#2D7D32', '#FF6F00', '#1976D2', '#7B1FA2', '#C2185B', '#0097A7', '#689F38', '#F57C00', '#5D4037', '#455A64', '#00897B', '#E64A19'];
-  const cityColors = useMemo(() => {
-    const map = {};
-    chosenLocations.forEach((name, idx) => {
-      const id = String(name).toLowerCase().replace(/\s+/g, '-');
-      map[id] = palette[idx % palette.length];
-    });
-    return map;
-  }, [chosenLocations]);
-
-  const cityNames = useMemo(() => {
-    const map = {};
-    chosenLocations.forEach((name) => {
-      const id = String(name).toLowerCase().replace(/\s+/g, '-');
-      map[id] = name;
-    });
-    return map;
-  }, [chosenLocations]);
-
-  const chartData = useMemo(() => {
-    if (liveData?.length) return liveData;
-    // Minimal fallback: empty dataset
-    return [];
-  }, [liveData]);
+  const chosenLocations = selectedCities || [];
 
   const getTimeLabel = (index) => {
     if (timeRange === '24h') return `${index}:00`;
@@ -75,7 +89,7 @@ const ComparativeChart = ({ selectedCities, selectedParameters, timeRange, chart
                     style={{ backgroundColor: entry?.color }}
                   />
                   <span className="text-xs text-foreground">
-                    {cityNames?.[cityId]} - {param?.toUpperCase()}
+                    {cityName(cityId)} - {param?.toUpperCase()}
                   </span>
                 </div>
                 <span className="text-xs font-data font-medium text-foreground">
@@ -99,10 +113,10 @@ const ComparativeChart = ({ selectedCities, selectedParameters, timeRange, chart
           </div>
           <div>
             <h3 className="text-base md:text-lg font-semibold text-foreground mb-2">
-              No Data to Display
+              {t('comp.chart.emptyTitle')}
             </h3>
             <p className="text-xs md:text-sm text-muted-foreground max-w-md">
-              Select at least one city and one parameter to view comparative analysis
+              {t('comp.chart.emptyDesc')}
             </p>
           </div>
         </div>
@@ -119,13 +133,13 @@ const ComparativeChart = ({ selectedCities, selectedParameters, timeRange, chart
         <div className="flex items-center gap-2">
           <Icon name="TrendingUp" size={20} color="var(--color-primary)" />
           <h3 className="text-base md:text-lg font-semibold text-foreground">
-            Comparative Analysis
+            {t('comp.chart.title')}
           </h3>
         </div>
         <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10">
           <Icon name="Activity" size={14} color="var(--color-primary)" />
           <span className="text-xs font-caption text-primary">
-            Live Data
+            {t('comp.chart.live')}
           </span>
         </div>
       </div>
@@ -148,7 +162,7 @@ const ComparativeChart = ({ selectedCities, selectedParameters, timeRange, chart
               wrapperStyle={{ fontSize: '12px' }}
               formatter={(value) => {
                 const [cityId, param] = value?.split('_');
-                return `${cityNames?.[cityId]} - ${param?.toUpperCase()}`;
+                return `${cityName(cityId)} - ${param?.toUpperCase()}`;
               }}
             />
             {chosenLocations?.map(name => {
@@ -182,7 +196,7 @@ const ComparativeChart = ({ selectedCities, selectedParameters, timeRange, chart
               style={{ backgroundColor: cityColors?.[cityId] }}
             />
             <span className="text-xs font-medium text-foreground">
-              {cityNames?.[cityId]}
+              {cityName(cityId)}
             </span>
           </div>
         );

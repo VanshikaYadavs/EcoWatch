@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import Select from '../../../components/ui/Select';
 import Button from '../../../components/ui/Button';
 import Icon from '../../../components/AppIcon';
@@ -13,28 +14,30 @@ const FilterControls = ({
   onRefresh,
   onExport
 }) => {
+  const { t } = useTranslation();
+
   const timeRangeOptions = [
-    { value: 'realtime', label: 'Real-time' },
-    { value: '1h', label: 'Last Hour' },
-    { value: '6h', label: 'Last 6 Hours' },
-    { value: '24h', label: 'Last 24 Hours' },
-    { value: '7d', label: 'Last 7 Days' }
+    { value: 'realtime', label: t('env.filters.timeRange.realtime') },
+    { value: '1h', label: t('env.filters.timeRange.1h') },
+    { value: '6h', label: t('env.filters.timeRange.6h') },
+    { value: '24h', label: t('env.filters.timeRange.24h') },
+    { value: '7d', label: t('env.filters.timeRange.7d') }
   ];
 
   const locationOptions = [
-    { value: 'all', label: 'All Locations' },
-    { value: 'downtown', label: 'MI Road, Jaipur' },
-    { value: 'industrial', label: 'Industrial Area, Tonk' },
-    { value: 'residential', label: 'Lake Pichola, Udaipur' },
-    { value: 'commercial', label: 'Pushkar Road, Ajmer' }
+    { value: 'all', label: t('env.filters.location.all') },
+    { value: 'downtown', label: t('env.filters.location.downtown') },
+    { value: 'industrial', label: t('env.filters.location.industrial') },
+    { value: 'residential', label: t('env.filters.location.residential') },
+    { value: 'commercial', label: t('env.filters.location.commercial') }
   ];
 
   const parameterOptions = [
-    { value: 'all', label: 'All Parameters' },
-    { value: 'aqi', label: 'Air Quality Index' },
-    { value: 'noise', label: 'Noise Levels' },
-    { value: 'temperature', label: 'Temperature' },
-    { value: 'humidity', label: 'Humidity' }
+    { value: 'all', label: t('env.filters.parameter.all') },
+    { value: 'aqi', label: t('env.filters.parameter.aqi') },
+    { value: 'noise', label: t('env.filters.parameter.noise') },
+    { value: 'temperature', label: t('env.filters.parameter.temperature') },
+    { value: 'humidity', label: t('env.filters.parameter.humidity') }
   ];
 
   return (
@@ -42,7 +45,7 @@ const FilterControls = ({
       <div className="flex flex-col lg:flex-row items-start lg:items-center gap-4">
         <div className="flex items-center gap-2 flex-shrink-0">
           <Icon name="Filter" size={20} color="var(--color-primary)" />
-          <h3 className="text-sm md:text-base font-medium">Filters</h3>
+          <h3 className="text-sm md:text-base font-medium">{t('env.filters.title')}</h3>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 flex-1 w-full lg:w-auto">
@@ -76,7 +79,7 @@ const FilterControls = ({
             onClick={onRefresh}
             className="flex-1 lg:flex-none"
           >
-            Refresh
+            {t('buttons.refresh')}
           </Button>
 
           <Button
@@ -86,7 +89,7 @@ const FilterControls = ({
             onClick={onExport}
             className="flex-1 lg:flex-none"
           >
-            Export
+            {t('buttons.export')}
           </Button>
         </div>
       </div>

@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import RealtimeNoiseMeter from './components/RealtimeNoiseMeter';
 import NoiseTimelineChart from './components/NoiseTimelineChart';
 import LocationFilter from './components/LocationFilter';
@@ -7,18 +8,42 @@ import AlertConfiguration from './components/AlertConfiguration';
 import ComparativeAnalysis from './components/ComparativeAnalysis';
 import ExportReports from './components/ExportReports';
 import { RAJASTHAN_PLACES } from '../../utils/rajasthanLocations';
-import { useEnvironmentReadings, useLatestCityReadings } from '../../utils/dataHooks';
-import { getSessionAllowlist } from '../../utils/sessionCities';
+import { useEnvironmentReadings } from '../../utils/dataHooks';
+import { translateText, getCachedTranslation } from '../../utils/translationService';
+import AutoText from '../../components/ui/AutoText';
 
 const NoiseLevelTracking = () => {
+  const { t, i18n } = useTranslation();
   
-
   const [selectedLocation, setSelectedLocation] = useState('all');
+  const [forceUpdate, setForceUpdate] = useState(0);
   const { data: readings, loading } = useEnvironmentReadings({ location: selectedLocation, limit: 100, realtime: true });
-  const [allowlist, setAllowlist] = useState([]);
-  const { data: latestCityReadings } = useLatestCityReadings({ fallbackWindow: 200, allowLocations: allowlist });
-  React.useEffect(() => { (async () => { try { setAllowlist(await getSessionAllowlist()); } catch {} })(); }, []);
   const { data: allRecent } = useEnvironmentReadings({ location: null, limit: 200, realtime: false });
+
+  // Helper function to get translated location name
+  const getLocationLabel = (rawLocation) => {
+    if (!rawLocation) return rawLocation;
+    
+    // Check if there's a cached translation
+    if (i18n.language !== 'en') {
+      const cached = getCachedTranslation(rawLocation, i18n.language);
+      if (cached) {
+        return cached;
+      }
+      
+      // Trigger API translation in background
+      console.log('Translating location:', rawLocation);
+      translateText(rawLocation, i18n.language)
+        .then(translated => {
+          console.log('Got translation:', rawLocation, '->', translated);
+          // Force re-render
+          setForceUpdate(prev => prev + 1);
+        })
+        .catch(err => console.error('Failed to translate location:', err));
+    }
+    
+    return rawLocation;
+  };
 
   const currentNoiseData = useMemo(() => {
     const levels = (readings || []).map(r => r?.noise_level).filter(v => typeof v === 'number');
@@ -37,17 +62,14 @@ const NoiseLevelTracking = () => {
   }, [readings]);
 
   const locations = useMemo(() => {
-    if (latestCityReadings?.length) {
-      return latestCityReadings.map(r => ({ id: r.location, name: r.location, type: 'Unknown', sensors: 1, density: 'Unknown' }));
-    }
     const unique = new Set((readings || []).map(r => r.location).filter(Boolean));
-    const base = [...unique].map(loc => ({ id: loc, name: loc, type: 'Unknown', sensors: 0, density: 'Unknown' }));
+    const base = [...unique].map(loc => ({ id: loc, name: getLocationLabel(loc), type: t('common.unknown'), sensors: 0, density: t('common.unknown') }));
     if (base.length) return base;
     return [
-      { id: RAJASTHAN_PLACES?.[0]?.value || 'Jaipur', name: RAJASTHAN_PLACES?.[0]?.label || 'MI Road, Jaipur', type: 'Commercial', sensors: 12, density: 'High' },
-      { id: RAJASTHAN_PLACES?.[1]?.value || 'Jodhpur', name: RAJASTHAN_PLACES?.[1]?.label || 'Clock Tower, Jodhpur', type: 'Educational', sensors: 8, density: 'Medium' },
+      { id: RAJASTHAN_PLACES?.[0]?.value || 'Jaipur', name: RAJASTHAN_PLACES?.[0]?.label || t('locations.miRoad'), type: t('zones.commercial'), sensors: 12, density: 'High' },
+      { id: RAJASTHAN_PLACES?.[1]?.value || 'Jodhpur', name: RAJASTHAN_PLACES?.[1]?.label || t('locations.clockTower'), type: t('zones.educational'), sensors: 8, density: 'Medium' },
     ];
-  }, [latestCityReadings, readings]);
+  }, [readings, t, forceUpdate]);
 
   
   const [customThresholds, setCustomThresholds] = useState({
@@ -81,6 +103,7 @@ const NoiseLevelTracking = () => {
     standardPriority: false
   });
 
+<<<<<<< HEAD
   const comparativeZones = useMemo(() => {
     const zones = (latestCityReadings || []).slice(0, 5).map((r, i) => {
       const locRows = (allRecent || []).filter(x => x.location === r.location && typeof x.noise_level === 'number');
@@ -95,6 +118,15 @@ const NoiseLevelTracking = () => {
     if (zones.length) return zones;
     return [];
   }, [latestCityReadings, allRecent]);
+=======
+  const [comparativeZones, setComparativeZones] = useState([
+    { id: 1, name: getLocationLabel(RAJASTHAN_PLACES?.[0]?.label || t('locations.miRoad')), type: t('zones.commercial'), sensors: 12, currentLevel: 68, peakLevel: 82, averageLevel: 61, trend: 8, compliant: false },
+    { id: 2, name: getLocationLabel(RAJASTHAN_PLACES?.[1]?.label || t('locations.clockTower')), type: t('zones.educational'), sensors: 8, currentLevel: 52, peakLevel: 58, averageLevel: 48, trend: -3, compliant: true },
+    { id: 3, name: getLocationLabel(RAJASTHAN_PLACES?.[2]?.label || t('locations.lakePichola')), type: t('zones.healthcare'), sensors: 15, currentLevel: 48, peakLevel: 55, averageLevel: 45, trend: 2, compliant: true },
+    { id: 4, name: getLocationLabel(RAJASTHAN_PLACES?.[3]?.label || t('locations.pushkarRoad')), type: t('zones.residential'), sensors: 10, currentLevel: 58, peakLevel: 65, averageLevel: 54, trend: 5, compliant: false },
+    { id: 5, name: getLocationLabel(RAJASTHAN_PLACES?.[4]?.label || t('locations.industrialTonk')), type: t('zones.industrial'), sensors: 6, currentLevel: 75, peakLevel: 88, averageLevel: 72, trend: 12, compliant: false }
+  ]);
+>>>>>>> translation
 
   const [exportSettings, setExportSettings] = useState({
     reportType: 'compliance',
@@ -142,8 +174,8 @@ const NoiseLevelTracking = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl md:text-2xl font-semibold text-foreground">Noise Level Tracking</h1>
-        <p className="text-sm text-muted-foreground">Acoustic monitoring and compliance insights</p>
+        <h1 className="text-xl md:text-2xl font-semibold text-foreground"><AutoText i18nKey="noise.title" defaultText="Noise Level Tracking" /></h1>
+        <p className="text-sm text-muted-foreground"><AutoText i18nKey="noise.subtitle" defaultText="Real-time acoustic monitoring and analysis" /></p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8">

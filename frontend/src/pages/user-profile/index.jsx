@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
+import AutoText from '../../components/ui/AutoText';
 import ProfileDetails from './components/ProfileDetails';
 import RoleManagement from './components/RoleManagement';
 import AccountSecurity from './components/AccountSecurity';
@@ -13,6 +15,7 @@ import { useMyProfile } from '../../utils/profileHooks';
 import { upsertProfile } from '../../utils/profiles';
 
 const UserProfile = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { profile, loading: profileLoading } = useMyProfile(user);
@@ -61,12 +64,12 @@ const UserProfile = () => {
   }, [profile?.full_name, profile?.organization, profile?.role, user?.email, user?.user_metadata?.full_name, user?.user_metadata?.organization, user?.user_metadata?.role, user?.user_metadata?.phone]);
 
   const tabs = [
-    { id: 'details', label: 'Profile Details', icon: 'User' },
-    { id: 'role', label: 'Role & Permissions', icon: 'Shield' },
-    { id: 'security', label: 'Account Security', icon: 'Lock' },
-    { id: 'notifications', label: 'Notification Preferences', icon: 'Bell' },
-    { id: 'activity', label: 'Activity History', icon: 'History' },
-    { id: 'statistics', label: 'Account Statistics', icon: 'BarChart3' }
+    { id: 'details', label: t('profile.tabs.details'), icon: 'User' },
+    { id: 'role', label: t('profile.tabs.role'), icon: 'Shield' },
+    { id: 'security', label: t('profile.tabs.security'), icon: 'Lock' },
+    { id: 'notifications', label: t('profile.tabs.notifications'), icon: 'Bell' },
+    { id: 'activity', label: t('profile.tabs.activity'), icon: 'History' },
+    { id: 'statistics', label: t('profile.tabs.statistics'), icon: 'BarChart3' }
   ];
 
   const handleSaveProfile = async () => {
@@ -109,10 +112,10 @@ const UserProfile = () => {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground">
-            User Profile
+            <AutoText i18nKey="profile.title" defaultText="User Profile" />
           </h1>
           <p className="text-sm md:text-base text-muted-foreground mt-2">
-            Manage your personal information, role settings, and account preferences
+            <AutoText i18nKey="profile.subtitle" defaultText="Manage your personal information, role settings, and account preferences" />
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -122,7 +125,7 @@ const UserProfile = () => {
             iconPosition="left"
             onClick={handleExportData}
           >
-            Export Data
+            {t('profile.buttons.export')}
           </Button>
           <Button
             variant="default"
@@ -130,7 +133,7 @@ const UserProfile = () => {
             iconPosition="left"
             onClick={handleSaveProfile}
           >
-            Save Changes
+            {t('profile.buttons.save')}
           </Button>
         </div>
       </div>
@@ -196,9 +199,9 @@ const UserProfile = () => {
       <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 flex items-start gap-3">
         <Icon name="Info" size={20} color="var(--color-primary)" className="mt-0.5" />
         <div>
-          <h3 className="font-semibold text-foreground mb-1">Account Management</h3>
+          <h3 className="font-semibold text-foreground mb-1">{t('profile.account.title')}</h3>
           <p className="text-sm text-muted-foreground">
-            Your profile information is used across the environmental monitoring system. Changes to your role or permissions require administrator approval.
+            {t('profile.account.description')}
           </p>
         </div>
       </div>
@@ -207,8 +210,8 @@ const UserProfile = () => {
         <div className="flex items-start gap-3">
           <Icon name="LogOut" size={20} color="var(--color-error)" className="mt-0.5" />
           <div>
-            <h3 className="font-semibold text-foreground">Logout</h3>
-            <p className="text-sm text-muted-foreground">Sign out of your account on this device.</p>
+            <h3 className="font-semibold text-foreground">{t('profile.logout.title')}</h3>
+              <p className="text-sm text-muted-foreground">{t('profile.logout.subtitle')}</p>
           </div>
         </div>
         <Button
@@ -217,7 +220,7 @@ const UserProfile = () => {
           iconPosition="left"
           onClick={handleLogout}
         >
-          Logout
+          {t('profile.logout.button')}
         </Button>
       </div>
     </div>

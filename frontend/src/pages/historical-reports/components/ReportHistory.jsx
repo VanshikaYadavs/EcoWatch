@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 import Select from '../../../components/ui/Select';
+import { useTranslation } from 'react-i18next';
 
 const ReportHistory = ({ onDownloadReport, onShareReport }) => {
   const [filterType, setFilterType] = useState('all');
   const [sortBy, setSortBy] = useState('date');
+  const { t } = useTranslation();
 
   const reportHistory = [
     {
@@ -83,20 +85,20 @@ const ReportHistory = ({ onDownloadReport, onShareReport }) => {
   ];
 
   const typeOptions = [
-    { value: 'all', label: 'All Types' },
-    { value: 'compliance', label: 'Compliance' },
-    { value: 'annual', label: 'Annual' },
-    { value: 'incident', label: 'Incident' },
-    { value: 'trend', label: 'Trend' },
-    { value: 'public', label: 'Public' },
-    { value: 'custom', label: 'Custom' }
+    { value: 'all', label: t('reports.type.all') },
+    { value: 'compliance', label: t('reports.type.compliance') },
+    { value: 'annual', label: t('reports.type.annual') },
+    { value: 'incident', label: t('reports.type.incident') },
+    { value: 'trend', label: t('reports.type.trend') },
+    { value: 'public', label: t('reports.type.public') },
+    { value: 'custom', label: t('reports.type.custom') }
   ];
 
   const sortOptions = [
-    { value: 'date', label: 'Date (Newest First)' },
-    { value: 'name', label: 'Name (A-Z)' },
-    { value: 'downloads', label: 'Most Downloaded' },
-    { value: 'size', label: 'File Size' }
+    { value: 'date', label: t('reports.sort.date') },
+    { value: 'name', label: t('reports.sort.name') },
+    { value: 'downloads', label: t('reports.sort.downloads') },
+    { value: 'size', label: t('reports.sort.size') }
   ];
 
   const getTypeIcon = (type) => {
@@ -128,14 +130,14 @@ const ReportHistory = ({ onDownloadReport, onShareReport }) => {
       return (
         <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full bg-warning/10 text-warning">
           <Icon name="Loader2" size={12} className="animate-spin" />
-          Processing
+          {t('reports.status.processing')}
         </span>
       );
     }
     return (
       <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full bg-success/10 text-success">
         <Icon name="CheckCircle2" size={12} />
-        Completed
+        {t('reports.status.completed')}
       </span>
     );
   };
@@ -148,8 +150,8 @@ const ReportHistory = ({ onDownloadReport, onShareReport }) => {
             <Icon name="History" size={20} color="var(--color-primary)" />
           </div>
           <div>
-            <h2 className="text-xl md:text-2xl font-semibold text-foreground">Report History</h2>
-            <p className="text-sm text-muted-foreground mt-1">Previously generated reports</p>
+            <h2 className="text-xl md:text-2xl font-semibold text-foreground">{t('reports.history.title')}</h2>
+            <p className="text-sm text-muted-foreground mt-1">{t('reports.history.subtitle')}</p>
           </div>
         </div>
 
@@ -158,14 +160,14 @@ const ReportHistory = ({ onDownloadReport, onShareReport }) => {
             options={typeOptions}
             value={filterType}
             onChange={setFilterType}
-            placeholder="Filter by type"
+            placeholder={t('reports.filter.placeholder')}
             className="sm:w-48"
           />
           <Select
             options={sortOptions}
             value={sortBy}
             onChange={setSortBy}
-            placeholder="Sort by"
+            placeholder={t('reports.sort.placeholder')}
             className="sm:w-48"
           />
         </div>
@@ -199,7 +201,7 @@ const ReportHistory = ({ onDownloadReport, onShareReport }) => {
                     </span>
                     <span className="text-sm text-muted-foreground flex items-center gap-1">
                       <Icon name="Download" size={14} />
-                      {report?.downloads} downloads
+                      {t('reports.downloads', { count: report?.downloads })}
                     </span>
                   </div>
                   <div className="mt-2">
@@ -217,7 +219,7 @@ const ReportHistory = ({ onDownloadReport, onShareReport }) => {
                   onClick={() => onDownloadReport(report?.id)}
                   disabled={report?.status === 'processing'}
                 >
-                  Download
+                  {t('reports.button.download')}
                 </Button>
                 <Button
                   variant="outline"
@@ -227,7 +229,7 @@ const ReportHistory = ({ onDownloadReport, onShareReport }) => {
                   onClick={() => onShareReport(report?.id)}
                   disabled={report?.status === 'processing'}
                 >
-                  Share
+                  {t('reports.button.share')}
                 </Button>
                 <Button
                   variant="ghost"

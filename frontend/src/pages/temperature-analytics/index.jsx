@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Helmet } from 'react-helmet';
 import TemperatureChart from './components/TemperatureChart';
 import TemperatureStatCard from './components/TemperatureStatCard';
@@ -11,28 +12,36 @@ import ComparativeAnalysis from './components/ComparativeAnalysis';
 import Select from '../../components/ui/Select';
 import Button from '../../components/ui/Button';
 import Icon from '../../components/AppIcon';
-import { useEnvironmentReadings, useLatestCityReadings } from '../../utils/dataHooks';
-import { getSessionAllowlist } from '../../utils/sessionCities';
+import AutoText from '../../components/ui/AutoText';
+import { useEnvironmentReadings } from '../../utils/dataHooks';
 
 const TemperatureAnalytics = () => {
+  const { t, i18n } = useTranslation();
   const [selectedLocation, setSelectedLocation] = useState('all');
   const [chartType, setChartType] = useState('line');
   const [showHeatIndex, setShowHeatIndex] = useState(true);
   const [timePeriod, setTimePeriod] = useState('24h');
+  const [, forceUpdate] = useState({});
   const { data: readings, loading } = useEnvironmentReadings({ location: selectedLocation, limit: 100, realtime: true });
-  const [allowlist, setAllowlist] = useState([]);
-  const { data: latestCityReadings } = useLatestCityReadings({ fallbackWindow: 200, allowLocations: allowlist });
-  React.useEffect(() => { (async () => { try { setAllowlist(await getSessionAllowlist()); } catch {} })(); }, []);
   const { data: allRecent } = useEnvironmentReadings({ location: null, limit: 200, realtime: false });
   
+  // Debug: Log current language and trigger re-render on language change
+  useEffect(() => {
+    console.log('TemperatureAnalytics - Current language:', i18n.language);
+    console.log('TemperatureAnalytics - Sample translation (temp.title):', t('temp.title'));
+    forceUpdate({});
+  }, [i18n.language, t, i18n]);
 
-  const locations = useMemo(() => {
-    if (latestCityReadings?.length) {
-      return latestCityReadings.map(r => ({ id: r.location, name: r.location }));
+  const locations = [
+    {
+      id: 'jaipur',
+      name: t('temp.locations.jaipur')
+    },
+    {
+      id: 'tonk',
+      name: t('temp.locations.tonk')
     }
-    const unique = new Set((readings || []).map(r => r.location).filter(Boolean));
-    return [...unique].map(loc => ({ id: loc, name: loc }));
-  }, [latestCityReadings, readings]);
+  ];
 
   const temperatureData = useMemo(() => {
     const seq = (readings || []).slice().reverse();
@@ -50,9 +59,16 @@ const TemperatureAnalytics = () => {
     }));
   }, [readings]);
 
-  const heatMapZones = useMemo(() => {
-    return (latestCityReadings || []).map((r, i) => ({ id: i + 1, name: r.location, temperature: r.temperature ?? null, lat: r.latitude ?? 0, lng: r.longitude ?? 0 }));
-  }, [latestCityReadings]);
+  const heatMapZones = [
+    { id: 1, name: t('locations.miRoad'), temperature: 34, lat: 40.7128, lng: -74.0060 },
+    { id: 2, name: t('locations.industrialTonk'), temperature: 36, lat: 40.7589, lng: -73.9851 },
+    { id: 3, name: t('locations.lakePichola'), temperature: 28, lat: 40.7489, lng: -73.9680 },
+    { id: 4, name: t('locations.pushkarRoad'), temperature: 25, lat: 40.7829, lng: -73.9654 },
+    { id: 5, name: t('locations.clockTower'), temperature: 26, lat: 40.7061, lng: -74.0087 },
+    { id: 6, name: t('locations.bikanerIndustrial'), temperature: 32, lat: 40.6413, lng: -73.7781 },
+    { id: 7, name: t('temp.locations.jaipur'), temperature: 29, lat: 40.8448, lng: -73.8648 },
+    { id: 8, name: t('temp.locations.tonk'), temperature: 24, lat: 40.6892, lng: -74.0445 }
+  ];
 
   const statisticalData = {
     statistics: {
@@ -81,6 +97,7 @@ const TemperatureAnalytics = () => {
     }
   };
 
+<<<<<<< HEAD
   const comparativeLocations = useMemo(() => {
     const items = (latestCityReadings || []).slice(0, 5).map((r, i) => {
       const locRows = (allRecent || []).filter(x => x.location === r.location && typeof x.temperature === 'number');
@@ -93,18 +110,27 @@ const TemperatureAnalytics = () => {
     });
     return items;
   }, [latestCityReadings, allRecent]);
+=======
+  const comparativeLocations = [
+    { id: 1, name: t('temp.locations.jaipur'), current: 34, difference: 0, average24h: 28.5 },
+    { id: 2, name: t('temp.locations.tonk'), current: 36, difference: 2, average24h: 30.2 },
+    { id: 3, name: t('cities.udaipur'), current: 28, difference: -6, average24h: 25.8 },
+    { id: 4, name: t('cities.ajmer'), current: 25, difference: -9, average24h: 23.1 },
+    { id: 5, name: t('cities.jodhpur'), current: 26, difference: -8, average24h: 24.5 }
+  ];
+>>>>>>> translation
 
   const timePeriodOptions = [
-    { value: '24h', label: 'Last 24 Hours' },
-    { value: '7d', label: 'Last 7 Days' },
-    { value: '30d', label: 'Last 30 Days' },
-    { value: '90d', label: 'Last 90 Days' },
-    { value: '1y', label: 'Last Year' }
+    { value: '24h', label: t('temp.time.24h') },
+    { value: '7d', label: t('temp.time.7d') },
+    { value: '30d', label: t('temp.time.30d') },
+    { value: '90d', label: t('temp.time.90d') },
+    { value: '1y', label: t('temp.time.1y') }
   ];
 
   const chartTypeOptions = [
-    { value: 'line', label: 'Line Chart' },
-    { value: 'area', label: 'Area Chart' }
+    { value: 'line', label: t('temp.chart.line') },
+    { value: 'area', label: t('temp.chart.area') }
   ];
 
   const handleRefreshData = async () => {
@@ -138,17 +164,17 @@ const TemperatureAnalytics = () => {
   return (
     <>
       <Helmet>
-        <title>Temperature Analytics - EchoWatch</title>
-        <meta name="description" content="Comprehensive thermal monitoring and climate trend analysis for environmental planning and public safety management" />
+        <title>{`${t('temp.title')} - EcoWatch`}</title>
+        <meta name="description" content={t('temp.subtitle')} />
       </Helmet>
 
       <div className="space-y-6">
         <div>
           <div className="flex items-center gap-3 mb-1">
             <Icon name="Thermometer" size={22} color="var(--color-primary)" />
-            <h1 className="text-xl md:text-2xl font-semibold text-foreground">Temperature Analytics</h1>
+            <h1 className="text-xl md:text-2xl font-semibold text-foreground"><AutoText i18nKey="temp.title" defaultText="Temperature Analytics" /></h1>
           </div>
-          <p className="text-sm text-muted-foreground">Thermal monitoring and climate trend analysis</p>
+          <p className="text-sm text-muted-foreground"><AutoText i18nKey="temp.subtitle" defaultText="Thermal monitoring and climate trend analysis" /></p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
@@ -161,16 +187,16 @@ const TemperatureAnalytics = () => {
             const heatIndex = current != null && hums?.[0] != null ? Math.round(current + Math.max(0, (hums[0] - 50) * 0.1)) : null;
             return (
               <>
-                <TemperatureStatCard title="Current Temperature" value={current ?? '--'} unit="°C" trend={null} trendValue={null} icon="Thermometer" color="var(--color-error)" description="Latest reading" />
-                <TemperatureStatCard title="Daily High" value={high ?? '--'} unit="°C" trend={null} trendValue={null} icon="TrendingUp" color="var(--color-warning)" description="Max recent value" />
-                <TemperatureStatCard title="Daily Low" value={low ?? '--'} unit="°C" trend={null} trendValue={null} icon="TrendingDown" color="var(--color-accent)" description="Min recent value" />
-                <TemperatureStatCard title="Heat Index" value={heatIndex ?? '--'} unit="°C" trend={null} trendValue={null} icon="Flame" color="var(--color-error)" description="Feels like temperature" />
+                <TemperatureStatCard title={t('temp.stats.current')} value={current ?? '--'} unit="°C" trend={null} trendValue={null} icon="Thermometer" color="var(--color-error)" description={t('temp.stats.currentDesc')} />
+                <TemperatureStatCard title={t('temp.stats.dailyHigh')} value={high ?? '--'} unit="°C" trend={null} trendValue={null} icon="TrendingUp" color="var(--color-warning)" description={t('temp.stats.dailyHighDesc')} />
+                <TemperatureStatCard title={t('temp.stats.dailyLow')} value={low ?? '--'} unit="°C" trend={null} trendValue={null} icon="TrendingDown" color="var(--color-accent)" description={t('temp.stats.dailyLowDesc')} />
+                <TemperatureStatCard title={t('temp.stats.heatIndex')} value={heatIndex ?? '--'} unit="°C" trend={null} trendValue={null} icon="Flame" color="var(--color-error)" description={t('temp.stats.heatIndexDesc')} />
               </>
             );
           })()}
         </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
               <div className="lg:col-span-2">
                 <div className="bg-card border border-border rounded-lg p-4 md:p-6">
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
@@ -179,8 +205,8 @@ const TemperatureAnalytics = () => {
                         <Icon name="LineChart" size={20} color="var(--color-primary)" />
                       </div>
                       <div>
-                        <h2 className="text-lg font-semibold text-foreground">Temperature Trends</h2>
-                        <p className="caption text-muted-foreground">Real-time thermal monitoring</p>
+                        <h2 className="text-lg font-semibold text-foreground">{t('temp.trends.title')}</h2>
+                        <p className="caption text-muted-foreground">{t('temp.trends.subtitle')}</p>
                       </div>
                     </div>
 
@@ -189,26 +215,26 @@ const TemperatureAnalytics = () => {
                         options={timePeriodOptions}
                         value={timePeriod}
                         onChange={setTimePeriod}
-                        placeholder="Select period"
+                        placeholder={t('temp.placeholders.selectPeriod')}
                       />
                       <Select
                         options={chartTypeOptions}
                         value={chartType}
                         onChange={setChartType}
-                        placeholder="Chart type"
+                        placeholder={t('temp.placeholders.chartType')}
                       />
                     </div>
                   </div>
 
                   <div className="flex items-center gap-4 mb-4">
-                    <Button
+                      <Button
                       variant={showHeatIndex ? 'default' : 'outline'}
                       size="sm"
                       iconName="Flame"
                       iconPosition="left"
                       onClick={() => setShowHeatIndex(!showHeatIndex)}
                     >
-                      Heat Index
+                      {t('temp.actions.heatIndex')}
                     </Button>
                   </div>
 
@@ -262,8 +288,8 @@ const TemperatureAnalytics = () => {
                       <Icon name="Calendar" size={20} color="var(--color-primary)" />
                     </div>
                     <div>
-                      <h3 className="text-lg font-semibold text-foreground">Historical Analysis</h3>
-                      <p className="caption text-muted-foreground">Long-term climate patterns and trends</p>
+                      <h3 className="text-lg font-semibold text-foreground">{t('temp.historical.title')}</h3>
+                      <p className="caption text-muted-foreground">{t('temp.historical.subtitle')}</p>
                     </div>
                   </div>
 
@@ -271,26 +297,26 @@ const TemperatureAnalytics = () => {
                     <div className="p-4 bg-muted rounded-lg">
                       <div className="flex items-center gap-3 mb-3">
                         <Icon name="TrendingUp" size={20} color="var(--color-error)" />
-                        <p className="font-medium text-foreground">Warming Trend</p>
+                        <p className="font-medium text-foreground">{t('temp.historical.warmingTrend')}</p>
                       </div>
                       <p className="caption text-muted-foreground mb-2">
-                        Average temperature has increased by <span className="font-medium text-error">+1.8°C</span> over the past decade
+                        {t('temp.historical.warmingDesc')} <span className="font-medium text-error">+1.8°C</span> {t('temp.historical.overDecade')}
                       </p>
                       <p className="caption text-muted-foreground">
-                        This trend is consistent with urban heat island effects and requires mitigation strategies
+                        {t('temp.historical.warmingNote')}
                       </p>
                     </div>
 
                     <div className="p-4 bg-muted rounded-lg">
                       <div className="flex items-center gap-3 mb-3">
                         <Icon name="AlertTriangle" size={20} color="var(--color-warning)" />
-                        <p className="font-medium text-foreground">Extreme Events</p>
+                        <p className="font-medium text-foreground">{t('temp.historical.extremeEvents')}</p>
                       </div>
                       <p className="caption text-muted-foreground mb-2">
-                        <span className="font-medium text-warning">23 heat wave days</span> recorded this year, up from 15 last year
+                        <span className="font-medium text-warning">23 {t('temp.historical.heatWaveDays')}</span> {t('temp.historical.recordedThisYear')}
                       </p>
                       <p className="caption text-muted-foreground">
-                        Increased frequency of extreme temperature events requires enhanced public health measures
+                        {t('temp.historical.extremeNote')}
                       </p>
                     </div>
                   </div>
@@ -299,7 +325,7 @@ const TemperatureAnalytics = () => {
 
               <ExportReportPanel onExport={handleExportReport} />
             </div>
-      </div>
+          </div>
     </>
   );
 };

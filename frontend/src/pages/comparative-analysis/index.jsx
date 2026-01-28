@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import Header from '../../components/ui/Header';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
+import AutoText from '../../components/ui/AutoText';
 import CitySelector from './components/CitySelector';
 import ParameterFilter from './components/ParameterFilter';
 import TimeRangeSelector from './components/TimeRangeSelector';
@@ -13,6 +15,7 @@ import ExportControls from './components/ExportControls';
 import CorrelationAnalysis from './components/CorrelationAnalysis';
 
 const ComparativeAnalysis = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [selectedCities, setSelectedCities] = useState([]);
   const [selectedParameters, setSelectedParameters] = useState(['aqi', 'temperature']);
@@ -78,11 +81,11 @@ const ComparativeAnalysis = () => {
                     <Icon name="ArrowLeft" size={20} />
                   </button>
                   <h1 className="text-2xl md:text-3xl lg:text-4xl font-heading font-semibold text-foreground">
-                    Comparative Analysis
+                    <AutoText i18nKey="comp.title" defaultText="Comparative Analysis" />
                   </h1>
                 </div>
                 <p className="text-sm md:text-base text-muted-foreground ml-12">
-                  Compare environmental trends across multiple Rajasthan cities
+                  <AutoText i18nKey="comp.subtitle" defaultText="Compare environmental metrics across cities and timeframes" />
                 </p>
               </div>
 
@@ -100,7 +103,7 @@ const ComparativeAnalysis = () => {
                     setActiveView('chart');
                   }}
                 >
-                  Reset
+                  {t('buttons.reset')}
                 </Button>
                 <Button
                   variant="default"
@@ -118,7 +121,7 @@ const ComparativeAnalysis = () => {
                   iconPosition="left"
                   onClick={() => navigate('/alert-center')}
                 >
-                  Alerts
+                  {t('buttons.alerts')}
                 </Button>
               </div>
             </div>

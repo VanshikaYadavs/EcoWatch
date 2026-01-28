@@ -1,8 +1,11 @@
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import Icon from '../../../components/AppIcon';
+import { useTranslation } from 'react-i18next';
 
 const FrequencyAnalysisChart = ({ data }) => {
+  const { t } = useTranslation();
+
   const CustomTooltip = ({ active, payload }) => {
     if (active && payload && payload?.length) {
       return (
@@ -11,10 +14,10 @@ const FrequencyAnalysisChart = ({ data }) => {
             {payload?.[0]?.payload?.source}
           </p>
           <p className="text-xs text-muted-foreground">
-            Frequency: {payload?.[0]?.value} Hz
+            {t('noise.frequency.tooltip.frequency')}: {payload?.[0]?.value} Hz
           </p>
           <p className="text-xs text-muted-foreground">
-            Intensity: {payload?.[1]?.value}%
+            {t('noise.frequency.tooltip.intensity')}: {payload?.[1]?.value}%
           </p>
         </div>
       );
@@ -27,11 +30,11 @@ const FrequencyAnalysisChart = ({ data }) => {
       <div className="flex items-center gap-3 mb-4 md:mb-6">
         <Icon name="Radio" size={24} color="var(--color-accent)" />
         <h2 className="text-xl md:text-2xl lg:text-3xl font-semibold text-foreground">
-          Frequency Analysis
+          {t('noise.frequency.title')}
         </h2>
       </div>
       <p className="text-sm md:text-base text-muted-foreground mb-4 md:mb-6">
-        Noise source identification and pattern recognition for traffic, construction, and industrial activities
+        {t('noise.frequency.subtitle')}
       </p>
       <div className="w-full h-64 md:h-80 lg:h-96" aria-label="Frequency Analysis Bar Chart">
         <ResponsiveContainer width="100%" height="100%">
@@ -50,7 +53,7 @@ const FrequencyAnalysisChart = ({ data }) => {
               stroke="var(--color-muted-foreground)"
               tick={{ fontSize: 12 }}
               tickMargin={8}
-              label={{ value: 'Hz / %', angle: -90, position: 'insideLeft', style: { fontSize: 12, fill: 'var(--color-muted-foreground)' } }}
+              label={{ value: t('noise.frequency.yaxis'), angle: -90, position: 'insideLeft', style: { fontSize: 12, fill: 'var(--color-muted-foreground)' } }}
             />
             <Tooltip content={<CustomTooltip />} />
             <Legend 
@@ -61,13 +64,13 @@ const FrequencyAnalysisChart = ({ data }) => {
               dataKey="frequency" 
               fill="var(--color-accent)" 
               radius={[8, 8, 0, 0]}
-              name="Frequency (Hz)"
+              name={t('noise.frequency.series.frequency')}
             />
             <Bar 
               dataKey="intensity" 
               fill="var(--color-secondary)" 
               radius={[8, 8, 0, 0]}
-              name="Intensity (%)"
+              name={t('noise.frequency.series.intensity')}
             />
           </BarChart>
         </ResponsiveContainer>
@@ -77,7 +80,7 @@ const FrequencyAnalysisChart = ({ data }) => {
           <div className="bg-muted rounded-lg p-3 md:p-4">
             <div className="flex items-center gap-2 mb-2">
               <Icon name="Car" size={16} color="var(--color-primary)" />
-              <span className="text-xs md:text-sm text-muted-foreground">Traffic Noise</span>
+              <span className="text-xs md:text-sm text-muted-foreground">{t('noise.sources.traffic')}</span>
             </div>
             <div className="text-lg md:text-xl font-bold text-foreground">
               {data?.filter(d => d?.source?.includes('Traffic'))?.reduce((sum, d) => sum + d?.intensity, 0)}%
@@ -86,7 +89,7 @@ const FrequencyAnalysisChart = ({ data }) => {
           <div className="bg-muted rounded-lg p-3 md:p-4">
             <div className="flex items-center gap-2 mb-2">
               <Icon name="HardHat" size={16} color="var(--color-warning)" />
-              <span className="text-xs md:text-sm text-muted-foreground">Construction</span>
+              <span className="text-xs md:text-sm text-muted-foreground">{t('noise.sources.construction')}</span>
             </div>
             <div className="text-lg md:text-xl font-bold text-foreground">
               {data?.filter(d => d?.source?.includes('Construction'))?.reduce((sum, d) => sum + d?.intensity, 0)}%
@@ -95,7 +98,7 @@ const FrequencyAnalysisChart = ({ data }) => {
           <div className="bg-muted rounded-lg p-3 md:p-4">
             <div className="flex items-center gap-2 mb-2">
               <Icon name="Factory" size={16} color="var(--color-error)" />
-              <span className="text-xs md:text-sm text-muted-foreground">Industrial</span>
+              <span className="text-xs md:text-sm text-muted-foreground">{t('noise.sources.industrial')}</span>
             </div>
             <div className="text-lg md:text-xl font-bold text-foreground">
               {data?.filter(d => d?.source?.includes('Industrial'))?.reduce((sum, d) => sum + d?.intensity, 0)}%

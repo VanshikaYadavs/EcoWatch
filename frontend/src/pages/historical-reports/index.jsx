@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import ReportBuilder from './components/ReportBuilder';
 import TrendChart from './components/TrendChart';
 import StatisticsPanel from './components/StatisticsPanel';
@@ -8,9 +9,11 @@ import ComparisonTool from './components/ComparisonTool';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
 import Select from '../../components/ui/Select';
+import AutoText from '../../components/ui/AutoText';
 import { useEnvironmentReadings } from '../../utils/dataHooks';
 
 const HistoricalReports = () => {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('builder');
   const [selectedLocation, setSelectedLocation] = useState('all');
   const [timeRange, setTimeRange] = useState('30d');
@@ -78,24 +81,24 @@ const HistoricalReports = () => {
   }, [readings]);
 
   const locationOptions = [
-    { value: 'all', label: 'All Locations' },
+    { value: 'all', label: t('reports.locations.all') },
     { value: 'Jaipur', label: 'Jaipur' },
     { value: 'Tonk', label: 'Tonk' },
   ];
   const timeOptions = [
-    { value: '7d', label: 'Last 7 Days' },
-    { value: '30d', label: 'Last 30 Days' },
-    { value: '90d', label: 'Last 90 Days' },
-    { value: '1y', label: 'Last Year' },
+    { value: '7d', label: t('reports.time.7d') },
+    { value: '30d', label: t('reports.time.30d') },
+    { value: '90d', label: t('reports.time.90d') },
+    { value: '1y', label: t('reports.time.1y') },
   ];
 
   const tabs = [
-    { id: 'builder', label: 'Report Builder', icon: 'FileText' },
-    { id: 'templates', label: 'Templates', icon: 'LayoutTemplate' },
-    { id: 'trends', label: 'Trends', icon: 'TrendingUp' },
-    { id: 'statistics', label: 'Statistics', icon: 'BarChart3' },
-    { id: 'comparison', label: 'Comparison', icon: 'GitCompare' },
-    { id: 'history', label: 'History', icon: 'History' }
+    { id: 'builder', label: t('reports.tabs.builder'), icon: 'FileText' },
+    { id: 'templates', label: t('reports.tabs.templates'), icon: 'LayoutTemplate' },
+    { id: 'trends', label: t('reports.tabs.trends'), icon: 'TrendingUp' },
+    { id: 'statistics', label: t('reports.tabs.statistics'), icon: 'BarChart3' },
+    { id: 'comparison', label: t('reports.tabs.comparison'), icon: 'GitCompare' },
+    { id: 'history', label: t('reports.tabs.history'), icon: 'History' }
   ];
 
   const handleRefreshData = async () => {
@@ -135,9 +138,9 @@ const HistoricalReports = () => {
       <div>
         <div className="flex items-center gap-3 mb-1">
           <Icon name="FileText" size={22} color="var(--color-primary)" />
-          <h1 className="text-xl md:text-2xl font-semibold text-foreground">Historical Reports</h1>
+          <h1 className="text-xl md:text-2xl font-semibold text-foreground"><AutoText i18nKey="reports.title" defaultText="Historical Reports" /></h1>
         </div>
-        <p className="text-sm md:text-base text-muted-foreground">Generate comprehensive reports for compliance and planning</p>
+        <p className="text-sm md:text-base text-muted-foreground"><AutoText i18nKey="reports.subtitle" defaultText="Generate comprehensive reports for compliance and planning" /></p>
       </div>
 
       <div className="flex items-center gap-2 overflow-x-auto scrollbar-thin pb-2">
@@ -171,8 +174,8 @@ const HistoricalReports = () => {
         {activeTab === 'trends' && (
           <>
             <div className="flex flex-col sm:flex-row gap-3 mb-4">
-              <Select options={locationOptions} value={selectedLocation} onChange={setSelectedLocation} placeholder="Location" />
-              <Select options={timeOptions} value={timeRange} onChange={setTimeRange} placeholder="Time Range" />
+              <Select options={locationOptions} value={selectedLocation} onChange={setSelectedLocation} placeholder={t('reports.placeholders.location')} />
+              <Select options={timeOptions} value={timeRange} onChange={setTimeRange} placeholder={t('reports.placeholders.timeRange')} />
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
               <TrendChart title="Air Quality Trends" data={byDay.aqi} parameter="aqi" chartType="area" />
@@ -201,16 +204,16 @@ const HistoricalReports = () => {
           <div className="flex items-center gap-3">
             <Icon name="Info" size={20} color={"var(--color-accent)"} />
             <div>
-              <p className="text-sm font-medium text-foreground">Need Help?</p>
-              <p className="text-sm text-muted-foreground">Access documentation and support resources</p>
+              <p className="text-sm font-medium text-foreground">{t('reports.needHelp.title')}</p>
+              <p className="text-sm text-muted-foreground">{t('reports.needHelp.subtitle')}</p>
             </div>
           </div>
           <div className="flex flex-wrap gap-3">
             <Button variant="outline" iconName="Book" iconPosition="left">
-              Documentation
+              {t('reports.buttons.documentation')}
             </Button>
             <Button variant="outline" iconName="HelpCircle" iconPosition="left">
-              Support
+              {t('reports.buttons.support')}
             </Button>
           </div>
         </div>

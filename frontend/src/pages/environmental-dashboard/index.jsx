@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import MetricCard from './components/MetricCard';
 import SensorMap from './components/SensorMap';
@@ -7,7 +8,8 @@ import HotspotAlert from './components/HotspotAlert';
 import QuickStats from './components/QuickStats';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
-import { useEnvironmentReadings, useAlertEvents, useLatestCityReadings, useNearbyLatestCityReadings } from '../../utils/dataHooks';
+import AutoText from '../../components/ui/AutoText';
+import { useEnvironmentReadings, useAlertEvents } from '../../utils/dataHooks';
 import { getLatestReading } from '../../services/environment.service';
 import { getCurrentLocation, displayLocation } from '../../utils/location';
 import { getNearbyCities } from '../../utils/nearbyCities';
@@ -16,6 +18,7 @@ import axios from 'axios';
 import { supabase } from '../../utils/supabaseClient';
 
 const EnvironmentalDashboard = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [timeRange, setTimeRange] = useState('realtime');
   const [location, setLocation] = useState('all');
@@ -25,10 +28,6 @@ const EnvironmentalDashboard = () => {
 
   const { data: readings } = useEnvironmentReadings({ location: location === 'all' ? null : location, limit: 100, realtime: true });
   const { data: alerts } = useAlertEvents({ limit: 20 });
-  const [allowlist, setAllowlist] = useState([]);
-  const [recomputing, setRecomputing] = useState(false);
-  const { data: latestCityReadings } = useLatestCityReadings({ fallbackWindow: 120, allowLocations: allowlist });
-  const { data: nearbyCityReadings } = useNearbyLatestCityReadings({ fallbackWindow: 120, allowLocations: allowlist });
 
   const latest = useMemo(() => readings?.[0] || {}, [readings]);
 
@@ -128,7 +127,7 @@ const EnvironmentalDashboard = () => {
 
   const metrics = [
     {
-      title: 'Air Quality Index',
+      title: t('env.metrics.aqi.title'),
       value: String(envData?.aqi ?? latest?.aqi ?? avg.aqi ?? '—'),
       unit: 'AQI',
       status: (envData?.aqi ?? latest?.aqi ?? avg.aqi) >= 150 ? 'poor' : 'good',
@@ -139,7 +138,7 @@ const EnvironmentalDashboard = () => {
       onClick: () => navigate('/air-quality-monitor')
     },
     {
-      title: 'Noise Level',
+      title: t('env.metrics.noise.title'),
       value: String(envData?.noise_level ?? latest?.noise_level ?? avg.noise ?? '—'),
       unit: 'dB',
       status: (envData?.noise_level ?? latest?.noise_level ?? avg.noise) >= 85 ? 'critical' : 'moderate',
@@ -150,7 +149,7 @@ const EnvironmentalDashboard = () => {
       onClick: () => navigate('/noise-level-tracking')
     },
     {
-      title: 'Temperature',
+      title: t('env.metrics.temperature.title'),
       value: String(envData?.temperature ?? latest?.temperature ?? avg.temp ?? '—'),
       unit: '°C',
       status: (envData?.temperature ?? latest?.temperature ?? avg.temp) >= 35 ? 'poor' : 'good',
@@ -161,7 +160,7 @@ const EnvironmentalDashboard = () => {
       onClick: () => navigate('/temperature-analytics')
     },
     {
-      title: 'Humidity',
+      title: t('env.metrics.humidity.title'),
       value: String(envData?.humidity ?? latest?.humidity ?? avg.humidity ?? '—'),
       unit: '%',
       status: 'good',
@@ -172,7 +171,7 @@ const EnvironmentalDashboard = () => {
       onClick: () => {}
     },
     {
-      title: 'Active Hotspots',
+      title: t('env.metrics.hotspots'),
       value: String(alerts?.length ?? 0),
       unit: 'events',
       status: alerts?.length ? 'critical' : 'good',
@@ -183,7 +182,7 @@ const EnvironmentalDashboard = () => {
       onClick: () => {}
     },
     {
-      title: 'Active Sensors',
+      title: t('env.metrics.sensors'),
       value: String(avg?.sensors ?? readings?.length ?? 0),
       unit: 'online',
       status: 'good',
@@ -205,28 +204,28 @@ const EnvironmentalDashboard = () => {
 
   const quickStats = [
     {
-      label: 'Total Alerts Today',
+      label: t('env.stats.totalAlerts'),
       value: String(alertsToday),
       icon: 'Bell',
       change: '',
       changeType: 'neutral'
     },
     {
-      label: 'Avg Response Time',
+      label: t('env.stats.avgResponse'),
       value: '—',
       icon: 'Clock',
       change: '',
       changeType: 'neutral'
     },
     {
-      label: 'Compliance Rate',
+      label: t('env.stats.compliance'),
       value: '—',
       icon: 'CheckCircle',
       change: '',
       changeType: 'neutral'
     },
     {
-      label: 'Data Coverage',
+      label: t('env.stats.coverage'),
       value: '—',
       icon: 'Activity',
       change: '',
@@ -306,11 +305,11 @@ const EnvironmentalDashboard = () => {
   };
 
   if (envLoading) {
-    return <p>Loading environmental data...</p>;
+    return <p>{t('env.loading')}</p>;
   }
 
   if (!envData && !readings?.length) {
-    return <p>No environmental data available yet.</p>;
+    return <p>{t('env.noData')}</p>;
   }
 
   return (
@@ -325,10 +324,10 @@ const EnvironmentalDashboard = () => {
       <div>
         <div className="flex items-center gap-3 mb-1">
           <Icon name="LayoutDashboard" size={22} color="var(--color-primary)" />
-          <h1 className="text-xl md:text-2xl font-semibold text-foreground">Environmental Dashboard</h1>
+          <h1 className="text-xl md:text-2xl font-semibold text-foreground"><AutoText i18nKey="env.title" defaultText="Environmental Dashboard" /></h1>
         </div>
         <p className="text-sm md:text-base text-muted-foreground">
-          Real-time environmental monitoring and analysis for smart city management
+          <AutoText i18nKey="env.subtitle" defaultText="Real-time environmental monitoring and analysis for smart city management" />
         </p>
       </div>
 
@@ -361,7 +360,7 @@ const EnvironmentalDashboard = () => {
 
         <div className="bg-card rounded-lg border border-border p-4 md:p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-base md:text-lg font-semibold">Quick Actions</h3>
+            <h3 className="text-base md:text-lg font-semibold"><AutoText i18nKey="env.quickActions" defaultText="Quick Actions" /></h3>
             <Icon name="Zap" size={20} color="var(--color-primary)" />
           </div>
 
@@ -384,7 +383,7 @@ const EnvironmentalDashboard = () => {
               fullWidth
               onClick={handleEmergencyBroadcast}
             >
-              Emergency Broadcast
+              <AutoText i18nKey="env.actions.emergency" defaultText="Emergency Broadcast" />
             </Button>
 
             <Button
@@ -394,7 +393,7 @@ const EnvironmentalDashboard = () => {
               fullWidth
               onClick={() => navigate('/historical-reports')}
             >
-              View Reports
+              <AutoText i18nKey="env.actions.viewReports" defaultText="View Reports" />
             </Button>
 
             <Button
@@ -403,7 +402,7 @@ const EnvironmentalDashboard = () => {
               iconPosition="left"
               fullWidth
             >
-              Configure Alerts
+              <AutoText i18nKey="env.actions.configureAlerts" defaultText="Configure Alerts" />
             </Button>
 
             <Button
@@ -412,24 +411,24 @@ const EnvironmentalDashboard = () => {
               iconPosition="left"
               fullWidth
             >
-              Manage Team
+              <AutoText i18nKey="env.actions.manageTeam" defaultText="Manage Team" />
             </Button>
           </div>
 
           <div className="mt-6 pt-6 border-t border-border">
-            <h4 className="text-sm font-medium mb-3">System Status</h4>
+            <h4 className="text-sm font-medium mb-3">{t('env.system.status')}</h4>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs md:text-sm text-muted-foreground">API Status</span>
-                <span className="text-xs md:text-sm text-success font-medium">Operational</span>
+                <span className="text-xs md:text-sm text-muted-foreground">{t('env.system.api')}</span>
+                <span className="text-xs md:text-sm text-success font-medium">{t('env.system.operational')}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-xs md:text-sm text-muted-foreground">Database</span>
-                <span className="text-xs md:text-sm text-success font-medium">Connected</span>
+                <span className="text-xs md:text-sm text-muted-foreground">{t('env.system.database')}</span>
+                <span className="text-xs md:text-sm text-success font-medium">{t('env.system.connected')}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-xs md:text-sm text-muted-foreground">WebSocket</span>
-                <span className="text-xs md:text-sm text-success font-medium">Active</span>
+                <span className="text-xs md:text-sm text-muted-foreground">{t('env.system.websocket')}</span>
+                <span className="text-xs md:text-sm text-success font-medium">{t('env.system.active')}</span>
               </div>
             </div>
           </div>
@@ -440,10 +439,10 @@ const EnvironmentalDashboard = () => {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <Icon name="AlertTriangle" size={20} color="var(--color-error)" />
-            <h3 className="text-base md:text-lg font-semibold">Active Hotspots</h3>
+            <h3 className="text-base md:text-lg font-semibold"><AutoText i18nKey="env.hotspots.title" defaultText="Active Hotspots" /></h3>
           </div>
           <span className="text-xs md:text-sm text-muted-foreground">
-            {hotspots?.length} active alerts
+            {hotspots?.length} {t('env.hotspots.activeAlerts')}
           </span>
         </div>
 

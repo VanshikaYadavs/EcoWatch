@@ -1,14 +1,17 @@
 import React from 'react';
 import { Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { useTranslation } from 'react-i18next';
 
 const AQIChart = ({ data, timeRange, selectedPollutants }) => {
+  const { t } = useTranslation();
+
   const aqiCategories = [
-    { name: 'Good', max: 50, color: '#10B981' },
-    { name: 'Moderate', max: 100, color: '#F59E0B' },
-    { name: 'Unhealthy for Sensitive', max: 150, color: '#F97316' },
-    { name: 'Unhealthy', max: 200, color: '#EF4444' },
-    { name: 'Very Unhealthy', max: 300, color: '#9333EA' },
-    { name: 'Hazardous', max: 500, color: '#7C2D12' }
+    { name: t('aq.legend.good'), max: 50, color: '#10B981' },
+    { name: t('aq.legend.moderate'), max: 100, color: '#F59E0B' },
+    { name: t('aq.legend.unhealthySensitive'), max: 150, color: '#F97316' },
+    { name: t('aq.legend.unhealthy'), max: 200, color: '#EF4444' },
+    { name: t('aq.legend.veryUnhealthy'), max: 300, color: '#9333EA' },
+    { name: t('aq.legend.hazardous'), max: 500, color: '#7C2D12' }
   ];
 
   const getAQIColor = (value) => {
@@ -43,10 +46,8 @@ const AQIChart = ({ data, timeRange, selectedPollutants }) => {
     <div className="bg-card rounded-lg border border-border p-4 md:p-6">
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
         <div>
-          <h2 className="text-xl md:text-2xl font-semibold text-foreground">AQI Trend Analysis</h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            Real-time air quality measurements across {timeRange}
-          </p>
+          <h2 className="text-xl md:text-2xl font-semibold text-foreground">{t('aq.trend.title')}</h2>
+          <p className="text-sm text-muted-foreground mt-1">{t('aq.trend.desc', { timeRange })}</p>
         </div>
         <div className="flex flex-wrap gap-2">
           {aqiCategories?.slice(0, 4)?.map((category) => (
@@ -60,7 +61,7 @@ const AQIChart = ({ data, timeRange, selectedPollutants }) => {
           ))}
         </div>
       </div>
-      <div className="w-full h-64 md:h-80 lg:h-96" aria-label="Air Quality Index Trend Chart">
+      <div className="w-full h-64 md:h-80 lg:h-96" aria-label={t('aq.trend.title')}>
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
             <defs>
@@ -78,7 +79,7 @@ const AQIChart = ({ data, timeRange, selectedPollutants }) => {
             <YAxis 
               stroke="var(--color-muted-foreground)"
               style={{ fontSize: '12px' }}
-              label={{ value: 'AQI', angle: -90, position: 'insideLeft' }}
+              label={{ value: t('aq.series.overall'), angle: -90, position: 'insideLeft' }}
             />
             <Tooltip content={<CustomTooltip />} />
             <Legend 
@@ -91,7 +92,7 @@ const AQIChart = ({ data, timeRange, selectedPollutants }) => {
               stroke="var(--color-primary)" 
               strokeWidth={2}
               fill="url(#aqiGradient)" 
-              name="Overall AQI"
+              name={t('aq.series.overall')}
             />
             {selectedPollutants?.includes('pm25') && (
               <Line 
@@ -100,7 +101,7 @@ const AQIChart = ({ data, timeRange, selectedPollutants }) => {
                 stroke="#F59E0B" 
                 strokeWidth={2}
                 dot={false}
-                name="PM2.5"
+                name={t('aq.series.pm25')}
               />
             )}
             {selectedPollutants?.includes('pm10') && (
@@ -110,7 +111,7 @@ const AQIChart = ({ data, timeRange, selectedPollutants }) => {
                 stroke="#EF4444" 
                 strokeWidth={2}
                 dot={false}
-                name="PM10"
+                name={t('aq.series.pm10')}
               />
             )}
             {selectedPollutants?.includes('ozone') && (
@@ -120,7 +121,7 @@ const AQIChart = ({ data, timeRange, selectedPollutants }) => {
                 stroke="#3B82F6" 
                 strokeWidth={2}
                 dot={false}
-                name="Ozone"
+                name={t('aq.series.ozone')}
               />
             )}
             {selectedPollutants?.includes('no2') && (
@@ -130,37 +131,53 @@ const AQIChart = ({ data, timeRange, selectedPollutants }) => {
                 stroke="#9333EA" 
                 strokeWidth={2}
                 dot={false}
-                name="NO₂"
+                name={t('aq.series.no2')}
               />
             )}
           </AreaChart>
         </ResponsiveContainer>
       </div>
+<<<<<<< HEAD
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-border">
         {(() => { const n = Math.max(1, data?.length || 0); const last = data?.[data?.length - 1] || {}; const vals = (data||[]).map(d=>d?.aqi||0); return (
         <>
+=======
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-border">
+>>>>>>> translation
         <div className="text-center">
-          <p className="text-xs text-muted-foreground mb-1">Current AQI</p>
+          <p className="text-xs text-muted-foreground mb-1">{t('aq.stats.current')}</p>
           <p className="text-2xl font-bold" style={{ color: getAQIColor(data?.[data?.length - 1]?.aqi || 0) }}>
             {last?.aqi || 0}
           </p>
         </div>
         <div className="text-center">
-          <p className="text-xs text-muted-foreground mb-1">24h Average</p>
+          <p className="text-xs text-muted-foreground mb-1">{t('aq.stats.avg24h')}</p>
           <p className="text-2xl font-bold text-foreground">
+<<<<<<< HEAD
             {Math.round(((data||[]).reduce((sum, d) => sum + (d?.aqi || 0), 0) / n))}
+=======
+            {Math.round(data?.reduce((sum, d) => sum + d?.aqi, 0) / (data?.length || 1))}
+>>>>>>> translation
           </p>
         </div>
         <div className="text-center">
-          <p className="text-xs text-muted-foreground mb-1">Peak Value</p>
+          <p className="text-xs text-muted-foreground mb-1">{t('aq.stats.peak')}</p>
           <p className="text-2xl font-bold text-error">
+<<<<<<< HEAD
             {vals.length ? Math.max(...vals) : 0}
+=======
+            {Math.max(...(data?.map(d => d?.aqi) || [0]))}
+>>>>>>> translation
           </p>
         </div>
         <div className="text-center">
-          <p className="text-xs text-muted-foreground mb-1">Lowest Value</p>
+          <p className="text-xs text-muted-foreground mb-1">{t('aq.stats.lowest')}</p>
           <p className="text-2xl font-bold text-success">
+<<<<<<< HEAD
             {vals.length ? Math.min(...vals) : 0}
+=======
+            {Math.min(...(data?.map(d => d?.aqi) || [0]))}
+>>>>>>> translation
           </p>
         </div>
         </>

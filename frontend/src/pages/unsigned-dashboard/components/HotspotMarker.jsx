@@ -1,5 +1,6 @@
 import React from 'react';
 import Icon from '../../../components/AppIcon';
+import { useTranslation } from 'react-i18next';
 
 const HotspotMarker = ({ 
   location, 
@@ -30,6 +31,8 @@ const HotspotMarker = ({
     }
   };
 
+  const { t } = useTranslation();
+
   const config = severityConfig?.[severity] || severityConfig?.medium;
 
   return (
@@ -46,7 +49,7 @@ const HotspotMarker = ({
             <Icon name={config?.icon} size={18} color={config?.color} />
             <div className="flex-1 min-w-0">
               <h4 className="text-sm font-semibold text-foreground mb-1">{location}</h4>
-              <p className="text-xs text-muted-foreground capitalize">{type} Alert</p>
+              <p className="text-xs text-muted-foreground capitalize">{t('hotspot.typeAlert', { type })}</p>
             </div>
           </div>
           <div className="pt-2 border-t border-border">

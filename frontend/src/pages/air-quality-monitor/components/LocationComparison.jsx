@@ -1,9 +1,15 @@
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import Icon from '../../../components/AppIcon';
+<<<<<<< HEAD
 import { displayLocation } from '../../../utils/location';
+=======
+import { useTranslation } from 'react-i18next';
+>>>>>>> translation
 
 const LocationComparison = ({ comparisonData, selectedLocations }) => {
+  const { t } = useTranslation();
+
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload?.length) {
       return (
@@ -36,14 +42,12 @@ const LocationComparison = ({ comparisonData, selectedLocations }) => {
     <div className="bg-card rounded-lg border border-border p-4 md:p-6">
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
         <div>
-          <h2 className="text-xl md:text-2xl font-semibold text-foreground">Location Comparison</h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            Compare pollutant levels across {selectedLocations?.length} locations
-          </p>
+          <h2 className="text-xl md:text-2xl font-semibold text-foreground">{t('locationComparison.title')}</h2>
+          <p className="text-sm text-muted-foreground mt-1">{t('locationComparison.subtitle', { count: selectedLocations?.length })}</p>
         </div>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Icon name="TrendingUp" size={16} />
-          <span>Analyzing pollution patterns</span>
+          <span>{t('locationComparison.analyzing')}</span>
         </div>
       </div>
       <div className="w-full h-64 md:h-80 lg:h-96" aria-label="Location Comparison Bar Chart">
@@ -61,17 +65,17 @@ const LocationComparison = ({ comparisonData, selectedLocations }) => {
             <YAxis 
               stroke="var(--color-muted-foreground)"
               style={{ fontSize: '12px' }}
-              label={{ value: 'Concentration', angle: -90, position: 'insideLeft' }}
+              label={{ value: t('locationComparison.chart.concentration'), angle: -90, position: 'insideLeft' }}
             />
             <Tooltip content={<CustomTooltip />} />
             <Legend 
               wrapperStyle={{ fontSize: '12px' }}
               iconType="circle"
             />
-            <Bar dataKey="pm25" fill={pollutantColors?.pm25} name="PM2.5 (µg/m³)" />
-            <Bar dataKey="pm10" fill={pollutantColors?.pm10} name="PM10 (µg/m³)" />
-            <Bar dataKey="ozone" fill={pollutantColors?.ozone} name="Ozone (ppb)" />
-            <Bar dataKey="no2" fill={pollutantColors?.no2} name="NO₂ (ppb)" />
+            <Bar dataKey="pm25" fill={pollutantColors?.pm25} name={t('locationComparison.series.pm25')} />
+            <Bar dataKey="pm10" fill={pollutantColors?.pm10} name={t('locationComparison.series.pm10')} />
+            <Bar dataKey="ozone" fill={pollutantColors?.ozone} name={t('locationComparison.series.ozone')} />
+            <Bar dataKey="no2" fill={pollutantColors?.no2} name={t('locationComparison.series.no2')} />
           </BarChart>
         </ResponsiveContainer>
       </div>
@@ -81,37 +85,53 @@ const LocationComparison = ({ comparisonData, selectedLocations }) => {
         <div className="text-center">
           <div className="flex items-center justify-center gap-2 mb-2">
             <div className="w-3 h-3 rounded-full" style={{ backgroundColor: pollutantColors?.pm25 }} />
-            <p className="text-xs text-muted-foreground">PM2.5 Average</p>
+            <p className="text-xs text-muted-foreground">{t('locationComparison.avg.pm25')}</p>
           </div>
           <p className="text-xl font-bold data-text text-foreground">
+<<<<<<< HEAD
             {Math.round((comparisonData?.reduce((sum, d) => sum + (d?.pm25 || 0), 0) / n))} µg/m³
+=======
+            {Math.round(comparisonData?.reduce((sum, d) => sum + d?.pm25, 0) / comparisonData?.length)} {t('sensors.units.pm')}
+>>>>>>> translation
           </p>
         </div>
         <div className="text-center">
           <div className="flex items-center justify-center gap-2 mb-2">
             <div className="w-3 h-3 rounded-full" style={{ backgroundColor: pollutantColors?.pm10 }} />
-            <p className="text-xs text-muted-foreground">PM10 Average</p>
+            <p className="text-xs text-muted-foreground">{t('locationComparison.avg.pm10')}</p>
           </div>
           <p className="text-xl font-bold data-text text-foreground">
+<<<<<<< HEAD
             {Math.round((comparisonData?.reduce((sum, d) => sum + (d?.pm10 || 0), 0) / n))} µg/m³
+=======
+            {Math.round(comparisonData?.reduce((sum, d) => sum + d?.pm10, 0) / comparisonData?.length)} {t('sensors.units.pm')}
+>>>>>>> translation
           </p>
         </div>
         <div className="text-center">
           <div className="flex items-center justify-center gap-2 mb-2">
             <div className="w-3 h-3 rounded-full" style={{ backgroundColor: pollutantColors?.ozone }} />
-            <p className="text-xs text-muted-foreground">Ozone Average</p>
+            <p className="text-xs text-muted-foreground">{t('locationComparison.avg.ozone')}</p>
           </div>
           <p className="text-xl font-bold data-text text-foreground">
+<<<<<<< HEAD
             {Math.round((comparisonData?.reduce((sum, d) => sum + (d?.ozone || 0), 0) / n))} ppb
+=======
+            {Math.round(comparisonData?.reduce((sum, d) => sum + d?.ozone, 0) / comparisonData?.length)} {t('sensors.units.ppb')}
+>>>>>>> translation
           </p>
         </div>
         <div className="text-center">
           <div className="flex items-center justify-center gap-2 mb-2">
             <div className="w-3 h-3 rounded-full" style={{ backgroundColor: pollutantColors?.no2 }} />
-            <p className="text-xs text-muted-foreground">NO₂ Average</p>
+            <p className="text-xs text-muted-foreground">{t('locationComparison.avg.no2')}</p>
           </div>
           <p className="text-xl font-bold data-text text-foreground">
+<<<<<<< HEAD
             {Math.round((comparisonData?.reduce((sum, d) => sum + (d?.no2 || 0), 0) / n))} ppb
+=======
+            {Math.round(comparisonData?.reduce((sum, d) => sum + d?.no2, 0) / comparisonData?.length)} {t('sensors.units.ppb')}
+>>>>>>> translation
           </p>
         </div>
         </>

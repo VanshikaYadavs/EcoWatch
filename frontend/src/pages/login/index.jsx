@@ -1,13 +1,15 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Helmet } from 'react-helmet';
 import Icon from '../../components/AppIcon';
-import Chatbot from '../../components/Chatbot';
+import AutoText from '../../components/ui/AutoText';
 
 import LoginForm from './components/LoginForm';
 import EnvironmentalPreview from './components/EnvironmentalPreview';
 import SecurityBadges from './components/SecurityBadges';
 
 const Login = () => {
+  const { t } = useTranslation();
   return (
     <>
       <Helmet>
@@ -47,10 +49,10 @@ const Login = () => {
               <div className="bg-card border border-border rounded-2xl shadow-xl p-6 md:p-8 lg:p-10">
                 <div className="mb-8">
                   <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
-                    Welcome Back
+                    <AutoText i18nKey="login.welcome" defaultText="Welcome Back" />
                   </h2>
                   <p className="text-sm md:text-base text-muted-foreground">
-                    Sign in to access the environmental monitoring dashboard
+                    <AutoText i18nKey="login.subtitle" defaultText="Sign in to access the environmental monitoring dashboard" />
                   </p>
                 </div>
 
@@ -63,7 +65,7 @@ const Login = () => {
 
               <div className="mt-6 text-center">
                 <p className="text-sm text-muted-foreground">
-                  Need access? Contact your system administrator
+                  {t('login.needAccess')}
                 </p>
                 <p className="text-xs text-muted-foreground mt-2">
                   support@echowatch.gov • +1 (555) 123-4567
@@ -94,11 +96,11 @@ const Login = () => {
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Icon name="Globe" size={16} />
-                  <span>English (US)</span>
+                  <span>{t('login.languageLabel')}</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Icon name="MapPin" size={16} />
-                  <span>United States</span>
+                  <span>{t('login.countryLabel')}</span>
                 </div>
               </div>
             </div>

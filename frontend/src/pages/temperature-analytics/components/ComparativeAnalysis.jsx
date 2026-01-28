@@ -1,13 +1,16 @@
 import React from 'react';
 import Icon from '../../../components/AppIcon';
+import { useTranslation } from 'react-i18next';
 
 const ComparativeAnalysis = ({ locations, onLocationSelect }) => {
+  const { t } = useTranslation();
+
   const getComparisonStatus = (diff) => {
-    if (diff > 3) return { color: 'var(--color-error)', label: 'Much Warmer', icon: 'ArrowUp' };
-    if (diff > 1) return { color: 'var(--color-warning)', label: 'Warmer', icon: 'ArrowUpRight' };
-    if (diff < -3) return { color: 'var(--color-accent)', label: 'Much Cooler', icon: 'ArrowDown' };
-    if (diff < -1) return { color: 'var(--color-success)', label: 'Cooler', icon: 'ArrowDownRight' };
-    return { color: 'var(--color-muted-foreground)', label: 'Similar', icon: 'Minus' };
+    if (diff > 3) return { color: 'var(--color-error)', label: t('temp.comparative.muchWarmer'), icon: 'ArrowUp' };
+    if (diff > 1) return { color: 'var(--color-warning)', label: t('temp.comparative.warmer'), icon: 'ArrowUpRight' };
+    if (diff < -3) return { color: 'var(--color-accent)', label: t('temp.comparative.muchCooler'), icon: 'ArrowDown' };
+    if (diff < -1) return { color: 'var(--color-success)', label: t('temp.comparative.cooler'), icon: 'ArrowDownRight' };
+    return { color: 'var(--color-muted-foreground)', label: t('temp.comparative.similar'), icon: 'Minus' };
   };
 
   return (
@@ -17,8 +20,8 @@ const ComparativeAnalysis = ({ locations, onLocationSelect }) => {
           <Icon name="GitCompare" size={20} color="var(--color-secondary)" />
         </div>
         <div>
-          <h3 className="text-lg font-semibold text-foreground">Comparative Analysis</h3>
-          <p className="caption text-muted-foreground">Temperature differences across zones</p>
+          <h3 className="text-lg font-semibold text-foreground">{t('temp.comparative.title')}</h3>
+          <p className="caption text-muted-foreground">{t('temp.comparative.subtitle')}</p>
         </div>
       </div>
       <div className="space-y-3">
@@ -44,13 +47,13 @@ const ComparativeAnalysis = ({ locations, onLocationSelect }) => {
               </div>
               <div className="grid grid-cols-3 gap-4 mt-3">
                 <div>
-                  <p className="caption text-muted-foreground mb-1">Current</p>
+                  <p className="caption text-muted-foreground mb-1">{t('temp.comparative.current')}</p>
                   <p className="text-lg font-semibold text-foreground data-text">
                     {location?.current}°C
                   </p>
                 </div>
                 <div>
-                  <p className="caption text-muted-foreground mb-1">Difference</p>
+                  <p className="caption text-muted-foreground mb-1">{t('temp.comparative.difference')}</p>
                   <p 
                     className="text-lg font-semibold data-text"
                     style={{ color: status?.color }}
@@ -59,7 +62,7 @@ const ComparativeAnalysis = ({ locations, onLocationSelect }) => {
                   </p>
                 </div>
                 <div>
-                  <p className="caption text-muted-foreground mb-1">24h Avg</p>
+                  <p className="caption text-muted-foreground mb-1">{t('temp.comparative.avg24h')}</p>
                   <p className="text-lg font-semibold text-foreground data-text">
                     {location?.average24h}°C
                   </p>
