@@ -68,26 +68,11 @@ const Sidebar = ({ isCollapsed = false, onToggleCollapse }) => {
       roles: ['admin', 'official', 'analyst', 'researcher']
     },
     {
-<<<<<<< HEAD
-      label: 'Alerts',
-      path: '/alert-center',
-      icon: 'Bell',
-      description: 'Alert management and monitoring',
-      roles: ['admin', 'official', 'analyst']
-    },
-    {
-      label: 'Notifications',
-      path: '/notification-settings',
-      icon: 'Bell',
-      description: 'Alert preferences and settings'
-      // Removed role restriction - all authenticated users can access
-=======
       label: navNotifications,
       path: '/notification-settings',
       icon: 'Bell',
       description: navNotificationsDesc,
       roles: ['admin', 'official']
->>>>>>> translation
     },
     {
       label: navProfile,
