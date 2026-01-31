@@ -1,100 +1,89 @@
-# React
+# EcoWatch Frontend (React + Vite + Tailwind)
 
-A modern React-based project utilizing the latest frontend technologies and tools for building responsive web applications.
+Modern UI for monitoring environmental data, configuring alerts, and viewing dashboards. Includes i18n and optional auto-translation.
 
-## 🚀 Features
+## Features
 
-- **React 18** - React version with improved rendering and concurrent features
-- **Vite** - Lightning-fast build tool and development server
-- **Redux Toolkit** - State management with simplified Redux setup
-- **TailwindCSS** - Utility-first CSS framework with extensive customization
-- **React Router v6** - Declarative routing for React applications
-- **Data Visualization** - Integrated D3.js and Recharts for powerful data visualization
-- **Form Management** - React Hook Form for efficient form handling
-- **Animation** - Framer Motion for smooth UI animations
-- **Testing** - Jest and React Testing Library setup
+- Dashboards: Air Quality, Noise Tracking, Temperature Analytics, Historical Reports
+- Alert Center: lists, filters, timelines, statistics, configuration
+- Auth callback, profile setup, notification settings
+- i18n via [src/i18n.js](src/i18n.js); optional auto-translate utilities
+- Tailwind-based components and layouts
 
-## 📋 Prerequisites
+## Prerequisites
 
-- Node.js (v14.x or higher)
-- npm or yarn
+- Node.js (LTS)
+- npm
 
-## 🛠️ Installation
+## Installation
 
-1. Install dependencies:
-   ```bash
-   npm install
-   # or
-   yarn install
-   ```
-   
-2. Start the development server:
-   ```bash
-   npm start
-   # or
-   yarn start
-   ```
-
-## 📁 Project Structure
-
-```
-react_app/
-├── public/             # Static assets
-├── src/
-│   ├── components/     # Reusable UI components
-│   ├── pages/          # Page components
-│   ├── styles/         # Global styles and Tailwind configuration
-│   ├── App.jsx         # Main application component
-│   ├── Routes.jsx      # Application routes
-│   └── index.jsx       # Application entry point
-├── .env                # Environment variables
-├── index.html          # HTML template
-├── package.json        # Project dependencies and scripts
-├── tailwind.config.js  # Tailwind CSS configuration
-└── vite.config.js      # Vite configuration
+```bash
+npm install
+npm run dev
 ```
 
-## 🧩 Adding Routes
+Vite dev server will print a local URL (typically http://localhost:5173).
 
-To add new routes to the application, update the `Routes.jsx` file:
+## Scripts
 
-```jsx
-import { useRoutes } from "react-router-dom";
-import HomePage from "pages/HomePage";
-import AboutPage from "pages/AboutPage";
+- `npm run dev` — start development server
+- `npm run build` — production build
+- `npm run preview` — preview built app locally
 
-const ProjectRoutes = () => {
-  let element = useRoutes([
-    { path: "/", element: <HomePage /> },
-    { path: "/about", element: <AboutPage /> },
-    // Add more routes as needed
-  ]);
+## Environment Variables
 
-  return element;
-};
+See [frontend/.env.example](../frontend/.env.example). Create `frontend/.env` with:
+
+```
+VITE_SUPABASE_URL=...
+VITE_SUPABASE_ANON_KEY=...
+VITE_GOOGLE_TRANSLATE_API_KEY=...   # optional
+VITE_API_URL=http://localhost:8080   # backend URL
 ```
 
-## 🎨 Styling
+## Structure (selected)
 
-This project uses Tailwind CSS for styling. The configuration includes:
+```
+src/
+  components/
+    navigation/
+    ui/
+    Chatbot.jsx
+  layouts/
+  pages/
+    alert-center/
+    air-quality-monitor/
+    environmental-dashboard/
+    historical-reports/
+    noise-level-tracking/
+    notification-setting/
+    profile-setup/
+    temperature-analytics/
+    unsigned-dashboard/
+    auth-callback/
+  services/
+  utils/
+    translationService.js
+    useAutoTranslate.js
+    profiles.js
+    nearbyCities.js
+    sessionCities.js
+  i18n.js
+```
 
-- Forms plugin for form styling
-- Typography plugin for text styling
-- Aspect ratio plugin for responsive elements
-- Container queries for component-specific responsive design
-- Fluid typography for responsive text
-- Animation utilities
+## Backend Integration
 
-## 📱 Responsive Design
+Set `VITE_API_URL` to your backend (default: http://localhost:8080). CORS is allowed from `FRONTEND_ORIGIN` configured in backend `.env`.
 
-The app is built with responsive design using Tailwind CSS breakpoints.
+## i18n / Auto-Translation
 
+- Base i18n setup in [src/i18n.js](src/i18n.js)
+- Optional helpers: [src/utils/translationService.js](src/utils/translationService.js), [src/utils/useAutoTranslate.js](src/utils/useAutoTranslate.js)
 
-## 📦 Deployment
-
-Build the application for production:
+## Deployment
 
 ```bash
 npm run build
+npm run preview
 ```
 

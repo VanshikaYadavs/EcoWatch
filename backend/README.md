@@ -1,64 +1,88 @@
-# EcoWatch Backend (Node + Supabase)
+# EcoWatch Backend (Node + Express + Supabase)
 
-Minimal Express service with a Supabase server-side client.
+Backend API and services for ingestion, alerting, and scheduled checks. Includes Email (SendGrid) and SMS (Twilio) notifications, plus a background scheduler.
 
 ## Setup
 
-1) Copy env file
+1) Copy env and fill values
 
 ```bash
 cp .env.example .env
 ```
 
-2) Fill `.env` values
+Required:
 - `SUPABASE_URL`
-- `SUPABASE_SERVICE_ROLE_KEY` (server only)
-- `SUPABASE_ANON_KEY` (optional)
-- `PORT` (optional, default 8080)
- - `WAQI_TOKEN` (optional for AQI)
- - `OPENWEATHER_API_KEY` (optional for weather)
- - `DEFAULT_LOCATIONS` JSON array (name, lat, lon) for CLI ingest
+- `SUPABASE_SERVICE_ROLE_KEY`
 
-3) Install dependencies
+Recommended/Optional:
+- `PORT` (default 8080)
+- `FRONTEND_ORIGIN` (default http://localhost:5173)
+- `SENDGRID_API_KEY`, `SENDGRID_FROM_EMAIL`
+- `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`
+- `WAQI_TOKEN`, `OPENWEATHER_API_KEY`
+- `ALERT_CHECK_INTERVAL_MS` (default: 3600000), `DEFAULT_LOCATIONS` (JSON array)
+- `ALLOW_DEMO_INGEST` (set `1` in dev to allow demo mode), `DEFAULT_USER_ID`
+
+2) Install and run
 
 ```bash
 npm install
-```
-
-4) Run
-
-```bash
 npm run dev
 ```
 
-## API (sample)
+3) Optional services
+
+```bash
+npm run scheduler   # start background alert checker
+npm run ingest      # CLI ingest for default locations
+```
+
+## API Endpoints
 
 - `GET /health` — service status
-- `GET /api/readings/latest?location_id=...&type=air&limit=50` — latest readings
-- `POST /api/readings` — insert a reading (server trusted)
- - `GET /api/ingest/now?name=Jaipur&lat=26.9124&lon=75.7873` — fetch AQI + weather and store one snapshot
-  - On insert, the backend evaluates user thresholds and writes triggered items to `alert_events`.
+- `GET /api/ping` — quick ping
+- `GET /api/check-supabase` — verify DB connectivity
+- `GET /api/readings/latest` — latest readings (query: `location`, `limit`)
+- `POST /api/readings` — insert environment reading (trusted server path)
+- `GET /api/readings/latest-by-city` — latest per configured city
+- `GET /api/readings/latest-by-cluster?name=...` — latest per city for a cluster
+- `GET /api/ingest/now?name=...&lat=...&lon=...&demo=1` — one-off ingest (auth/demo)
+- `GET /api/ingest/all` — parallel ingest for default cities
+- `GET /api/ingest/cluster?name=...` — ingest all cities in a cluster
+- `GET /api/ingest/clusters` — ingest all clusters in parallel
 
-Body example:
+On inserts, alert evaluation runs and writes triggered items to `alert_events`.
+
+### Insert body example
+
 ```json
 {
-  "sensor_id": "uuid-...",
-  "location_id": "uuid-...",
-  "type": "air",
-  "metric": "pm25",
-  "value": 42.1,
-  "unit": "ug/m3",
-  "timestamp": "2025-01-01T10:00:00Z"
+  "location": "Jaipur",
+  "latitude": 26.9124,
+  "longitude": 75.7873,
+  "aqi": 150,
+  "temperature": 35.2,
+  "humidity": 80,
+  "noise_level": 85,
+  "source": "api",
+  "recorded_at": "2026-01-12T10:00:00Z"
 }
 ```
 
+## Notifications
+
+- Email: [backend/src/email.mjs](backend/src/email.mjs) (SendGrid; rate-limited)
+- SMS: [backend/src/smsService.mjs](backend/src/smsService.mjs) (Twilio)
+- Alerts: [backend/src/alerts.mjs](backend/src/alerts.mjs)
+- Scheduler: [backend/scheduler.mjs](backend/scheduler.mjs) — see [SCHEDULER_README.md](../SCHEDULER_README.md)
+
 ## Database
 
-Apply schema and policies in Supabase SQL editor:
-- `database/schema.sql`
-- `database/policies.sql`
+Apply schema and policies in Supabase:
+- [database/schema.sql](../database/schema.sql)
+- [database/policies.sql](../database/policies.sql)
 
-Consider adding scheduled jobs (Edge Functions or external cron) to ingest public APIs and evaluate alerts.
+Migrations: see [database/migrations](../database/migrations)
 
 ## Ingestion (CLI)
 
@@ -77,10 +101,9 @@ npm run ingest
 ]
 ```
 
-Schedule this with Windows Task Scheduler or a hosted cron (e.g., GitHub Actions, Render cron) every 10–15 minutes.
+Schedule with Task Scheduler/PM2 or a hosted cron.
 
-## Alert Engine
+## Development Tips
 
-- Preferences are defined per user in `user_alert_preferences`.
-- When a new `environment_readings` row is written by ingestion, the backend checks thresholds for AQI, noise, and temperature.
-- Triggered items are recorded in `alert_events` (users can read their own via Supabase with RLS).
+- For local testing without auth, set `ALLOW_DEMO_INGEST=1` and use `&demo=1` on ingest endpoints.
+- Keep service role keys server-side only; never expose them to the frontend.
